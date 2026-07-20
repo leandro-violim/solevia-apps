@@ -7,6 +7,7 @@ import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
 import { playPop, unlockAudio } from "../lib/pop-sound";
 import { usePhaseRecords } from "../lib/records";
+import { pickQuote } from "../lib/quotes";
 
 const searchSchema = z.object({
   phase: z.number().int().min(1).max(TOTAL_PHASES).optional().default(1),
@@ -121,6 +122,17 @@ function PlayPage() {
 
   const record = records[phase];
   const isLast = phase >= TOTAL_PHASES;
+  const isNewBestScore = !!result && result.score > (record?.prevBestScore ?? 0);
+  const isNewBestTime =
+    !!result &&
+    ((record?.prevBestTimeMs ?? 0) === 0 || result.timeMs < (record?.prevBestTimeMs ?? 0));
+  // Stable per-run quote for the phase-5 finale.
+  const finaleQuote = useMemo(
+    () => (isLast && result ? pickQuote(result.score + result.timeMs) : ""),
+    [isLast, result],
+  );
+  // Skip idle float animation on the densest phase to save CPU/battery.
+  const stillBubbles = cfg.bubbles >= 60;
 
   const nextPhase = useCallback(() => {
     navigate({ to: "/play", search: { phase: Math.min(phase + 1, TOTAL_PHASES) } });
@@ -172,6 +184,7 @@ function PlayPage() {
               size={b.size}
               popped={b.popped}
               driftDelay={b.drift}
+              still={stillBubbles}
               onPop={() => handlePop(b.id)}
             />
           ))}
@@ -195,9 +208,17 @@ function PlayPage() {
                   Time {formatTime(result.timeMs)}
                 </div>
                 <div className="mt-3 rounded-lg bg-muted p-2 text-xs text-muted-foreground">
-                  Best score {record?.bestScore ?? result.score} · Best time{" "}
-                  {formatTime(record?.bestTimeMs ?? result.timeMs)}
+                  {isNewBestScore ? "New best score! " : ""}
+                  {isNewBestTime ? "New best time! " : ""}
+                  {!isNewBestScore && !isNewBestTime
+                    ? `Best ${record?.bestScore ?? 0} · ${formatTime(record?.bestTimeMs ?? 0)}`
+                    : null}
                 </div>
+                {isLast && (
+                  <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs italic text-foreground">
+                    “{finaleQuote}”
+                  </div>
+                )}
                 <div className="mt-4 flex flex-col gap-2">
                   <button
                     onClick={() => setState("ad")}

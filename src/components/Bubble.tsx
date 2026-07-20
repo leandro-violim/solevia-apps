@@ -6,6 +6,8 @@ type Props = {
   y: number;
   size: number;
   popped: boolean;
+  /** When true, skip the idle float animation to save CPU on dense phases. */
+  still?: boolean;
   driftDelay: number;
   onPop: () => void;
 };
@@ -16,6 +18,7 @@ export const Bubble = memo(function Bubble({
   y,
   size,
   popped,
+  still,
   driftDelay,
   onPop,
 }: Props) {
@@ -37,9 +40,10 @@ export const Bubble = memo(function Bubble({
         transition:
           "transform 180ms cubic-bezier(.34,1.56,.64,1), opacity 180ms ease-out",
         pointerEvents: popped ? "none" : "auto",
-        animation: popped
-          ? undefined
-          : `bubbleFloat 4s ease-in-out ${driftDelay}s infinite`,
+        animation:
+          popped || still
+            ? undefined
+            : `bubbleFloat 4s ease-in-out ${driftDelay}s infinite`,
         WebkitTapHighlightColor: "transparent",
       }}
       aria-label="Pop bubble"
@@ -50,10 +54,11 @@ export const Bubble = memo(function Bubble({
         width={size}
         height={size}
         draggable={false}
+        decoding="async"
+        loading="lazy"
         style={{
           width: "100%",
           height: "100%",
-          filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.12))",
           pointerEvents: "none",
         }}
       />
