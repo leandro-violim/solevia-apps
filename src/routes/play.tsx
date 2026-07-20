@@ -159,10 +159,10 @@ function PlayPage() {
         {remaining} bubbles left · Best: {record?.bestScore ?? 0} pts
       </div>
 
-      <div className="relative flex-1 px-2">
+      <div className="relative flex flex-1 px-2">
         <div
           ref={fieldRef}
-          className="relative h-full w-full overflow-hidden rounded-3xl border border-border/40 bg-white/30"
+          className="relative w-full flex-1 overflow-hidden rounded-3xl border border-border/40 bg-white/30"
         >
           {bubbles.map((b) => (
             <Bubble
