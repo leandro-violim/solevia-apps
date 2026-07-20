@@ -1,0 +1,237 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { z } from "zod";
+import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
+import { Bubble } from "../components/Bubble";
+import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
+import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
+import { playPop, unlockAudio } from "../lib/pop-sound";
+import { usePhaseRecords } from "../lib/records";
+
+const searchSchema = z.object({
+  phase: z.number().int().min(1).max(TOTAL_PHASES).optional().default(1),
+});
+
+export const Route = createFileRoute("/play")({
+  validateSearch: (s) => searchSchema.parse(s),
+  head: () => ({
+    meta: [
+      { title: "Play — Bubble Pop Calm" },
+      { name: "description", content: "Pop plastic bubbles to relax. Beat your best time each phase." },
+      { property: "og:title", content: "Play — Bubble Pop Calm" },
+      { property: "og:description", content: "Pop plastic bubbles to relax." },
+    ],
+  }),
+  component: PlayPage,
+});
+
+type BubbleState = { id: number; x: number; y: number; size: number; drift: number; popped: boolean };
+
+function layoutBubbles(
+  count: number,
+  size: number,
+  width: number,
+  height: number,
+): BubbleState[] {
+  const padding = 6;
+  const step = size + padding;
+  const cols = Math.max(1, Math.floor(width / step));
+  const rows = Math.max(1, Math.ceil(count / cols));
+  const totalW = cols * step - padding;
+  const totalH = rows * step - padding;
+  const offsetX = Math.max(0, (width - totalW) / 2);
+  const offsetY = Math.max(0, (height - totalH) / 2);
+  const bubbles: BubbleState[] = [];
+  for (let i = 0; i < count; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    // Slight jitter so it doesn't look like a rigid grid
+    const jitterX = (Math.random() - 0.5) * padding * 0.8;
+    const jitterY = (Math.random() - 0.5) * padding * 0.8;
+    bubbles.push({
+      id: i,
+      x: offsetX + col * step + jitterX,
+      y: offsetY + row * step + jitterY,
+      size,
+      drift: Math.random() * 3,
+      popped: false,
+    });
+  }
+  return bubbles;
+}
+
+function PlayPage() {
+  const { phase } = Route.useSearch();
+  const navigate = useNavigate({ from: "/play" });
+  const cfg = getPhase(phase);
+  const { submit, records } = usePhaseRecords();
+
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const [bubbles, setBubbles] = useState<BubbleState[]>([]);
+  const [startAt, setStartAt] = useState<number | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [state, setState] = useState<"ready" | "playing" | "done" | "ad">("ready");
+  const [result, setResult] = useState<{ score: number; timeMs: number } | null>(null);
+
+  // Build field for this phase
+  useEffect(() => {
+    const el = fieldRef.current;
+    if (!el) return;
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+    setBubbles(layoutBubbles(cfg.bubbles, cfg.size, w, h));
+    setStartAt(null);
+    setElapsed(0);
+    setState("ready");
+    setResult(null);
+  }, [phase, cfg.bubbles, cfg.size]);
+
+  // Timer
+  useEffect(() => {
+    if (state !== "playing" || startAt === null) return;
+    const id = window.setInterval(() => setElapsed(Date.now() - startAt), 100);
+    return () => window.clearInterval(id);
+  }, [state, startAt]);
+
+  const handlePop = useCallback(
+    (id: number) => {
+      if (state === "ready") {
+        unlockAudio();
+        setStartAt(Date.now());
+        setState("playing");
+      }
+      playPop();
+      setBubbles((prev) => {
+        const next = prev.map((b) => (b.id === id ? { ...b, popped: true } : b));
+        const remaining = next.filter((b) => !b.popped).length;
+        if (remaining === 0) {
+          const now = Date.now();
+          const t = startAt ? now - startAt : elapsed;
+          const score = computeScore(cfg.bubbles, t);
+          setElapsed(t);
+          setResult({ score, timeMs: t });
+          submit(phase, score, t);
+          setState("done");
+        }
+        return next;
+      });
+    },
+    [state, startAt, elapsed, cfg.bubbles, phase, submit],
+  );
+
+  const record = records[phase];
+  const isLast = phase >= TOTAL_PHASES;
+
+  const nextPhase = useCallback(() => {
+    navigate({ to: "/play", search: { phase: Math.min(phase + 1, TOTAL_PHASES) } });
+  }, [navigate, phase]);
+
+  const restart = useCallback(() => {
+    const el = fieldRef.current;
+    if (!el) return;
+    setBubbles(layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, el.clientHeight));
+    setStartAt(null);
+    setElapsed(0);
+    setState("ready");
+    setResult(null);
+  }, [cfg.bubbles, cfg.size]);
+
+  const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
+
+  return (
+    <div className="flex min-h-screen flex-col" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <header className="flex items-center justify-between px-4 py-3">
+        <Link to="/" className="text-sm font-medium text-muted-foreground">
+          ← Exit
+        </Link>
+        <div className="text-center">
+          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+            Phase {phase} of {TOTAL_PHASES}
+          </div>
+          <div className="text-sm font-semibold text-foreground">{cfg.label} bubbles</div>
+        </div>
+        <div className="w-10 text-right font-mono text-sm tabular-nums text-foreground">
+          {formatTime(elapsed)}
+        </div>
+      </header>
+
+      <div className="px-4 pb-2 text-center text-xs text-muted-foreground">
+        {remaining} bubbles left · Best: {record?.bestScore ?? 0} pts
+      </div>
+
+      <div className="relative flex-1 px-2">
+        <div
+          ref={fieldRef}
+          className="relative h-full w-full overflow-hidden rounded-3xl border border-border/40 bg-white/30"
+        >
+          {bubbles.map((b) => (
+            <Bubble
+              key={b.id}
+              x={b.x}
+              y={b.y}
+              size={b.size}
+              popped={b.popped}
+              driftDelay={b.drift}
+              onPop={() => handlePop(b.id)}
+            />
+          ))}
+
+          {state === "ready" && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="rounded-full bg-foreground/70 px-5 py-2 text-sm font-medium text-primary-foreground">
+                Tap any bubble to start
+              </div>
+            </div>
+          )}
+
+          {state === "done" && result && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+              <div className="mx-4 w-full max-w-xs rounded-2xl bg-card p-6 text-center shadow-xl">
+                <div className="text-xs uppercase tracking-widest text-muted-foreground">
+                  Phase {phase} complete
+                </div>
+                <div className="mt-2 text-4xl font-bold text-primary">{result.score}</div>
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Time {formatTime(result.timeMs)}
+                </div>
+                <div className="mt-3 rounded-lg bg-muted p-2 text-xs text-muted-foreground">
+                  Best score {record?.bestScore ?? result.score} · Best time{" "}
+                  {formatTime(record?.bestTimeMs ?? result.timeMs)}
+                </div>
+                <div className="mt-4 flex flex-col gap-2">
+                  <button
+                    onClick={() => setState("ad")}
+                    className="rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow"
+                  >
+                    {isLast ? "Watch ad · Finish" : "Watch ad · Next phase"}
+                  </button>
+                  <button
+                    onClick={restart}
+                    className="rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground"
+                  >
+                    Replay this phase
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <AdBannerSpacer />
+      <AdBanner />
+
+      {state === "ad" && (
+        <VideoAdPlaceholder
+          onComplete={() => {
+            if (isLast) {
+              navigate({ to: "/records" });
+            } else {
+              nextPhase();
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
