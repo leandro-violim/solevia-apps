@@ -35,27 +35,67 @@ function RecordsPage() {
         {PHASES.map((p) => {
           const r = records[p.phase];
           const hasRecord = hydrated && r && r.bestScore > 0;
+          const hasLast = hydrated && r && r.lastScore > 0;
+          const scoreDelta = hasLast ? r.lastScore - r.prevBestScore : 0;
+          // Time delta: negative = faster (improved). If no previous time, treat as improvement.
+          const timeDelta =
+            hasLast && r.prevBestTimeMs > 0 ? r.lastTimeMs - r.prevBestTimeMs : 0;
           return (
             <div
               key={p.phase}
-              className="flex items-center justify-between rounded-2xl border border-border/60 bg-card px-4 py-3 shadow-sm"
+              className="rounded-2xl border border-border/60 bg-card px-4 py-3 shadow-sm"
             >
-              <div>
-                <div className="text-xs uppercase tracking-widest text-muted-foreground">
-                  Phase {p.phase}
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-muted-foreground">
+                    Phase {p.phase}
+                  </div>
+                  <div className="text-sm font-medium text-foreground">
+                    {p.label} · {p.bubbles} bubbles
+                  </div>
                 </div>
-                <div className="text-sm font-medium text-foreground">
-                  {p.label} · {p.bubbles} bubbles
+                <div className="text-right">
+                  <div className="text-lg font-bold text-primary">
+                    {hasRecord ? r.bestScore : "—"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {hasRecord ? formatTime(r.bestTimeMs) : "no time yet"}
+                  </div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-primary">
-                  {hasRecord ? r.bestScore : "—"}
+              {hasLast && (
+                <div className="mt-2 flex items-center justify-between border-t border-border/40 pt-2 text-xs">
+                  <span className="text-muted-foreground">
+                    Last: {r.lastScore} · {formatTime(r.lastTimeMs)}
+                  </span>
+                  <span className="flex gap-2">
+                    <span
+                      className={
+                        scoreDelta > 0
+                          ? "font-semibold text-emerald-600"
+                          : scoreDelta < 0
+                            ? "font-semibold text-rose-600"
+                            : "text-muted-foreground"
+                      }
+                    >
+                      {scoreDelta > 0 ? "▲" : scoreDelta < 0 ? "▼" : "="}
+                      {scoreDelta !== 0 ? Math.abs(scoreDelta) : ""} pts
+                    </span>
+                    <span
+                      className={
+                        timeDelta < 0
+                          ? "font-semibold text-emerald-600"
+                          : timeDelta > 0
+                            ? "font-semibold text-rose-600"
+                            : "text-muted-foreground"
+                      }
+                    >
+                      {timeDelta < 0 ? "▲" : timeDelta > 0 ? "▼" : "="}
+                      {timeDelta !== 0 ? formatTime(Math.abs(timeDelta)) : ""}
+                    </span>
+                  </span>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {hasRecord ? formatTime(r.bestTimeMs) : "no time yet"}
-                </div>
-              </div>
+              )}
             </div>
           );
         })}
