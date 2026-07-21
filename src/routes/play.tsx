@@ -122,6 +122,10 @@ function PlayPage() {
 
   const record = records[phase];
   const isLast = phase >= TOTAL_PHASES;
+  // Ad gating: show the video ad only after phases 2, 4, and the finale.
+  // Full-screen ads on every phase get flagged by app store reviewers as
+  // disruptive; every-other-phase pacing is the common accepted pattern.
+  const showAdOnFinish = isLast || phase % 2 === 0;
   const isNewBestScore = !!result && result.score > (record?.prevBestScore ?? 0);
   const isNewBestTime =
     !!result &&
@@ -221,10 +225,24 @@ function PlayPage() {
                 )}
                 <div className="mt-4 flex flex-col gap-2">
                   <button
-                    onClick={() => setState("ad")}
+                    onClick={() => {
+                      if (showAdOnFinish) {
+                        setState("ad");
+                      } else if (isLast) {
+                        navigate({ to: "/records" });
+                      } else {
+                        nextPhase();
+                      }
+                    }}
                     className="rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow"
                   >
-                    {isLast ? "Watch ad · Finish" : "Watch ad · Next phase"}
+                    {showAdOnFinish
+                      ? isLast
+                        ? "Watch ad · Finish"
+                        : "Watch ad · Next phase"
+                      : isLast
+                        ? "Finish"
+                        : "Next phase"}
                   </button>
                   <button
                     onClick={restart}

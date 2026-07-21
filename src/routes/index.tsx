@@ -65,6 +65,10 @@ function Home() {
           aria-label="Legal"
           className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground"
         >
+          <Link to="/settings" className="hover:underline">
+            Settings
+          </Link>
+          <span aria-hidden>·</span>
           <Link to="/about" className="hover:underline">
             About
           </Link>

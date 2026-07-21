@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { APP_VERSION } from "../lib/settings";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -70,6 +71,10 @@ function AboutPage() {
           </Link>
         </li>
       </ul>
+
+      <p className="mt-8 text-[11px] text-muted-foreground">
+        Bubble Pop Calm · v{APP_VERSION}
+      </p>
     </main>
   );
 }
