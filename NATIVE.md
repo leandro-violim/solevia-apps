@@ -50,3 +50,43 @@ between-phase full-screen video ad. Once you have an AdMob account:
   required for the store build.
 - The game uses the Web Audio API for the pop sound — works fine inside a
   Capacitor WebView on both platforms.
+
+## App icon and splash screen
+
+Both stores require a real app icon and launch screen. Capacitor has a
+first-party generator that produces every size Apple and Google need from
+two source images.
+
+1. Create two square PNGs at the project root:
+   - `resources/icon.png` — 1024×1024, no transparency, no rounded corners
+     (the stores round them for you).
+   - `resources/splash.png` — 2732×2732, artwork centered in the middle
+     ~50% (edges get cropped on some devices).
+
+   Reuse the in-app bubble artwork on the soft mint background for
+   consistency with the marketing screenshots.
+
+2. Install and run the generator:
+
+   ```bash
+   npm install --save-dev @capacitor/assets
+   npx capacitor-assets generate --iconBackgroundColor "#e6f7f5" \
+     --splashBackgroundColor "#e6f7f5"
+   ```
+
+   This writes every required icon/splash size into `ios/App/App/Assets.xcassets`
+   and `android/app/src/main/res/`.
+
+3. Re-run `npx cap sync` and rebuild in Xcode / Android Studio.
+
+## Bumping the app version
+
+The user-visible version lives in `src/lib/settings.ts` (`APP_VERSION`). The
+store versions live in the native projects:
+
+- iOS: `ios/App/App/Info.plist` → `CFBundleShortVersionString` and
+  `CFBundleVersion`.
+- Android: `android/app/build.gradle` → `versionName` and `versionCode`.
+
+Keep all three in sync for each submission (increment `CFBundleVersion` /
+`versionCode` on every upload, even for the same public version).
