@@ -60,6 +60,23 @@ function Home() {
             View records
           </Link>
         </div>
+
+        <nav
+          aria-label="Legal"
+          className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground"
+        >
+          <Link to="/about" className="hover:underline">
+            About
+          </Link>
+          <span aria-hidden>·</span>
+          <Link to="/privacy" className="hover:underline">
+            Privacy
+          </Link>
+          <span aria-hidden>·</span>
+          <Link to="/terms" className="hover:underline">
+            Terms
+          </Link>
+        </nav>
       </div>
 
       <AdBannerSpacer />
