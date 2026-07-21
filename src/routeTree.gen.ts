@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as RecordsRouteImport } from './routes/records'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecordsRoute = RecordsRouteImport.update({
   id: '/records',
   path: '/records',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/records': typeof RecordsRoute
+  '/terms': typeof TermsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/records': typeof RecordsRoute
+  '/terms': typeof TermsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/records': typeof RecordsRoute
+  '/terms': typeof TermsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/play' | '/privacy' | '/records'
+  fullPaths: '/' | '/play' | '/privacy' | '/records' | '/terms'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/play' | '/privacy' | '/records'
-  id: '__root__' | '/' | '/play' | '/privacy' | '/records'
+  to: '/' | '/play' | '/privacy' | '/records' | '/terms'
+  id: '__root__' | '/' | '/play' | '/privacy' | '/records' | '/terms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +76,18 @@ export interface RootRouteChildren {
   PlayRoute: typeof PlayRoute
   PrivacyRoute: typeof PrivacyRoute
   RecordsRoute: typeof RecordsRoute
+  TermsRoute: typeof TermsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/records': {
       id: '/records'
       path: '/records'
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlayRoute: PlayRoute,
   PrivacyRoute: PrivacyRoute,
   RecordsRoute: RecordsRoute,
+  TermsRoute: TermsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
