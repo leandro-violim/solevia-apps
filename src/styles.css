@@ -152,3 +152,15 @@
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-4px); }
 }
+
+/* Respect user's reduced-motion preference across the app. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
