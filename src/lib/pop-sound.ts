@@ -5,6 +5,8 @@
  *  2. Fast downward pitch chirp (the "plop")
  * Voice-stealing: reuses a single AudioContext, allows overlapping pops.
  */
+import { isSoundEnabled } from "./settings";
+
 let ctx: AudioContext | null = null;
 
 function getCtx(): AudioContext | null {
@@ -29,6 +31,7 @@ export function unlockAudio() {
 }
 
 export function playPop() {
+  if (!isSoundEnabled()) return;
   const ac = getCtx();
   if (!ac) return;
   const now = ac.currentTime;
