@@ -38,44 +38,63 @@ export function playPop() {
 
   // Master
   const master = ac.createGain();
-  master.gain.setValueAtTime(0.9, now);
+  master.gain.setValueAtTime(1, now);
   master.connect(ac.destination);
 
-  // 1) Noise burst (the crack)
-  const noiseBuf = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.08), ac.sampleRate);
-  const nd = noiseBuf.getChannelData(0);
-  for (let i = 0; i < nd.length; i++) {
-    nd[i] = (Math.random() * 2 - 1) * (1 - i / nd.length);
-  }
-  const noise = ac.createBufferSource();
-  noise.buffer = noiseBuf;
-  const noiseFilter = ac.createBiquadFilter();
-  noiseFilter.type = "bandpass";
-  // Slight per-pop pitch variation for a natural feel
-  const centerFreq = 1600 + Math.random() * 900;
-  noiseFilter.frequency.setValueAtTime(centerFreq, now);
-  noiseFilter.Q.value = 6;
-  const noiseGain = ac.createGain();
-  noiseGain.gain.setValueAtTime(0.55, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-  noise.connect(noiseFilter);
-  noiseFilter.connect(noiseGain);
-  noiseGain.connect(master);
-  noise.start(now);
-  noise.stop(now + 0.09);
+  // Slight per-pop variation so repeated pops feel natural, not machine-gun.
+  const v = 0.9 + Math.random() * 0.25;
 
-  // 2) Downward pitch chirp (the plop body)
+  // 1) Body "pock" — the resonant air-cavity thump of the plastic dome
+  //    collapsing. A fast downward pitch snap with a very tight envelope is
+  //    what makes it read as a real bubble-wrap pop rather than a beep. This
+  //    is now the dominant layer (the old sound was mostly broadband noise,
+  //    which is why it sounded "hissy").
+  const bodyStart = 440 * v;
   const osc = ac.createOscillator();
-  osc.type = "sine";
-  const startFreq = 620 + Math.random() * 140;
-  osc.frequency.setValueAtTime(startFreq, now);
-  osc.frequency.exponentialRampToValueAtTime(90, now + 0.08);
-  const oscGain = ac.createGain();
-  oscGain.gain.setValueAtTime(0.0001, now);
-  oscGain.gain.exponentialRampToValueAtTime(0.5, now + 0.005);
-  oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-  osc.connect(oscGain);
-  oscGain.connect(master);
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(bodyStart, now);
+  osc.frequency.exponentialRampToValueAtTime(85, now + 0.045);
+  const bodyGain = ac.createGain();
+  bodyGain.gain.setValueAtTime(0.0001, now);
+  bodyGain.gain.exponentialRampToValueAtTime(0.95, now + 0.004); // sharp attack
+  bodyGain.gain.exponentialRampToValueAtTime(0.0006, now + 0.085); // quick decay
+  osc.connect(bodyGain);
+  bodyGain.connect(master);
   osc.start(now);
-  osc.stop(now + 0.12);
+  osc.stop(now + 0.1);
+
+  // 2) A short mid resonance layered under the body adds "plastic" character.
+  const sub = ac.createOscillator();
+  sub.type = "sine";
+  sub.frequency.setValueAtTime(1100 * v, now);
+  sub.frequency.exponentialRampToValueAtTime(260, now + 0.03);
+  const subGain = ac.createGain();
+  subGain.gain.setValueAtTime(0.0001, now);
+  subGain.gain.exponentialRampToValueAtTime(0.28, now + 0.003);
+  subGain.gain.exponentialRampToValueAtTime(0.0004, now + 0.05);
+  sub.connect(subGain);
+  subGain.connect(master);
+  sub.start(now);
+  sub.stop(now + 0.06);
+
+  // 3) Tiny high-frequency "snap" transient — the plastic film breaking.
+  //    Only ~5ms of high-passed noise, so it's a click, not a hiss.
+  const clickBuf = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.005), ac.sampleRate);
+  const cd = clickBuf.getChannelData(0);
+  for (let i = 0; i < cd.length; i++) {
+    cd[i] = (Math.random() * 2 - 1) * (1 - i / cd.length);
+  }
+  const click = ac.createBufferSource();
+  click.buffer = clickBuf;
+  const clickHP = ac.createBiquadFilter();
+  clickHP.type = "highpass";
+  clickHP.frequency.value = 2800;
+  const clickGain = ac.createGain();
+  clickGain.gain.setValueAtTime(0.3, now);
+  clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
+  click.connect(clickHP);
+  clickHP.connect(clickGain);
+  clickGain.connect(master);
+  click.start(now);
+  click.stop(now + 0.02);
 }

@@ -13,3 +13,8 @@ export default defineConfig({
     server: { entry: "server" },
   },
 });
+// NOTE: The static build used to wrap this app with Capacitor lives in a
+// separate config, `vite.config.mobile.ts` (run via `bun run build:mobile`).
+// It bypasses the Lovable Cloudflare preset — which breaks SPA prerendering —
+// and emits a static SPA into `dist/client` for the native shell. This web
+// config stays as-is so the normal web build/deploy is unaffected.
