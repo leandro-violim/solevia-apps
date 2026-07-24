@@ -54,7 +54,7 @@ function AboutPage() {
       <h2 className="mt-8 text-lg font-semibold">Support</h2>
       <p className="mt-2">
         Need help, want to report a bug, or have a suggestion? Email us at{" "}
-        <span className="font-mono">[YOUR SUPPORT EMAIL]</span>. We aim to
+        <span className="font-mono">leandroviolim@gmail.com</span>. We aim to
         respond within a few business days.
       </p>
 

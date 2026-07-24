@@ -84,7 +84,7 @@ function TermsPage() {
       <h2 className="mt-8 text-lg font-semibold">Apple App Store additional terms</h2>
       <p className="mt-2">
         If you obtained the App from the Apple App Store, you acknowledge
-        that these Terms are between you and the app owner only, not with
+        that these Terms are between you and Sole Via Entertainment LLC only, not with
         Apple, and that Apple is not responsible for the App or its
         content. Apple and its subsidiaries are third-party beneficiaries
         of these Terms and may enforce them against you.
@@ -98,7 +98,7 @@ function TermsPage() {
 
       <h2 className="mt-8 text-lg font-semibold">Contact</h2>
       <p className="mt-2">
-        Questions about these Terms: <span className="font-mono">[YOUR SUPPORT EMAIL]</span>.
+        Questions about these Terms: <span className="font-mono">leandroviolim@gmail.com</span>.
       </p>
     </main>
   );

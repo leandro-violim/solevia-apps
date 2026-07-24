@@ -33,7 +33,7 @@ function PrivacyPage() {
       </p>
 
       <p className="mt-6">
-        This page is maintained by the app owner ("we", "us") to explain how
+        This page is maintained by Sole Via Entertainment LLC ("we", "us") to explain how
         Bubble Pop Calm ("the App") handles information. The App is designed
         to be enjoyed without creating an account and without collecting
         personal information on our own servers.
@@ -97,7 +97,7 @@ function PrivacyPage() {
 
       <h2 className="mt-8 text-lg font-semibold">Contact</h2>
       <p className="mt-2">
-        Questions about this policy: <span className="font-mono">[YOUR SUPPORT EMAIL]</span>.
+        Questions about this policy: <span className="font-mono">leandroviolim@gmail.com</span>.
       </p>
     </main>
   );
