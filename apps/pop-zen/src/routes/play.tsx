@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { z } from "zod";
 import { AdBanner } from "../components/AdBanner";
+import { showInterstitial } from "../lib/ads";
 import { Bubble } from "../components/Bubble";
 import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
@@ -80,6 +82,50 @@ function layoutBubbles(
   return bubbles;
 }
 
+/**
+ * Usable height (in px) for laying out bubbles inside the play field.
+ *
+ * On web this is just the field's own height (the DOM banner reserves its space).
+ *
+ * On native the AdMob banner is a native overlay and the web container reports
+ * itself as full-screen-tall, so "field height minus a bit" isn't reliable. We
+ * instead anchor to the ACTUAL visible viewport bottom (`visualViewport.height`)
+ * minus a fixed reserve for the banner + home-indicator safe area. Because it's
+ * measured from the visible viewport, it doesn't matter if the web view is
+ * taller than the screen — the bottom row always lands above the banner.
+ */
+function usableFieldHeight(el: HTMLElement): number {
+  if (!Capacitor.isNativePlatform() || typeof window === "undefined") {
+    return el.clientHeight;
+  }
+
+  const rect = el.getBoundingClientRect();
+  const vpH = window.visualViewport?.height ?? window.innerHeight;
+
+  // Home-indicator safe area.
+  let safe = 0;
+  try {
+    const probe = document.createElement("div");
+    probe.style.cssText =
+      "position:fixed;left:0;bottom:0;width:0;height:env(safe-area-inset-bottom);pointer-events:none;";
+    document.body.appendChild(probe);
+    safe = probe.getBoundingClientRect().height;
+    probe.remove();
+  } catch {
+    safe = 0;
+  }
+
+  // Real banner height when known (published by ads.ts), min 100px ("large"
+  // banner) so nothing is clipped before the banner reports its size.
+  const cssVar = parseFloat(
+    getComputedStyle(document.documentElement).getPropertyValue("--ad-banner-h"),
+  );
+  const banner = Math.max(Number.isFinite(cssVar) ? cssVar : 0, 100);
+
+  const reserve = banner + safe + 16; // + small breathing gap
+  return Math.max(160, vpH - reserve - rect.top);
+}
+
 function PlayPage() {
   const { phase } = Route.useSearch();
   const navigate = useNavigate({ from: "/play" });
@@ -101,7 +147,7 @@ function PlayPage() {
     const el = fieldRef.current;
     if (!el) return;
     const w = el.clientWidth;
-    const h = el.clientHeight;
+    const h = usableFieldHeight(el);
     setBubbles(layoutBubbles(cfg.bubbles, cfg.size, w, h));
     setStartAt(null);
     setElapsed(0);
@@ -109,6 +155,25 @@ function PlayPage() {
     setResult(null);
     settledRef.current = false;
   }, [phase, cfg.bubbles, cfg.size]);
+
+  // Re-lay-out the field when the native ad banner reports its real height,
+  // so bubbles clear it exactly. Only while "ready" so an in-progress game
+  // isn't disturbed.
+  useEffect(() => {
+    const onResize = () => {
+      const el = fieldRef.current;
+      if (!el || state !== "ready") return;
+      setBubbles(
+        layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el)),
+      );
+    };
+    window.addEventListener("ad-banner-resize", onResize);
+    window.visualViewport?.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("ad-banner-resize", onResize);
+      window.visualViewport?.removeEventListener("resize", onResize);
+    };
+  }, [state, cfg.bubbles, cfg.size]);
 
   // Timer
   useEffect(() => {
@@ -171,7 +236,9 @@ function PlayPage() {
   const restart = useCallback(() => {
     const el = fieldRef.current;
     if (!el) return;
-    setBubbles(layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, el.clientHeight));
+    setBubbles(
+      layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el)),
+    );
     setStartAt(null);
     setElapsed(0);
     setState("ready");
@@ -202,13 +269,7 @@ function PlayPage() {
         {remaining} bubbles left · Best: {record?.bestScore ?? 0} pts
       </div>
 
-      {/* Reserve the exact height of the fixed ad banner (plus the iOS
-          home-indicator safe area) so the play field — and therefore the
-          bottom row of bubbles — always sits fully above the banner. */}
-      <div
-        className="relative flex flex-1 px-2"
-        style={{ marginBottom: "calc(72px + env(safe-area-inset-bottom))" }}
-      >
+      <div className="relative flex flex-1 px-2">
         <div
           ref={fieldRef}
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-border/40 bg-white/30"
@@ -258,13 +319,18 @@ function PlayPage() {
                 )}
                 <div className="mt-4 flex flex-col gap-2">
                   <button
-                    onClick={() => {
-                      if (showAdOnFinish) {
-                        setState("ad");
-                      } else if (isLast) {
-                        navigate({ to: "/records" });
+                    onClick={async () => {
+                      const proceed = () =>
+                        isLast ? navigate({ to: "/records" }) : nextPhase();
+                      if (!showAdOnFinish) {
+                        proceed();
+                      } else if (Capacitor.isNativePlatform()) {
+                        // Real AdMob interstitial on device, then continue.
+                        await showInterstitial();
+                        proceed();
                       } else {
-                        nextPhase();
+                        // Web/dev: show the in-app placeholder overlay instead.
+                        setState("ad");
                       }
                     }}
                     className="rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow"
@@ -290,7 +356,9 @@ function PlayPage() {
         </div>
       </div>
 
-      <AdBanner />
+      {/* Web/dev only: on native the AdMob banner overlays the bottom of the
+          screen and the play field is sized to clear it (see usableFieldHeight). */}
+      {!Capacitor.isNativePlatform() && <AdBanner inline />}
 
       {state === "ad" && (
         <VideoAdPlaceholder

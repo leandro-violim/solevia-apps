@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { initAds, showBanner } from "../lib/ads";
 
 function NotFoundComponent() {
   return (
@@ -122,6 +123,19 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // Initialize AdMob and show the bottom banner once, on native only.
+  // Both calls are no-ops on the web/dev build.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await initAds();
+      if (!cancelled) await showBanner();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
