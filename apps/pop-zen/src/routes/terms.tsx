@@ -3,16 +3,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
-      { title: "Terms of Use — Bubble Pop Calm" },
+      { title: "Terms of Use — Zen Bubbles" },
       {
         name: "description",
         content:
-          "Terms of use for the Bubble Pop Calm relaxation game.",
+          "Terms of use for the Zen Bubbles relaxation game.",
       },
-      { property: "og:title", content: "Terms of Use — Bubble Pop Calm" },
+      { property: "og:title", content: "Terms of Use — Zen Bubbles" },
       {
         property: "og:description",
-        content: "The terms that govern your use of Bubble Pop Calm.",
+        content: "The terms that govern your use of Zen Bubbles.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -33,7 +33,7 @@ function TermsPage() {
       </p>
 
       <p className="mt-6">
-        These Terms govern your use of Bubble Pop Calm ("the App"). By
+        These Terms govern your use of Zen Bubbles ("the App"). By
         installing or using the App you agree to these Terms. If you do
         not agree, do not use the App.
       </p>

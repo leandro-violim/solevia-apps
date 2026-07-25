@@ -5,13 +5,13 @@ import { usePhaseRecords } from "../lib/records";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — Bubble Pop Calm" },
+      { title: "Settings — Zen Bubbles" },
       {
         name: "description",
         content:
-          "Adjust sound, reset your records, and view app version for Bubble Pop Calm.",
+          "Adjust sound, reset your records, and view app version for Zen Bubbles.",
       },
-      { property: "og:title", content: "Settings — Bubble Pop Calm" },
+      { property: "og:title", content: "Settings — Zen Bubbles" },
       {
         property: "og:description",
         content: "Sound, records, and app info.",
@@ -112,7 +112,7 @@ function SettingsPage() {
           </li>
         </ul>
         <div className="mt-4 text-[11px] text-muted-foreground">
-          Bubble Pop Calm · v{APP_VERSION}
+          Zen Bubbles · v{APP_VERSION}
         </div>
       </section>
     </main>

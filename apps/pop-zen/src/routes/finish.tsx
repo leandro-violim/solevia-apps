@@ -17,7 +17,7 @@ export const Route = createFileRoute("/finish")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
-      { title: "Run complete — Bubble Pop Calm" },
+      { title: "Run complete — Zen Bubbles" },
       {
         name: "description",
         content: "Your five-phase run is complete. See if you beat your all-time record.",

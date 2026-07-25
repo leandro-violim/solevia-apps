@@ -3,16 +3,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — Bubble Pop Calm" },
+      { title: "Privacy Policy — Zen Bubbles" },
       {
         name: "description",
         content:
-          "Privacy policy for Bubble Pop Calm: what we store on your device, what ads may collect, and how to contact us.",
+          "Privacy policy for Zen Bubbles: what we store on your device, what ads may collect, and how to contact us.",
       },
-      { property: "og:title", content: "Privacy Policy — Bubble Pop Calm" },
+      { property: "og:title", content: "Privacy Policy — Zen Bubbles" },
       {
         property: "og:description",
-        content: "How Bubble Pop Calm handles your data.",
+        content: "How Zen Bubbles handles your data.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -29,12 +29,12 @@ function PrivacyPage() {
       </Link>
       <h1 className="mt-4 text-3xl font-bold tracking-tight">Privacy Policy</h1>
       <p className="mt-2 text-xs text-muted-foreground">
-        Last updated: July 24, 2026
+        Last updated: July 25, 2026
       </p>
 
       <p className="mt-6">
         This Privacy Policy explains how Sole Via Entertainment LLC ("Solevia",
-        "we", "us") handles information in connection with Bubble Pop Calm ("the
+        "we", "us") handles information in connection with Zen Bubbles ("the
         App"), a relaxation game in which you pop bubbles across five phases and
         your best scores and times are saved on your device. You can play
         without an account, and we do not run servers that collect your personal

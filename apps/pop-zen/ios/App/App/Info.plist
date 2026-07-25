@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Bubble Pop Calm</string>
+        <string>Zen Bubbles</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -47,24 +47,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	<!-- ===== AdMob ===== -->
-	<!-- Sole Via — Bubble Pop Calm real AdMob App ID. Required — the app crashes
-	     on launch without this key once AdMob initializes. Safe to use with test
-	     ads while USE_TEST_ADS is true in src/lib/ads.ts. -->
-	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-9628521678374705~5486523715</string>
-	<!-- Text shown in the iOS "Allow tracking?" (ATT) prompt. Reword freely. -->
-	<key>NSUserTrackingUsageDescription</key>
-	<string>Your data will be used to show you more relevant ads.</string>
-	<!-- Ad attribution networks. This is Google's primary entry; for a release
-	     build add Google's full SKAdNetwork list:
-	     https://developers.google.com/admob/ios/quick-start#update_your_infoplist -->
-	<key>SKAdNetworkItems</key>
-	<array>
-		<dict>
-			<key>SKAdNetworkIdentifier</key>
-			<string>cstr6suwn9.skadnetwork</string>
-		</dict>
-	</array>
 </dict>
 </plist>

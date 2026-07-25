@@ -43,9 +43,8 @@ between-phase full-screen video ad. Once you have an AdMob account:
 
 ## Notes
 
-- `capacitor.config.ts` already sets the app ID (`com.bubblepop.calm`) and
-  splash background. Change `appId` before your first store submission if
-  you want a different bundle identifier.
+- `capacitor.config.ts` already sets the app ID (`app.solevia.zenbubbles`) and
+  splash background.
 - Records are stored in the device's local storage; no backend or sign-in is
   required for the store build.
 - The game uses the Web Audio API for the pop sound — works fine inside a

@@ -5,8 +5,8 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * Not used by the web build. See NATIVE.md for the wrap workflow.
  */
 const config: CapacitorConfig = {
-  appId: "com.bubblepop.calm",
-  appName: "Bubble Pop Calm",
+  appId: "app.solevia.zenbubbles",
+  appName: "Zen Bubbles",
   // Folder Capacitor copies into the native apps. It must contain the static
   // `index.html` shell produced by the mobile SPA build:
   //   bun run build:mobile      (uses vite.config.mobile.ts)
@@ -19,7 +19,7 @@ const config: CapacitorConfig = {
     contentInset: "always",
   },
   android: {
-    backgroundColor: "#e6f7f5",
+    backgroundColor: "#171326",
   },
   server: {
     androidScheme: "https",

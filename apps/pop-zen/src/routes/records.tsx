@@ -6,9 +6,9 @@ import { usePhaseRecords } from "../lib/records";
 export const Route = createFileRoute("/records")({
   head: () => ({
     meta: [
-      { title: "Your Records — Bubble Pop Calm" },
+      { title: "Your Records — Zen Bubbles" },
       { name: "description", content: "Your best score and best time for every bubble-popping phase." },
-      { property: "og:title", content: "Your Records — Bubble Pop Calm" },
+      { property: "og:title", content: "Your Records — Zen Bubbles" },
       { property: "og:description", content: "Your best score and time per phase." },
     ],
   }),

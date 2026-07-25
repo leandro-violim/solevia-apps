@@ -78,13 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Bubble Pop Calm" },
+      { title: "Zen Bubbles" },
       {
         name: "description",
         content:
           "A calming bubble-wrap popping game with five phases of shrinking bubbles.",
       },
-      { property: "og:title", content: "Bubble Pop Calm" },
+      { property: "og:title", content: "Zen Bubbles" },
       {
         property: "og:description",
         content: "Relax and pop plastic bubbles across five soothing phases.",

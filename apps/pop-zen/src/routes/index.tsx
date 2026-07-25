@@ -5,13 +5,13 @@ import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Bubble Pop Calm — Relax and pop plastic bubbles" },
+      { title: "Zen Bubbles — Relax and pop plastic bubbles" },
       {
         name: "description",
         content:
           "A calming bubble-wrap popping game. Five phases of shrinking bubbles. Pop, relax, beat your best time.",
       },
-      { property: "og:title", content: "Bubble Pop Calm" },
+      { property: "og:title", content: "Zen Bubbles" },
       {
         property: "og:description",
         content: "Relax and pop plastic bubbles across five soothing phases.",
@@ -38,7 +38,7 @@ function Home() {
           />
         </div>
         <h1 className="mt-6 text-4xl font-bold tracking-tight text-foreground">
-          Bubble Pop Calm
+          Zen Bubbles
         </h1>
         <p className="mt-3 max-w-xs text-sm text-muted-foreground">
           Five soothing phases. Bubbles get smaller as you go. Pop them all as

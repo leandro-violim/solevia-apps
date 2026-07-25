@@ -4,16 +4,16 @@ import { APP_VERSION } from "../lib/settings";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About & Support — Bubble Pop Calm" },
+      { title: "About & Support — Zen Bubbles" },
       {
         name: "description",
         content:
-          "About Bubble Pop Calm, the calming bubble-popping game, and how to get support.",
+          "About Zen Bubbles, the calming bubble-popping game, and how to get support.",
       },
-      { property: "og:title", content: "About & Support — Bubble Pop Calm" },
+      { property: "og:title", content: "About & Support — Zen Bubbles" },
       {
         property: "og:description",
-        content: "Learn about Bubble Pop Calm and how to reach us.",
+        content: "Learn about Zen Bubbles and how to reach us.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -31,7 +31,7 @@ function AboutPage() {
       <h1 className="mt-4 text-3xl font-bold tracking-tight">About & Support</h1>
 
       <p className="mt-6">
-        Bubble Pop Calm is a simple relaxation game. Pop plastic bubbles
+        Zen Bubbles is a simple relaxation game. Pop plastic bubbles
         across five soothing phases — bubbles shrink as you advance. The
         faster you clear a phase, the higher your score. Your best scores
         and best times are saved on your device so you can beat your own
@@ -73,7 +73,7 @@ function AboutPage() {
       </ul>
 
       <p className="mt-8 text-[11px] text-muted-foreground">
-        Bubble Pop Calm · v{APP_VERSION}
+        Zen Bubbles · v{APP_VERSION}
       </p>
     </main>
   );

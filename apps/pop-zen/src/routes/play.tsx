@@ -25,9 +25,9 @@ export const Route = createFileRoute("/play")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
-      { title: "Play — Bubble Pop Calm" },
+      { title: "Play — Zen Bubbles" },
       { name: "description", content: "Pop plastic bubbles to relax. Beat your best time each phase." },
-      { property: "og:title", content: "Play — Bubble Pop Calm" },
+      { property: "og:title", content: "Play — Zen Bubbles" },
       { property: "og:description", content: "Pop plastic bubbles to relax." },
     ],
   }),
