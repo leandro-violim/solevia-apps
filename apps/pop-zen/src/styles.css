@@ -5,17 +5,20 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
+ * ─────────────────────────────────────────────────────────────────────────
+ * DESIGN SYSTEM — "Aurora Glass"
+ * ─────────────────────────────────────────────────────────────────────────
+ * A calm, modern night-sky theme: a deep indigo backdrop with softly drifting
+ * aurora light behind frosted-glass surfaces. Every screen inherits this look
+ * automatically because the whole app is painted with the semantic tokens
+ * below (--background, --foreground, --card, --primary, …).
  *
  * The @theme inline block maps CSS custom properties to Tailwind utility
  * classes (e.g. --color-primary -> bg-primary, text-primary).
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * The :root block defines the actual color values using oklch. Glass surfaces
+ * use a translucent card token PLUS a global frost effect (see @layer base).
+ * ─────────────────────────────────────────────────────────────────────────
  */
 
 @theme inline {
@@ -62,74 +65,89 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.98 0.02 190);
-  --foreground: oklch(0.28 0.05 220);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.28 0.05 220);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.28 0.05 220);
-  --primary: oklch(0.62 0.14 200);
-  --primary-foreground: oklch(0.99 0.01 200);
-  --secondary: oklch(0.94 0.03 190);
-  --secondary-foreground: oklch(0.28 0.05 220);
-  --muted: oklch(0.94 0.03 190);
-  --muted-foreground: oklch(0.50 0.04 220);
-  --accent: oklch(0.90 0.06 190);
-  --accent-foreground: oklch(0.28 0.05 220);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.88 0.03 195);
-  --input: oklch(0.88 0.03 195);
-  --ring: oklch(0.70 0.10 200);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --radius: 0.9rem;
+
+  /* Aurora Glass — deep indigo night sky with luminous glass surfaces. */
+  --background: oklch(0.17 0.045 275);
+  --foreground: oklch(0.97 0.015 265);
+
+  /* Frosted glass: translucent white, frosted globally in @layer base. */
+  --card: oklch(0.99 0.02 265 / 0.07);
+  --card-foreground: oklch(0.98 0.012 265);
+  --popover: oklch(0.22 0.05 275 / 0.92);
+  --popover-foreground: oklch(0.98 0.012 265);
+
+  /* Aurora teal/cyan — the primary glow. */
+  --primary: oklch(0.82 0.13 195);
+  --primary-foreground: oklch(0.20 0.05 260);
+
+  --secondary: oklch(0.99 0.02 265 / 0.09);
+  --secondary-foreground: oklch(0.97 0.015 265);
+  --muted: oklch(0.99 0.02 265 / 0.06);
+  --muted-foreground: oklch(0.80 0.03 268);
+
+  /* Aurora magenta — celebratory accent. */
+  --accent: oklch(0.74 0.15 325);
+  --accent-foreground: oklch(0.99 0.01 265);
+
+  --destructive: oklch(0.70 0.19 20);
+  --destructive-foreground: oklch(0.99 0.01 265);
+
+  --border: oklch(1 0 0 / 0.14);
+  --input: oklch(1 0 0 / 0.16);
+  --ring: oklch(0.82 0.13 195 / 0.55);
+
+  --chart-1: oklch(0.82 0.13 195);
+  --chart-2: oklch(0.74 0.15 325);
+  --chart-3: oklch(0.70 0.15 240);
+  --chart-4: oklch(0.83 0.16 90);
+  --chart-5: oklch(0.72 0.17 300);
+
+  --sidebar: oklch(0.20 0.045 275 / 0.9);
+  --sidebar-foreground: oklch(0.97 0.015 265);
+  --sidebar-primary: oklch(0.82 0.13 195);
+  --sidebar-primary-foreground: oklch(0.20 0.05 260);
+  --sidebar-accent: oklch(0.99 0.02 265 / 0.09);
+  --sidebar-accent-foreground: oklch(0.97 0.015 265);
+  --sidebar-border: oklch(1 0 0 / 0.12);
+  --sidebar-ring: oklch(0.82 0.13 195 / 0.55);
 }
 
+/* The app renders Aurora Glass by default; .dark mirrors it so any dark: *
+ * variants stay consistent. */
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --background: oklch(0.15 0.04 275);
+  --foreground: oklch(0.97 0.015 265);
+  --card: oklch(0.99 0.02 265 / 0.08);
+  --card-foreground: oklch(0.98 0.012 265);
+  --popover: oklch(0.20 0.05 275 / 0.92);
+  --popover-foreground: oklch(0.98 0.012 265);
+  --primary: oklch(0.82 0.13 195);
+  --primary-foreground: oklch(0.20 0.05 260);
+  --secondary: oklch(0.99 0.02 265 / 0.09);
+  --secondary-foreground: oklch(0.97 0.015 265);
+  --muted: oklch(0.99 0.02 265 / 0.06);
+  --muted-foreground: oklch(0.80 0.03 268);
+  --accent: oklch(0.74 0.15 325);
+  --accent-foreground: oklch(0.99 0.01 265);
+  --destructive: oklch(0.70 0.19 20);
+  --destructive-foreground: oklch(0.99 0.01 265);
+  --border: oklch(1 0 0 / 0.14);
+  --input: oklch(1 0 0 / 0.16);
+  --ring: oklch(0.82 0.13 195 / 0.55);
+  --chart-1: oklch(0.82 0.13 195);
+  --chart-2: oklch(0.74 0.15 325);
+  --chart-3: oklch(0.70 0.15 240);
+  --chart-4: oklch(0.83 0.16 90);
+  --chart-5: oklch(0.72 0.17 300);
+  --sidebar: oklch(0.20 0.045 275 / 0.9);
+  --sidebar-foreground: oklch(0.97 0.015 265);
+  --sidebar-primary: oklch(0.82 0.13 195);
+  --sidebar-primary-foreground: oklch(0.20 0.05 260);
+  --sidebar-accent: oklch(0.99 0.02 265 / 0.09);
+  --sidebar-accent-foreground: oklch(0.97 0.015 265);
+  --sidebar-border: oklch(1 0 0 / 0.12);
+  --sidebar-ring: oklch(0.82 0.13 195 / 0.55);
 }
 
 @layer base {
@@ -137,14 +155,60 @@
     border-color: var(--color-border);
   }
 
+  html {
+    background-color: var(--background);
+  }
+
   body {
-    background-color: var(--color-background);
     color: var(--color-foreground);
-    background-image:
-      radial-gradient(1200px 800px at 20% 0%, oklch(0.95 0.05 190) 0%, transparent 60%),
-      radial-gradient(900px 600px at 80% 100%, oklch(0.96 0.04 180) 0%, transparent 60%);
-    background-attachment: fixed;
+    background: transparent;
+    min-height: 100vh;
     overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Drifting aurora light — sits behind all content. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -25%;
+    z-index: -2;
+    background-image:
+      radial-gradient(38% 38% at 20% 22%, oklch(0.78 0.15 195 / 0.45), transparent 70%),
+      radial-gradient(42% 42% at 82% 16%, oklch(0.66 0.20 300 / 0.42), transparent 70%),
+      radial-gradient(48% 48% at 72% 82%, oklch(0.70 0.16 330 / 0.36), transparent 70%),
+      radial-gradient(44% 44% at 24% 84%, oklch(0.72 0.15 240 / 0.40), transparent 70%);
+    filter: blur(48px) saturate(135%);
+    animation: aurora 22s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+
+  /* Vignette to deepen the edges and make the glass surfaces read. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      130% 130% at 50% 0%,
+      transparent 42%,
+      oklch(0.10 0.03 275 / 0.55) 100%
+    );
+  }
+
+  /* Frost every card-token surface into glass. */
+  .bg-card {
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid var(--border);
+    box-shadow:
+      0 10px 34px oklch(0.08 0.05 275 / 0.38),
+      inset 0 1px 0 oklch(1 0 0 / 0.10);
+  }
+  .bg-popover {
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(20px) saturate(150%);
   }
 }
 
@@ -153,7 +217,30 @@
   50% { transform: translateY(-4px); }
 }
 
-/* Respect user's reduced-motion preference across the app. */
+@keyframes aurora {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(2%, -2%, 0) scale(1.08); }
+  100% { transform: translate3d(-2%, 2%, 0) scale(1.05); }
+}
+
+/* Trophy / celebration helpers (used by the finish screen). */
+@keyframes trophyPop {
+  0%   { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+  60%  { transform: scale(1.12) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes trophyGlow {
+  0%, 100% { filter: drop-shadow(0 0 18px oklch(0.85 0.16 90 / 0.55)); }
+  50%      { filter: drop-shadow(0 0 34px oklch(0.85 0.18 90 / 0.85)); }
+}
+
+@keyframes floatUp {
+  0%   { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Respect the user's reduced-motion preference across the app. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

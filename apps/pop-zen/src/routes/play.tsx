@@ -8,7 +8,13 @@ import { Bubble } from "../components/Bubble";
 import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
 import { playPop, unlockAudio } from "../lib/pop-sound";
-import { usePhaseRecords } from "../lib/records";
+import {
+  usePhaseRecords,
+  resetRun,
+  recordRunPhase,
+  getRunTotal,
+  commitRunTotal,
+} from "../lib/records";
 import { pickQuote } from "../lib/quotes";
 
 const searchSchema = z.object({
@@ -154,6 +160,8 @@ function PlayPage() {
     setState("ready");
     setResult(null);
     settledRef.current = false;
+    // Entering phase 1 starts a brand-new full-run total.
+    if (phase === 1) resetRun();
     // Warm up the interstitial now so it's ready (if online) by phase end.
     void preloadInterstitial();
   }, [phase, cfg.bubbles, cfg.size]);
@@ -210,6 +218,8 @@ function PlayPage() {
     setElapsed(t);
     setResult({ score, timeMs: t });
     submit(phase, score, t);
+    // Accumulate this phase's score into the current full-run total.
+    recordRunPhase(phase, score);
     setState("done");
   }, [bubbles, state, startAt, elapsed, cfg.bubbles, phase, submit]);
 
@@ -234,6 +244,17 @@ function PlayPage() {
   const nextPhase = useCallback(() => {
     navigate({ to: "/play", search: { phase: Math.min(phase + 1, TOTAL_PHASES) } });
   }, [navigate, phase]);
+
+  // End of the 5-phase run: total up every phase, compare to the all-time best,
+  // and send the player to the celebration / encouragement screen.
+  const goFinish = useCallback(() => {
+    const total = getRunTotal();
+    const { beat, prevBest } = commitRunTotal(total);
+    navigate({
+      to: "/finish",
+      search: { total, prevBest, beat: beat ? 1 : 0 },
+    });
+  }, [navigate]);
 
   const restart = useCallback(() => {
     const el = fieldRef.current;
@@ -274,7 +295,7 @@ function PlayPage() {
       <div className="relative flex flex-1 px-2">
         <div
           ref={fieldRef}
-          className="relative w-full flex-1 overflow-hidden rounded-3xl border border-border/40 bg-white/30"
+          className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm"
         >
           {bubbles.map((b) => (
             <Bubble
@@ -323,7 +344,7 @@ function PlayPage() {
                   <button
                     onClick={async () => {
                       const proceed = () =>
-                        isLast ? navigate({ to: "/records" }) : nextPhase();
+                        isLast ? goFinish() : nextPhase();
                       if (!showAdOnFinish) {
                         proceed();
                       } else if (Capacitor.isNativePlatform()) {
@@ -366,7 +387,7 @@ function PlayPage() {
         <VideoAdPlaceholder
           onComplete={() => {
             if (isLast) {
-              navigate({ to: "/records" });
+              goFinish();
             } else {
               nextPhase();
             }
