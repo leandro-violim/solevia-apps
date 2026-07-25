@@ -107,6 +107,19 @@ export async function initAds(): Promise<void> {
         console.warn("[ads] ATT prompt skipped:", e);
       }
     }
+
+    // Warm up the first interstitial so it's ready between phases.
+    setupInterstitialListeners();
+    void preloadInterstitial();
+
+    // Recover ads automatically when connectivity returns (e.g. the player
+    // was offline, then reconnects mid-session).
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", () => {
+        void showBanner();
+        void preloadInterstitial();
+      });
+    }
   } catch (e) {
     console.warn("[ads] initialize failed:", e);
   }
@@ -158,37 +171,95 @@ export async function hideBanner(): Promise<void> {
   }
 }
 
+// ── Interstitial: preload ahead of time, show only if already loaded ──────
+// Preloading means the play screen never waits on a network request between
+// phases. If an ad isn't loaded (offline, flaky connection, or no fill) we
+// simply skip it and let gameplay continue — an ad never blocks the game.
+let interstitialReady = false;
+let interstitialLoading = false;
+let interstitialListenersAdded = false;
+
+/** Best-effort connectivity check (no extra plugin needed). */
+function isOnline(): boolean {
+  return typeof navigator === "undefined" || navigator.onLine !== false;
+}
+
+function setupInterstitialListeners() {
+  if (interstitialListenersAdded) return;
+  interstitialListenersAdded = true;
+  AdMob.addListener(InterstitialAdPluginEvents.Loaded, () => {
+    interstitialReady = true;
+    interstitialLoading = false;
+  }).catch(() => {
+    /* ignore */
+  });
+  AdMob.addListener(InterstitialAdPluginEvents.FailedToLoad, () => {
+    interstitialReady = false;
+    interstitialLoading = false;
+  }).catch(() => {
+    /* ignore */
+  });
+}
+
 /**
- * Prepare and show a full-screen interstitial, resolving once the ad is
- * dismissed (or immediately if it can't be shown) so gameplay always
- * continues. Awaited by the play screen between phases.
+ * Warm up the next interstitial in the background. Safe to call often — it
+ * no-ops if one is already loaded/loading, if the device is offline, or on web.
+ * Call it early (e.g. when a phase starts) so an ad is ready by phase end.
  */
-export async function showInterstitial(): Promise<void> {
-  if (!IS_NATIVE) return;
+export async function preloadInterstitial(): Promise<void> {
+  if (!IS_NATIVE || interstitialReady || interstitialLoading || !isOnline()) {
+    return;
+  }
+  setupInterstitialListeners();
+  interstitialLoading = true;
   try {
     await AdMob.prepareInterstitial({
       adId: unitIds().interstitial,
       isTesting: USE_TEST_ADS,
     });
+    // `interstitialReady` flips true via the Loaded event above.
   } catch (e) {
-    console.warn("[ads] interstitial not ready, skipping:", e);
+    interstitialLoading = false;
+    console.warn("[ads] interstitial preload failed (offline?):", e);
+  }
+}
+
+/**
+ * Show the interstitial ONLY if one is already loaded, then resolve when it's
+ * dismissed. If nothing is loaded (offline / no fill / not preloaded yet),
+ * resolve immediately so gameplay is never blocked, and kick off a preload for
+ * next time. Awaited by the play screen between phases.
+ */
+export async function showInterstitial(): Promise<void> {
+  if (!IS_NATIVE) return;
+
+  if (!interstitialReady) {
+    // Nothing ready to show — never block the game. Try to have one next time.
+    void preloadInterstitial();
     return;
   }
 
   await new Promise<void>((resolve) => {
-    let handle: PluginListenerHandle | undefined;
+    const handles: PluginListenerHandle[] = [];
     let settled = false;
     const finish = () => {
       if (settled) return;
       settled = true;
-      handle?.remove();
+      interstitialReady = false;
+      handles.forEach((h) => h.remove());
       resolve();
+      // Warm up the next one for the following ad break.
+      void preloadInterstitial();
     };
-    AdMob.addListener(InterstitialAdPluginEvents.Dismissed, finish).then((h) => {
-      handle = h;
-      // If the ad already dismissed before the handle resolved, clean up.
-      if (settled) h.remove();
-    });
-    AdMob.showInterstitial().catch(finish);
+    Promise.all([
+      AdMob.addListener(InterstitialAdPluginEvents.Dismissed, finish),
+      AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, finish),
+    ])
+      .then((hs) => {
+        handles.push(...hs);
+        if (settled) hs.forEach((h) => h.remove());
+        return AdMob.showInterstitial();
+      })
+      .catch(finish);
   });
 }

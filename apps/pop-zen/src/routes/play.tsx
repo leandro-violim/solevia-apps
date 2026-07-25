@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { z } from "zod";
 import { AdBanner } from "../components/AdBanner";
-import { showInterstitial } from "../lib/ads";
+import { showInterstitial, preloadInterstitial } from "../lib/ads";
 import { Bubble } from "../components/Bubble";
 import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
@@ -154,6 +154,8 @@ function PlayPage() {
     setState("ready");
     setResult(null);
     settledRef.current = false;
+    // Warm up the interstitial now so it's ready (if online) by phase end.
+    void preloadInterstitial();
   }, [phase, cfg.bubbles, cfg.size]);
 
   // Re-lay-out the field when the native ad banner reports its real height,
