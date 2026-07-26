@@ -147,6 +147,9 @@ function PlayPage() {
   // Guards the phase-complete handler so the score is submitted exactly once,
   // even though React re-runs state updaters/effects in dev (StrictMode).
   const settledRef = useRef(false);
+  // True once the first bubble of this phase is popped (starts the clock). A ref,
+  // not state, so handlePop stays referentially stable and <Bubble>'s memo works.
+  const startedRef = useRef(false);
 
   // Build field for this phase
   useEffect(() => {
@@ -160,6 +163,7 @@ function PlayPage() {
     setState("ready");
     setResult(null);
     settledRef.current = false;
+    startedRef.current = false;
     // Entering phase 1 starts a brand-new full-run total.
     if (phase === 1) resetRun();
     // Warm up the interstitial now so it's ready (if online) by phase end.
@@ -192,20 +196,18 @@ function PlayPage() {
     return () => window.clearInterval(id);
   }, [state, startAt]);
 
-  const handlePop = useCallback(
-    (id: number) => {
-      if (state === "ready") {
-        unlockAudio();
-        setStartAt(Date.now());
-        setState("playing");
-      }
-      playPop();
-      // Pure state update only — no side effects here, so React re-running this
-      // updater (StrictMode/concurrent) can't submit the score twice.
-      setBubbles((prev) => prev.map((b) => (b.id === id ? { ...b, popped: true } : b)));
-    },
-    [state],
-  );
+  const handlePop = useCallback((id: number) => {
+    if (!startedRef.current) {
+      startedRef.current = true;
+      unlockAudio();
+      setStartAt(Date.now());
+      setState("playing");
+    }
+    playPop();
+    // Pure state update only — no side effects here, so React re-running this
+    // updater (StrictMode/concurrent) can't submit the score twice.
+    setBubbles((prev) => prev.map((b) => (b.id === id ? { ...b, popped: true } : b)));
+  }, []); // stable: reads timing from refs, so <Bubble>'s memo skips un-popped bubbles
 
   // Detect phase completion once the field is cleared, and record it exactly
   // once. Kept out of the pop handler's updater so it can't double-submit.
@@ -267,6 +269,7 @@ function PlayPage() {
     setState("ready");
     setResult(null);
     settledRef.current = false;
+    startedRef.current = false;
   }, [cfg.bubbles, cfg.size]);
 
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
@@ -300,13 +303,14 @@ function PlayPage() {
           {bubbles.map((b) => (
             <Bubble
               key={b.id}
+              id={b.id}
               x={b.x}
               y={b.y}
               size={b.size}
               popped={b.popped}
               driftDelay={b.drift}
               still={stillBubbles}
-              onPop={() => handlePop(b.id)}
+              onPop={handlePop}
             />
           ))}
 
