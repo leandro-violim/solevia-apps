@@ -7,7 +7,10 @@ export const Route = createFileRoute("/records")({
   head: () => ({
     meta: [
       { title: "Your Records — Zen Bubbles" },
-      { name: "description", content: "Your best score and best time for every bubble-popping phase." },
+      {
+        name: "description",
+        content: "Your best score and best time for every bubble-popping phase.",
+      },
       { property: "og:title", content: "Your Records — Zen Bubbles" },
       { property: "og:description", content: "Your best score and time per phase." },
     ],
@@ -38,8 +41,7 @@ function RecordsPage() {
           const hasLast = hydrated && r && r.lastScore > 0;
           const scoreDelta = hasLast ? r.lastScore - r.prevBestScore : 0;
           // Time delta: negative = faster (improved). If no previous time, treat as improvement.
-          const timeDelta =
-            hasLast && r.prevBestTimeMs > 0 ? r.lastTimeMs - r.prevBestTimeMs : 0;
+          const timeDelta = hasLast && r.prevBestTimeMs > 0 ? r.lastTimeMs - r.prevBestTimeMs : 0;
           // Only compare against a metric that actually has a previous best.
           // On a phase's first-ever run there's nothing to compare, so we show
           // a "New!" badge instead of confusing "=" markers.

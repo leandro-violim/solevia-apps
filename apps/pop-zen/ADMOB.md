@@ -58,6 +58,7 @@ ID when you go live (step 6).
 ```
 
 Notes:
+
 - **`GADApplicationIdentifier` is mandatory** — without it the app crashes on
   launch as soon as AdMob initializes. That's why we set the test App ID now.
 - For release, add Google's **full SKAdNetwork list** (dozens of entries) so ad
@@ -76,6 +77,7 @@ bunx cap open ios      # ▶ Run on a simulator
 ```
 
 Expected on device/simulator:
+
 - A **test banner** ("Test Ad") pinned to the bottom.
 - After phase 2, a **full-screen test interstitial**; close it and the next
   phase starts.
@@ -87,6 +89,7 @@ Google's safe test ads. **Do not** flip to live ads just to "see real ones" and
 tap them — that's invalid traffic and can get your AdMob account suspended.
 
 ## 5. If ads don't show
+
 - Check the Xcode console for `[ads]` warnings.
 - New AdMob apps can take a few hours before even test ads fill reliably.
 - Make sure `bunx cap sync` ran after `bun add` (installs the pod).
@@ -98,14 +101,15 @@ tap them — that's invalid traffic and can get your AdMob account suspended.
 2. In `Info.plist`, replace the test `GADApplicationIdentifier` with your real
    App ID (the `~` one), and add Google's full SKAdNetwork list.
 3. In **App Store Connect → App Privacy**, declare data collection for ads:
-   typically *Identifiers → Device ID* and *Usage Data*, used for *Third-Party
-   Advertising*, linked to the user. (This is required because AdMob collects
+   typically _Identifiers → Device ID_ and _Usage Data_, used for _Third-Party
+   Advertising_, linked to the user. (This is required because AdMob collects
    the advertising identifier.)
 4. Update your **Privacy Policy** — it already mentions AdMob + ATT; just make
    sure the support email placeholder is filled in.
 5. Rebuild, re-sync, archive, and submit.
 
 ## 7. Android (later)
+
 When you're ready: `bunx cap add android`, create Android ad units in AdMob,
 paste them into `LIVE_IDS.android`, add your Android App ID to
 `android/app/src/main/AndroidManifest.xml` as
@@ -114,6 +118,7 @@ paste them into `LIVE_IDS.android`, add your Android App ID to
 already picks the Android IDs automatically by platform.
 
 ## About AdSense
+
 AdSense is for **websites**, not apps — Google policy doesn't allow it inside a
-native app. It would only apply if you deploy the *web* version of pop-zen to a
+native app. It would only apply if you deploy the _web_ version of pop-zen to a
 public URL and want ads there. The store app uses AdMob only.

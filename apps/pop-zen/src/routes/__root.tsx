@@ -81,8 +81,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Zen Bubbles" },
       {
         name: "description",
-        content:
-          "A calming bubble-wrap popping game with five phases of shrinking bubbles.",
+        content: "A calming bubble-wrap popping game with five phases of shrinking bubbles.",
       },
       { property: "og:title", content: "Zen Bubbles" },
       {

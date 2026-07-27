@@ -8,8 +8,7 @@ export const Route = createFileRoute("/settings")({
       { title: "Settings — Zen Bubbles" },
       {
         name: "description",
-        content:
-          "Adjust sound, reset your records, and view app version for Zen Bubbles.",
+        content: "Adjust sound, reset your records, and view app version for Zen Bubbles.",
       },
       { property: "og:title", content: "Settings — Zen Bubbles" },
       {
@@ -65,8 +64,8 @@ function SettingsPage() {
           </button>
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">
-          Motion is reduced automatically when your device has "Reduce Motion"
-          turned on in accessibility settings.
+          Motion is reduced automatically when your device has "Reduce Motion" turned on in
+          accessibility settings.
         </p>
       </section>
 
@@ -111,9 +110,7 @@ function SettingsPage() {
             </Link>
           </li>
         </ul>
-        <div className="mt-4 text-[11px] text-muted-foreground">
-          Zen Bubbles · v{APP_VERSION}
-        </div>
+        <div className="mt-4 text-[11px] text-muted-foreground">Zen Bubbles · v{APP_VERSION}</div>
       </section>
     </main>
   );

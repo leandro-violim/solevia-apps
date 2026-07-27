@@ -43,8 +43,8 @@ export function VideoAdPlaceholder({ onComplete, duration = 5 }: Props) {
         </div>
       </div>
       <p className="mt-6 max-w-xs text-sm text-primary-foreground/70">
-        A short video ad plays between phases. Real ads appear once AdMob is
-        connected in the native build.
+        A short video ad plays between phases. Real ads appear once AdMob is connected in the native
+        build.
       </p>
       <button
         onClick={onComplete}

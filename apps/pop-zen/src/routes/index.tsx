@@ -37,12 +37,10 @@ function Home() {
             className="h-48 w-48 animate-[bubbleFloat_5s_ease-in-out_infinite] drop-shadow-xl"
           />
         </div>
-        <h1 className="mt-6 text-4xl font-bold tracking-tight text-foreground">
-          Zen Bubbles
-        </h1>
+        <h1 className="mt-6 text-4xl font-bold tracking-tight text-foreground">Zen Bubbles</h1>
         <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-          Five soothing phases. Bubbles get smaller as you go. Pop them all as
-          fast as you can to beat your record.
+          Five soothing phases. Bubbles get smaller as you go. Pop them all as fast as you can to
+          beat your record.
         </p>
 
         <div className="mt-10 flex w-full max-w-xs flex-col gap-3">

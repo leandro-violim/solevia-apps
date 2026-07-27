@@ -54,11 +54,7 @@ export function launchConfetti(options: ConfettiOptions = {}): (() => void) | vo
   if (typeof window === "undefined" || typeof document === "undefined") return;
   if (prefersReducedMotion()) return;
 
-  const {
-    count = 140,
-    durationMs = 2600,
-    colors = DEFAULT_COLORS,
-  } = options;
+  const { count = 140, durationMs = 2600, colors = DEFAULT_COLORS } = options;
 
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = window.innerWidth;
@@ -83,8 +79,7 @@ export function launchConfetti(options: ConfettiOptions = {}): (() => void) | vo
   // Two launch origins (lower-left and lower-right) firing up and inward,
   // like party poppers, plus a gentle top sprinkle.
   const particles: Particle[] = [];
-  const pick = <T>(arr: readonly T[]): T =>
-    arr[Math.floor(Math.random() * arr.length)];
+  const pick = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
   for (let i = 0; i < count; i++) {
     const fromLeft = i % 2 === 0;

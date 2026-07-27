@@ -7,8 +7,7 @@ export const Route = createFileRoute("/about")({
       { title: "About & Support — Zen Bubbles" },
       {
         name: "description",
-        content:
-          "About Zen Bubbles, the calming bubble-popping game, and how to get support.",
+        content: "About Zen Bubbles, the calming bubble-popping game, and how to get support.",
       },
       { property: "og:title", content: "About & Support — Zen Bubbles" },
       {
@@ -31,24 +30,21 @@ function AboutPage() {
       <h1 className="mt-4 text-3xl font-bold tracking-tight">About & Support</h1>
 
       <p className="mt-6">
-        Zen Bubbles is a simple relaxation game. Pop plastic bubbles
-        across five soothing phases — bubbles shrink as you advance. The
-        faster you clear a phase, the higher your score. Your best scores
-        and best times are saved on your device so you can beat your own
-        record over time.
+        Zen Bubbles is a simple relaxation game. Pop plastic bubbles across five soothing phases —
+        bubbles shrink as you advance. The faster you clear a phase, the higher your score. Your
+        best scores and best times are saved on your device so you can beat your own record over
+        time.
       </p>
 
       <h2 className="mt-8 text-lg font-semibold">No account required</h2>
       <p className="mt-2">
-        The App works fully offline and does not require sign-in. Records
-        live on your device only.
+        The App works fully offline and does not require sign-in. Records live on your device only.
       </p>
 
       <h2 className="mt-8 text-lg font-semibold">Accessibility</h2>
       <p className="mt-2">
-        The App respects your system "Reduce Motion" setting and disables
-        idle animations when enabled. Tap targets are sized for comfortable
-        touch on phones.
+        The App respects your system "Reduce Motion" setting and disables idle animations when
+        enabled. Tap targets are sized for comfortable touch on phones.
       </p>
 
       <h2 className="mt-8 text-lg font-semibold">Support</h2>
@@ -74,9 +70,7 @@ function AboutPage() {
         </li>
       </ul>
 
-      <p className="mt-8 text-[11px] text-muted-foreground">
-        Zen Bubbles · v{APP_VERSION}
-      </p>
+      <p className="mt-8 text-[11px] text-muted-foreground">Zen Bubbles · v{APP_VERSION}</p>
     </main>
   );
 }
