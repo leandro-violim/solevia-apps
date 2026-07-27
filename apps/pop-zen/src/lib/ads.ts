@@ -7,12 +7,14 @@
  * Uses the @capacitor-community/admob plugin.
  *
  * ─────────────────────────────────────────────────────────────────────────
- * BEFORE YOU SHIP TO THE STORE:
- *   1. Paste your real AdMob ad unit ids into LIVE_IDS below.
- *   2. Set USE_TEST_ADS = false.
- * While USE_TEST_ADS is true you'll see Google's TEST ads (safe to tap).
- * NEVER tap your own LIVE ads during testing — Google can suspend your
- * AdMob account for invalid traffic. That's why this defaults to test mode.
+ * TEST vs LIVE ads is now automatic:
+ *   • `bun dev` / development build      → Google TEST ads (safe to tap).
+ *   • production build (`build:mobile`)  → your real LIVE ads.
+ * So a store build can never accidentally ship test ads. To force test ads in
+ * a production build (e.g. a TestFlight smoke test where you don't want to risk
+ * tapping live ads), set VITE_USE_TEST_ADS=true for that build.
+ * NEVER tap your own LIVE ads — Google can suspend your AdMob account for
+ * invalid traffic.
  * ─────────────────────────────────────────────────────────────────────────
  */
 import { Capacitor } from "@capacitor/core";
@@ -30,13 +32,13 @@ import {
 const IS_NATIVE = Capacitor.isNativePlatform();
 const PLATFORM = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
 
-// While true, Google's official TEST ad units are used and `isTesting` is set,
-// so you always get safe test ads. The iOS LIVE_IDS below are already your real
-// units — but KEEP THIS true until BOTH: (1) your AdMob account has passed
-// payment setup + review, and (2) you're building a real store release. Live
-// ads won't fill on an unapproved account, and tapping your own live ads can
-// get the account suspended.
-const USE_TEST_ADS = true;
+// TEST ads in development, LIVE ads in production/store builds — decided at
+// build time so a release can't accidentally ship test ads. Override with
+// VITE_USE_TEST_ADS=true to force test ads in a production build if needed.
+// (Live ads simply won't fill until your AdMob account passes payment/review;
+// gameplay is never blocked when an ad doesn't show.)
+const USE_TEST_ADS =
+  import.meta.env.DEV || import.meta.env.VITE_USE_TEST_ADS === "true";
 
 // Google's official sample ad unit ids — safe to build and tap.
 const TEST_IDS = {
@@ -242,15 +244,20 @@ export async function showInterstitial(): Promise<void> {
   await new Promise<void>((resolve) => {
     const handles: PluginListenerHandle[] = [];
     let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const finish = () => {
       if (settled) return;
       settled = true;
+      if (timer) clearTimeout(timer);
       interstitialReady = false;
       handles.forEach((h) => h.remove());
       resolve();
       // Warm up the next one for the following ad break.
       void preloadInterstitial();
     };
+    // Safety net: if the SDK never fires Dismissed/FailedToShow (rare, but it
+    // would leave the "Next phase" button hung), resolve anyway after 15s.
+    timer = setTimeout(finish, 15000);
     Promise.all([
       AdMob.addListener(InterstitialAdPluginEvents.Dismissed, finish),
       AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, finish),
