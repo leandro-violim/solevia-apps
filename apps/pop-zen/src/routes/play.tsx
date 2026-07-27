@@ -7,10 +7,12 @@ import { showInterstitial, preloadInterstitial } from "../lib/ads";
 import { Bubble } from "../components/Bubble";
 import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
+import { layoutBubbles, type BubbleState } from "../lib/layout";
 import { playPop, unlockAudio } from "../lib/pop-sound";
 import {
   usePhaseRecords,
   resetRun,
+  runHasPhase,
   recordRunPhase,
   getRunTotal,
   commitRunTotal,
@@ -26,67 +28,16 @@ export const Route = createFileRoute("/play")({
   head: () => ({
     meta: [
       { title: "Play — Zen Bubbles" },
-      { name: "description", content: "Pop plastic bubbles to relax. Beat your best time each phase." },
+      {
+        name: "description",
+        content: "Pop plastic bubbles to relax. Beat your best time each phase.",
+      },
       { property: "og:title", content: "Play — Zen Bubbles" },
       { property: "og:description", content: "Pop plastic bubbles to relax." },
     ],
   }),
   component: PlayPage,
 });
-
-type BubbleState = { id: number; x: number; y: number; size: number; drift: number; popped: boolean };
-
-function layoutBubbles(
-  count: number,
-  size: number,
-  width: number,
-  height: number,
-): BubbleState[] {
-  const padding = 6;
-  const step = size + padding;
-  const cols = Math.max(1, Math.floor(width / step));
-  const rows = Math.max(1, Math.ceil(count / cols));
-
-  // Spread the bubbles across the whole play area instead of clustering them
-  // in a centered block (which left large empty margins on tall phones,
-  // especially on the early phases with few, large bubbles). Each bubble is
-  // centered inside its own grid cell. If the field is too small to give every
-  // bubble a cell at least `size` wide/tall, fall back to tight centered
-  // packing so bubbles never overlap.
-  const cellW = width / cols;
-  const cellH = height / rows;
-  const spread = cellW >= size && cellH >= size;
-
-  const totalW = cols * step - padding;
-  const totalH = rows * step - padding;
-  const offsetX = Math.max(0, (width - totalW) / 2);
-  const offsetY = Math.max(0, (height - totalH) / 2);
-
-  const bubbles: BubbleState[] = [];
-  for (let i = 0; i < count; i++) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    // Center the final (possibly partial) row for a tidier look.
-    const rowCount = Math.min(cols, count - row * cols);
-    const rowIndent = spread ? ((cols - rowCount) * cellW) / 2 : 0;
-    // Slight jitter so it doesn't look like a rigid grid
-    const jitterX = (Math.random() - 0.5) * padding * 0.8;
-    const jitterY = (Math.random() - 0.5) * padding * 0.8;
-    bubbles.push({
-      id: i,
-      x: spread
-        ? rowIndent + col * cellW + (cellW - size) / 2 + jitterX
-        : offsetX + col * step + jitterX,
-      y: spread
-        ? row * cellH + (cellH - size) / 2 + jitterY
-        : offsetY + row * step + jitterY,
-      size,
-      drift: Math.random() * 3,
-      popped: false,
-    });
-  }
-  return bubbles;
-}
 
 /**
  * Usable height (in px) for laying out bubbles inside the play field.
@@ -132,6 +83,21 @@ function usableFieldHeight(el: HTMLElement): number {
   return Math.max(160, vpH - reserve - rect.top);
 }
 
+/**
+ * Isolated clock. Owns the 100ms interval + elapsed state so a timer tick
+ * re-renders only this node — not the (up to 60) bubbles in the field.
+ */
+function Timer({ startAt }: { startAt: number }) {
+  const [ms, setMs] = useState(() => Math.max(0, Date.now() - startAt));
+  useEffect(() => {
+    const tick = () => setMs(Math.max(0, Date.now() - startAt));
+    tick();
+    const id = window.setInterval(tick, 100);
+    return () => window.clearInterval(id);
+  }, [startAt]);
+  return <>{formatTime(ms)}</>;
+}
+
 function PlayPage() {
   const { phase } = Route.useSearch();
   const navigate = useNavigate({ from: "/play" });
@@ -141,7 +107,6 @@ function PlayPage() {
   const fieldRef = useRef<HTMLDivElement>(null);
   const [bubbles, setBubbles] = useState<BubbleState[]>([]);
   const [startAt, setStartAt] = useState<number | null>(null);
-  const [elapsed, setElapsed] = useState(0);
   const [state, setState] = useState<"ready" | "playing" | "done" | "ad">("ready");
   const [result, setResult] = useState<{ score: number; timeMs: number } | null>(null);
   // Guards the phase-complete handler so the score is submitted exactly once,
@@ -159,13 +124,14 @@ function PlayPage() {
     const h = usableFieldHeight(el);
     setBubbles(layoutBubbles(cfg.bubbles, cfg.size, w, h));
     setStartAt(null);
-    setElapsed(0);
     setState("ready");
     setResult(null);
     settledRef.current = false;
     startedRef.current = false;
-    // Entering phase 1 starts a brand-new full-run total.
-    if (phase === 1) resetRun();
+    // Start a brand-new full-run total when entering phase 1 — or when arriving
+    // at a later phase that isn't a valid continuation (e.g. an edited ?phase=3
+    // deep link), so stale scores from a prior run can't inflate the finish total.
+    if (phase === 1 || !runHasPhase(phase - 1)) resetRun();
     // Warm up the interstitial now so it's ready (if online) by phase end.
     void preloadInterstitial();
   }, [phase, cfg.bubbles, cfg.size]);
@@ -177,9 +143,7 @@ function PlayPage() {
     const onResize = () => {
       const el = fieldRef.current;
       if (!el || state !== "ready") return;
-      setBubbles(
-        layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el)),
-      );
+      setBubbles(layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el)));
     };
     window.addEventListener("ad-banner-resize", onResize);
     window.visualViewport?.addEventListener("resize", onResize);
@@ -189,12 +153,15 @@ function PlayPage() {
     };
   }, [state, cfg.bubbles, cfg.size]);
 
-  // Timer
+  // Freeze the animated full-screen aurora while actively playing — a large
+  // blurred, continuously-animated layer under the field's backdrop-blur is a
+  // battery/jank cost on mobile Safari, worst on the 60-bubble phase. It resumes
+  // on the ready/done screens.
   useEffect(() => {
-    if (state !== "playing" || startAt === null) return;
-    const id = window.setInterval(() => setElapsed(Date.now() - startAt), 100);
-    return () => window.clearInterval(id);
-  }, [state, startAt]);
+    if (typeof document === "undefined") return;
+    document.body.classList.toggle("game-playing", state === "playing");
+    return () => document.body.classList.remove("game-playing");
+  }, [state]);
 
   const handlePop = useCallback((id: number) => {
     if (!startedRef.current) {
@@ -215,15 +182,14 @@ function PlayPage() {
     if (state !== "playing" || settledRef.current) return;
     if (bubbles.length === 0 || bubbles.some((b) => !b.popped)) return;
     settledRef.current = true;
-    const t = startAt !== null ? Date.now() - startAt : elapsed;
+    const t = startAt !== null ? Date.now() - startAt : 0;
     const score = computeScore(cfg.bubbles, t);
-    setElapsed(t);
     setResult({ score, timeMs: t });
     submit(phase, score, t);
     // Accumulate this phase's score into the current full-run total.
     recordRunPhase(phase, score);
     setState("done");
-  }, [bubbles, state, startAt, elapsed, cfg.bubbles, phase, submit]);
+  }, [bubbles, state, startAt, cfg.bubbles, phase, submit]);
 
   const record = records[phase];
   const isLast = phase >= TOTAL_PHASES;
@@ -261,11 +227,8 @@ function PlayPage() {
   const restart = useCallback(() => {
     const el = fieldRef.current;
     if (!el) return;
-    setBubbles(
-      layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el)),
-    );
+    setBubbles(layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el)));
     setStartAt(null);
-    setElapsed(0);
     setState("ready");
     setResult(null);
     settledRef.current = false;
@@ -287,7 +250,11 @@ function PlayPage() {
           <div className="text-sm font-semibold text-foreground">{cfg.label} bubbles</div>
         </div>
         <div className="w-10 text-right font-mono text-sm tabular-nums text-foreground">
-          {formatTime(elapsed)}
+          {state === "playing" && startAt !== null ? (
+            <Timer startAt={startAt} />
+          ) : (
+            formatTime(state === "done" && result ? result.timeMs : 0)
+          )}
         </div>
       </header>
 
@@ -347,8 +314,7 @@ function PlayPage() {
                 <div className="mt-4 flex flex-col gap-2">
                   <button
                     onClick={async () => {
-                      const proceed = () =>
-                        isLast ? goFinish() : nextPhase();
+                      const proceed = () => (isLast ? goFinish() : nextPhase());
                       if (!showAdOnFinish) {
                         proceed();
                       } else if (Capacitor.isNativePlatform()) {

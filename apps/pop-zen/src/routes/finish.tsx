@@ -41,11 +41,17 @@ function FinishPage() {
 
   useEffect(() => {
     if (!beatRecord) return;
-    // Two bursts for a fuller celebration.
+    // Two bursts for a fuller celebration. Capture BOTH stop handles so leaving
+    // the screen mid-celebration cancels the second burst's canvas/rAF too.
+    let stop2: (() => void) | undefined;
     const stop1 = launchConfetti();
-    const t = window.setTimeout(() => launchConfetti({ count: 90 }), 550);
+    const t = window.setTimeout(() => {
+      const s = launchConfetti({ count: 90 });
+      if (typeof s === "function") stop2 = s;
+    }, 550);
     return () => {
       stop1?.();
+      stop2?.();
       window.clearTimeout(t);
     };
   }, [beatRecord]);
@@ -108,9 +114,7 @@ function FinishPage() {
           <div className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
             Run complete
           </div>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-foreground">
-            So close!
-          </h1>
+          <h1 className="mt-2 text-4xl font-bold tracking-tight text-foreground">So close!</h1>
         </>
       )}
 
@@ -126,8 +130,7 @@ function FinishPage() {
         {beatRecord ? (
           prevBest > 0 ? (
             <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
-              ▲ {delta.toLocaleString()} over your old best of{" "}
-              {prevBest.toLocaleString()}
+              ▲ {delta.toLocaleString()} over your old best of {prevBest.toLocaleString()}
             </div>
           ) : (
             <div className="mt-3 text-sm text-muted-foreground">
@@ -138,9 +141,7 @@ function FinishPage() {
           <div className="mt-3 space-y-1">
             <div className="text-sm text-muted-foreground">
               All-time best:{" "}
-              <span className="font-semibold text-foreground">
-                {allTimeBest.toLocaleString()}
-              </span>
+              <span className="font-semibold text-foreground">{allTimeBest.toLocaleString()}</span>
             </div>
             {pointsAway > 0 && (
               <div className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-3 py-1 text-sm font-semibold text-primary">
@@ -156,9 +157,7 @@ function FinishPage() {
         className="mt-5 max-w-xs text-sm italic text-muted-foreground"
         style={{ animation: "floatUp 600ms ease-out 200ms both" }}
       >
-        {beatRecord
-          ? "Ride the momentum — see if you can push it even higher."
-          : `“${quote}”`}
+        {beatRecord ? "Ride the momentum — see if you can push it even higher." : `“${quote}”`}
       </p>
 
       {/* Actions */}

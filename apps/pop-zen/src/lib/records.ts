@@ -216,6 +216,11 @@ export function recordRunPhase(phase: number, score: number): void {
   writeRun(run);
 }
 
+/** Whether the current run already has a score recorded for `phase`. */
+export function runHasPhase(phase: number): boolean {
+  return readRun()[phase] !== undefined;
+}
+
 /** Sum of every phase score recorded in the current run so far. */
 export function getRunTotal(): number {
   const run = readRun();
@@ -235,22 +240,33 @@ export function getAllTimeBestTotal(): number {
 }
 
 /**
- * Compare a finished run's total against the all-time best. If it's a new
- * record, persist it. Returns whether the record was beaten and the previous
- * best (so the finish screen can show the delta). Ties do NOT count as beating.
+ * Pure decision for a finished run vs the all-time best. Ties do NOT beat; the
+ * very first run counts as a celebration. `newBest` is the value to persist.
+ * Separated from storage so it can be unit-tested.
+ */
+export function evaluateRun(
+  total: number,
+  prevBest: number,
+): { beat: boolean; prevBest: number; newBest: number } {
+  const beat = total > prevBest && prevBest > 0;
+  const isFirstRun = prevBest === 0;
+  return { beat: beat || isFirstRun, prevBest, newBest: Math.max(total, prevBest) };
+}
+
+/**
+ * Compare a finished run's total against the all-time best, persist a new record
+ * if beaten, and return whether it was beaten + the previous best (so the finish
+ * screen can show the delta).
  */
 export function commitRunTotal(total: number): { beat: boolean; prevBest: number } {
   const prevBest = getAllTimeBestTotal();
-  const beat = total > prevBest && prevBest > 0;
-  const isFirstRun = prevBest === 0;
-  if (total > prevBest && typeof window !== "undefined") {
+  const { beat, newBest } = evaluateRun(total, prevBest);
+  if (newBest > prevBest && typeof window !== "undefined") {
     try {
-      window.localStorage.setItem(ALLTIME_KEY, String(total));
+      window.localStorage.setItem(ALLTIME_KEY, String(newBest));
     } catch {
       /* ignore */
     }
   }
-  // On the very first completed run there's no prior record to "beat", so we
-  // treat it as a celebration too (they just set their first all-time total).
-  return { beat: beat || isFirstRun, prevBest };
+  return { beat, prevBest };
 }

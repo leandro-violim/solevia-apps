@@ -79,18 +79,18 @@
 
   /* Aurora teal/cyan — the primary glow. */
   --primary: oklch(0.82 0.13 195);
-  --primary-foreground: oklch(0.20 0.05 260);
+  --primary-foreground: oklch(0.2 0.05 260);
 
   --secondary: oklch(0.99 0.02 265 / 0.09);
   --secondary-foreground: oklch(0.97 0.015 265);
   --muted: oklch(0.99 0.02 265 / 0.06);
-  --muted-foreground: oklch(0.80 0.03 268);
+  --muted-foreground: oklch(0.8 0.03 268);
 
   /* Aurora magenta — celebratory accent. */
   --accent: oklch(0.74 0.15 325);
   --accent-foreground: oklch(0.99 0.01 265);
 
-  --destructive: oklch(0.70 0.19 20);
+  --destructive: oklch(0.7 0.19 20);
   --destructive-foreground: oklch(0.99 0.01 265);
 
   --border: oklch(1 0 0 / 0.14);
@@ -99,14 +99,14 @@
 
   --chart-1: oklch(0.82 0.13 195);
   --chart-2: oklch(0.74 0.15 325);
-  --chart-3: oklch(0.70 0.15 240);
+  --chart-3: oklch(0.7 0.15 240);
   --chart-4: oklch(0.83 0.16 90);
   --chart-5: oklch(0.72 0.17 300);
 
-  --sidebar: oklch(0.20 0.045 275 / 0.9);
+  --sidebar: oklch(0.2 0.045 275 / 0.9);
   --sidebar-foreground: oklch(0.97 0.015 265);
   --sidebar-primary: oklch(0.82 0.13 195);
-  --sidebar-primary-foreground: oklch(0.20 0.05 260);
+  --sidebar-primary-foreground: oklch(0.2 0.05 260);
   --sidebar-accent: oklch(0.99 0.02 265 / 0.09);
   --sidebar-accent-foreground: oklch(0.97 0.015 265);
   --sidebar-border: oklch(1 0 0 / 0.12);
@@ -120,30 +120,30 @@
   --foreground: oklch(0.97 0.015 265);
   --card: oklch(0.99 0.02 265 / 0.08);
   --card-foreground: oklch(0.98 0.012 265);
-  --popover: oklch(0.20 0.05 275 / 0.92);
+  --popover: oklch(0.2 0.05 275 / 0.92);
   --popover-foreground: oklch(0.98 0.012 265);
   --primary: oklch(0.82 0.13 195);
-  --primary-foreground: oklch(0.20 0.05 260);
+  --primary-foreground: oklch(0.2 0.05 260);
   --secondary: oklch(0.99 0.02 265 / 0.09);
   --secondary-foreground: oklch(0.97 0.015 265);
   --muted: oklch(0.99 0.02 265 / 0.06);
-  --muted-foreground: oklch(0.80 0.03 268);
+  --muted-foreground: oklch(0.8 0.03 268);
   --accent: oklch(0.74 0.15 325);
   --accent-foreground: oklch(0.99 0.01 265);
-  --destructive: oklch(0.70 0.19 20);
+  --destructive: oklch(0.7 0.19 20);
   --destructive-foreground: oklch(0.99 0.01 265);
   --border: oklch(1 0 0 / 0.14);
   --input: oklch(1 0 0 / 0.16);
   --ring: oklch(0.82 0.13 195 / 0.55);
   --chart-1: oklch(0.82 0.13 195);
   --chart-2: oklch(0.74 0.15 325);
-  --chart-3: oklch(0.70 0.15 240);
+  --chart-3: oklch(0.7 0.15 240);
   --chart-4: oklch(0.83 0.16 90);
   --chart-5: oklch(0.72 0.17 300);
-  --sidebar: oklch(0.20 0.045 275 / 0.9);
+  --sidebar: oklch(0.2 0.045 275 / 0.9);
   --sidebar-foreground: oklch(0.97 0.015 265);
   --sidebar-primary: oklch(0.82 0.13 195);
-  --sidebar-primary-foreground: oklch(0.20 0.05 260);
+  --sidebar-primary-foreground: oklch(0.2 0.05 260);
   --sidebar-accent: oklch(0.99 0.02 265 / 0.09);
   --sidebar-accent-foreground: oklch(0.97 0.015 265);
   --sidebar-border: oklch(1 0 0 / 0.12);
@@ -175,12 +175,21 @@
     z-index: -2;
     background-image:
       radial-gradient(38% 38% at 20% 22%, oklch(0.78 0.15 195 / 0.45), transparent 70%),
-      radial-gradient(42% 42% at 82% 16%, oklch(0.66 0.20 300 / 0.42), transparent 70%),
-      radial-gradient(48% 48% at 72% 82%, oklch(0.70 0.16 330 / 0.36), transparent 70%),
-      radial-gradient(44% 44% at 24% 84%, oklch(0.72 0.15 240 / 0.40), transparent 70%);
+      radial-gradient(42% 42% at 82% 16%, oklch(0.66 0.2 300 / 0.42), transparent 70%),
+      radial-gradient(48% 48% at 72% 82%, oklch(0.7 0.16 330 / 0.36), transparent 70%),
+      radial-gradient(44% 44% at 24% 84%, oklch(0.72 0.15 240 / 0.4), transparent 70%);
     filter: blur(48px) saturate(135%);
     animation: aurora 22s ease-in-out infinite alternate;
     will-change: transform;
+  }
+
+  /* While actively playing, stop animating the large blurred aurora — a
+     continuously-animated blur under the field's backdrop-blur is a battery/jank
+     cost on mobile, worst on the 60-bubble phase. The static gradient remains.
+     Toggled by play.tsx adding `.game-playing` to <body> during play. */
+  body.game-playing::before {
+    animation: none;
+    will-change: auto;
   }
 
   /* Vignette to deepen the edges and make the glass surfaces read. */
@@ -193,7 +202,7 @@
     background: radial-gradient(
       130% 130% at 50% 0%,
       transparent 42%,
-      oklch(0.10 0.03 275 / 0.55) 100%
+      oklch(0.1 0.03 275 / 0.55) 100%
     );
   }
 
@@ -204,7 +213,7 @@
     border: 1px solid var(--border);
     box-shadow:
       0 10px 34px oklch(0.08 0.05 275 / 0.38),
-      inset 0 1px 0 oklch(1 0 0 / 0.10);
+      inset 0 1px 0 oklch(1 0 0 / 0.1);
   }
   .bg-popover {
     -webkit-backdrop-filter: blur(20px) saturate(150%);
@@ -213,31 +222,62 @@
 }
 
 @keyframes bubbleFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-4px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 @keyframes aurora {
-  0%   { transform: translate3d(0, 0, 0) scale(1); }
-  50%  { transform: translate3d(2%, -2%, 0) scale(1.08); }
-  100% { transform: translate3d(-2%, 2%, 0) scale(1.05); }
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2%, -2%, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-2%, 2%, 0) scale(1.05);
+  }
 }
 
 /* Trophy / celebration helpers (used by the finish screen). */
 @keyframes trophyPop {
-  0%   { transform: scale(0.4) rotate(-8deg); opacity: 0; }
-  60%  { transform: scale(1.12) rotate(3deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  0% {
+    transform: scale(0.4) rotate(-8deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12) rotate(3deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
 }
 
 @keyframes trophyGlow {
-  0%, 100% { filter: drop-shadow(0 0 18px oklch(0.85 0.16 90 / 0.55)); }
-  50%      { filter: drop-shadow(0 0 34px oklch(0.85 0.18 90 / 0.85)); }
+  0%,
+  100% {
+    filter: drop-shadow(0 0 18px oklch(0.85 0.16 90 / 0.55));
+  }
+  50% {
+    filter: drop-shadow(0 0 34px oklch(0.85 0.18 90 / 0.85));
+  }
 }
 
 @keyframes floatUp {
-  0%   { transform: translateY(12px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Respect the user's reduced-motion preference across the app. */

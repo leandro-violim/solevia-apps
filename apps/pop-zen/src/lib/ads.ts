@@ -37,8 +37,7 @@ const PLATFORM = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
 // VITE_USE_TEST_ADS=true to force test ads in a production build if needed.
 // (Live ads simply won't fill until your AdMob account passes payment/review;
 // gameplay is never blocked when an ad doesn't show.)
-const USE_TEST_ADS =
-  import.meta.env.DEV || import.meta.env.VITE_USE_TEST_ADS === "true";
+const USE_TEST_ADS = import.meta.env.DEV || import.meta.env.VITE_USE_TEST_ADS === "true";
 
 // Google's official sample ad unit ids — safe to build and tap.
 const TEST_IDS = {
@@ -88,10 +87,7 @@ export async function initAds(): Promise<void> {
     // GDPR / consent. The form is only shown where regulations require it.
     try {
       const consent = await AdMob.requestConsentInfo();
-      if (
-        consent.isConsentFormAvailable &&
-        consent.status === AdmobConsentStatus.REQUIRED
-      ) {
+      if (consent.isConsentFormAvailable && consent.status === AdmobConsentStatus.REQUIRED) {
         await AdMob.showConsentForm();
       }
     } catch (e) {
@@ -134,14 +130,11 @@ let sizeListenerAdded = false;
 function trackBannerSize() {
   if (sizeListenerAdded) return;
   sizeListenerAdded = true;
-  AdMob.addListener(
-    BannerAdPluginEvents.SizeChanged,
-    (info: { width: number; height: number }) => {
-      const h = Math.max(0, Math.round(info?.height ?? 0));
-      document.documentElement.style.setProperty("--ad-banner-h", `${h}px`);
-      window.dispatchEvent(new CustomEvent("ad-banner-resize"));
-    },
-  ).catch(() => {
+  AdMob.addListener(BannerAdPluginEvents.SizeChanged, (info: { width: number; height: number }) => {
+    const h = Math.max(0, Math.round(info?.height ?? 0));
+    document.documentElement.style.setProperty("--ad-banner-h", `${h}px`);
+    window.dispatchEvent(new CustomEvent("ad-banner-resize"));
+  }).catch(() => {
     /* ignore */
   });
 }
