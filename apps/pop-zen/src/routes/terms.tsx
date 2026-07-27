@@ -98,7 +98,11 @@ function TermsPage() {
 
       <h2 className="mt-8 text-lg font-semibold">Contact</h2>
       <p className="mt-2">
-        Questions about these Terms: <span className="font-mono">leandroviolim@gmail.com</span>.
+        Questions about these Terms:{" "}
+        <a href="mailto:contact@solevia.app" className="font-mono underline">
+          contact@solevia.app
+        </a>
+        .
       </p>
     </main>
   );

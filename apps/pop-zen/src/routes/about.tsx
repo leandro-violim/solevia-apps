@@ -54,8 +54,10 @@ function AboutPage() {
       <h2 className="mt-8 text-lg font-semibold">Support</h2>
       <p className="mt-2">
         Need help, want to report a bug, or have a suggestion? Email us at{" "}
-        <span className="font-mono">leandroviolim@gmail.com</span>. We aim to
-        respond within a few business days.
+        <a href="mailto:support@solevia.app" className="font-mono underline">
+          support@solevia.app
+        </a>
+        . We aim to respond within a few business days.
       </p>
 
       <h2 className="mt-8 text-lg font-semibold">Legal</h2>

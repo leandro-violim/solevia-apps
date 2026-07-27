@@ -146,8 +146,11 @@ function PrivacyPage() {
 
       <h2 className="mt-8 text-lg font-semibold">11. Contact</h2>
       <p className="mt-2">
-        Questions about this policy: <span className="font-mono">leandroviolim@gmail.com</span>
-        {" "}(Sole Via Entertainment LLC).
+        Questions about this policy:{" "}
+        <a href="mailto:contact@solevia.app" className="font-mono underline">
+          contact@solevia.app
+        </a>{" "}
+        (Sole Via Entertainment LLC).
       </p>
     </main>
   );
