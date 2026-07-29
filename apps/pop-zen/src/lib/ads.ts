@@ -21,13 +21,13 @@ import { Capacitor } from "@capacitor/core";
 import type { PluginListenerHandle } from "@capacitor/core";
 import {
   AdMob,
-  AdmobConsentStatus,
   BannerAdPluginEvents,
   BannerAdPosition,
   BannerAdSize,
   InterstitialAdPluginEvents,
   type BannerAdOptions,
 } from "@capacitor-community/admob";
+import { runConsentAndTracking } from "@solevia/consent";
 
 const IS_NATIVE = Capacitor.isNativePlatform();
 const PLATFORM = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
@@ -84,27 +84,12 @@ export async function initAds(): Promise<void> {
   try {
     await AdMob.initialize();
 
-    // GDPR / consent. The form is only shown where regulations require it.
-    try {
-      const consent = await AdMob.requestConsentInfo();
-      if (consent.isConsentFormAvailable && consent.status === AdmobConsentStatus.REQUIRED) {
-        await AdMob.showConsentForm();
-      }
-    } catch (e) {
-      console.warn("[ads] consent flow skipped:", e);
-    }
-
-    // iOS App Tracking Transparency — required before the IDFA can be used.
-    if (PLATFORM === "ios") {
-      try {
-        const att = await AdMob.trackingAuthorizationStatus();
-        if (att.status === "notDetermined") {
-          await AdMob.requestTrackingAuthorization();
-        }
-      } catch (e) {
-        console.warn("[ads] ATT prompt skipped:", e);
-      }
-    }
+    // Google UMP (GDPR) consent, then iOS ATT — in that order, BEFORE any ad
+    // identifier is used. Housed in @solevia/consent so it's shared across apps.
+    await runConsentAndTracking(AdMob, {
+      platform: PLATFORM,
+      log: (m, e) => console.warn(m, e),
+    });
 
     // Warm up the first interstitial so it's ready between phases.
     setupInterstitialListeners();
