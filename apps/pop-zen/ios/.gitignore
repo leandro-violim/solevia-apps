@@ -5,6 +5,9 @@ App/App/public
 DerivedData
 xcuserdata
 
+# Auto-generated per-machine Xcode workspace settings (not project source)
+**/xcshareddata/WorkspaceSettings.xcsettings
+
 # Cordova plugins for Capacitor
 capacitor-cordova-ios-plugins
 
