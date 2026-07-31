@@ -162,7 +162,12 @@
   body {
     color: var(--color-foreground);
     background: transparent;
-    min-height: 100vh;
+    /* 100dvh = the *visible* (dynamic) viewport, so a screen that fits is exactly
+       the screen height and never overflows into a stray scroll. (100vh is the
+       LARGE viewport — taller than what's actually visible on device — which is
+       what made every screen scroll a little.) Long pages (legal, records) still
+       grow past this and scroll normally. */
+    min-height: 100dvh;
     overscroll-behavior: none;
     -webkit-font-smoothing: antialiased;
   }

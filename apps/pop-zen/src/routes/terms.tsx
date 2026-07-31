@@ -22,7 +22,7 @@ export const Route = createFileRoute("/terms")({
 
 function TermsPage() {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-10 text-sm leading-relaxed text-foreground">
+    <main className="mx-auto max-w-2xl px-6 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)] text-sm leading-relaxed text-foreground">
       <Link to="/" className="text-xs text-muted-foreground">
         ← Back home
       </Link>

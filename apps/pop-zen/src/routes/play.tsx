@@ -238,7 +238,7 @@ function PlayPage() {
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
 
   return (
-    <div className="flex min-h-screen flex-col" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+    <div className="flex min-h-dvh flex-col" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <header className="flex items-center justify-between px-4 py-3">
         <Link to="/" className="text-sm font-medium text-muted-foreground">
           ← Exit

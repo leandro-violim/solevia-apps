@@ -23,7 +23,7 @@ function RecordsPage() {
 
   return (
     <div
-      className="flex min-h-screen flex-col px-5 pb-6"
+      className="flex min-h-dvh flex-col px-5 pb-6"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
     >
       <header className="mb-6 flex items-center justify-between">

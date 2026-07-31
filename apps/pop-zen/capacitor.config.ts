@@ -16,7 +16,12 @@ const config: CapacitorConfig = {
   // and set webDir to whichever folder contains index.html if it differs.
   webDir: "dist/client",
   ios: {
-    contentInset: "always",
+    // "never" = the web view owns the full screen (edge to edge). The app draws
+    // into the safe areas itself via CSS env(safe-area-inset-*), so the WKWebView
+    // must NOT add its own content insets — "always" double-insets the content and
+    // makes every screen slightly taller than the viewport, which is what caused
+    // the stray scroll on all screens.
+    contentInset: "never",
   },
   android: {
     backgroundColor: "#171326",

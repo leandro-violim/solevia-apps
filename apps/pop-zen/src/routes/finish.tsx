@@ -58,7 +58,7 @@ function FinishPage() {
 
   return (
     <div
-      className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center"
+      className="relative flex min-h-dvh flex-col items-center justify-center px-6 text-center"
       style={{
         paddingTop: "calc(env(safe-area-inset-top) + 24px)",
         paddingBottom: "calc(env(safe-area-inset-bottom) + 24px)",

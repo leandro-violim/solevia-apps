@@ -28,7 +28,7 @@ function SettingsPage() {
 
   return (
     <main
-      className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-10"
+      className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
     >
       <header className="mb-6 flex items-center justify-between">
