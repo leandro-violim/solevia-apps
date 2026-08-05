@@ -77,7 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      // viewport-fit=cover is REQUIRED for env(safe-area-inset-*) to return real
+      // values. Without it those insets are 0, so with the edge-to-edge web view
+      // (ios.contentInset "never") the header draws under the status bar / notch.
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1, viewport-fit=cover",
+      },
       { title: "Zen Bubbles" },
       {
         name: "description",
