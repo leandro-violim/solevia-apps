@@ -30,9 +30,9 @@ describe("PhysicsWorld integration", () => {
 
   it("moves a body by velocity * time with no friction", () => {
     const w = new PhysicsWorld(cfg());
-    w.addBody(body({ position: { x: 0, y: 0 }, velocity: { x: 100, y: 0 } }));
+    w.addBody(body({ position: { x: 100, y: 100 }, velocity: { x: 100, y: 0 } }));
     w.step(1); // one full simulated second
-    expect(w.getBody("a")!.position.x).toBeCloseTo(100, 5);
+    expect(w.getBody("a")!.position.x).toBeCloseTo(200, 5);
   });
 
   it("brings a moving body to rest under friction", () => {
