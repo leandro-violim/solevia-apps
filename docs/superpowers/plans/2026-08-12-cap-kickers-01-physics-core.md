@@ -234,9 +234,11 @@ describe("PhysicsWorld integration", () => {
 
   it("moves a body by velocity * time with no friction", () => {
     const w = new PhysicsWorld(cfg());
-    w.addBody(body({ position: { x: 0, y: 0 }, velocity: { x: 100, y: 0 } }));
+    // Start inside the pitch (not on a wall) so this stays a pure free-motion
+    // check once wall collisions land in Task 3.
+    w.addBody(body({ position: { x: 100, y: 100 }, velocity: { x: 100, y: 0 } }));
     w.step(1); // one full simulated second
-    expect(w.getBody("a")!.position.x).toBeCloseTo(100, 5);
+    expect(w.getBody("a")!.position.x).toBeCloseTo(200, 5);
   });
 
   it("brings a moving body to rest under friction", () => {
@@ -641,19 +643,22 @@ const body = (over: Partial<Body> = {}): Body => ({
 describe("anti-tunneling", () => {
   it("a very fast body collides with a target instead of passing through", () => {
     const w = new PhysicsWorld(cfg());
-    // 5000 u/s * (1/60) ≈ 83u of travel in ONE fixed step, target is 100u away.
-    w.addBody(body({ id: "fast", position: { x: 0, y: 0 }, velocity: { x: 5000, y: 0 } }));
+    // 10000 u/s * (1/60) ≈ 167u of travel in ONE fixed step — that overshoots
+    // the target's FAR edge (x=120), so a naive end-of-step-only overlap check
+    // would miss it entirely. Only mid-flight substepping catches the collision.
+    w.addBody(body({ id: "fast", position: { x: 0, y: 0 }, velocity: { x: 10000, y: 0 } }));
     w.addBody(body({ id: "target", position: { x: 100, y: 0 }, velocity: { x: 0, y: 0 } }));
     w.step(1 / 60);
-    w.step(1 / 60);
+    const fast = w.getBody("fast")!;
     const target = w.getBody("target")!;
-    expect(target.velocity.x).toBeGreaterThan(0); // momentum was transferred
+    expect(target.velocity.x).toBeGreaterThan(0); // momentum transferred
+    expect(fast.position.x).toBeLessThan(120); // stopped at impact, did NOT tunnel past
   });
 
   it("substepping preserves determinism at high speed", () => {
     const make = () => {
       const w = new PhysicsWorld(cfg());
-      w.addBody(body({ id: "fast", position: { x: 0, y: 0 }, velocity: { x: 5000, y: 0 } }));
+      w.addBody(body({ id: "fast", position: { x: 0, y: 0 }, velocity: { x: 10000, y: 0 } }));
       w.addBody(body({ id: "target", position: { x: 100, y: 0 }, velocity: { x: 0, y: 0 } }));
       return w;
     };
@@ -672,7 +677,7 @@ describe("anti-tunneling", () => {
 - [ ] **Step 2: Run the test**
 
 Run: `cd apps/cap-kickers && bunx vitest run src/game/physics/tunneling.test.ts`
-Expected: PASS — `computeSubsteps` already subdivides the coarse fixed step (travel ≈ 83u vs half-radius 5u → ~17 substeps, capped at 64), so the fast body meets the target instead of skipping past it. If it FAILS (target velocity 0), raise `maxSubsteps` handling or tighten the substep divisor in `computeSubsteps` — do not weaken the test.
+Expected: PASS — `computeSubsteps` subdivides the coarse fixed step (travel ≈ 167u vs half-radius 5u → ~34 substeps, capped at 64), so the fast body meets the target mid-flight instead of tunneling past its far edge. The `fast.position.x < 120` assertion proves the collision was caught in-flight: with substepping disabled (`computeSubsteps` → 1), the fast body would jump to x≈167 in one step, find no end-of-step overlap, and the target's velocity would stay 0 — failing the test. If it FAILS, the fix is in `computeSubsteps`/`fixedStep`, not the test — do not weaken the test.
 
 - [ ] **Step 3: Run the full suite**
 
