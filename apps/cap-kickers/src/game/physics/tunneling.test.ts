@@ -23,19 +23,22 @@ const body = (over: Partial<Body> = {}): Body => ({
 describe("anti-tunneling", () => {
   it("a very fast body collides with a target instead of passing through", () => {
     const w = new PhysicsWorld(cfg());
-    // 5000 u/s * (1/60) ≈ 83u of travel in ONE fixed step, target is 100u away.
-    w.addBody(body({ id: "fast", position: { x: 0, y: 0 }, velocity: { x: 5000, y: 0 } }));
+    // 10000 u/s * (1/60) ≈ 167u of travel in ONE fixed step — that overshoots
+    // the target's FAR edge (x=120), so a naive end-of-step-only overlap check
+    // would miss it entirely. Only mid-flight substepping catches the collision.
+    w.addBody(body({ id: "fast", position: { x: 0, y: 0 }, velocity: { x: 10000, y: 0 } }));
     w.addBody(body({ id: "target", position: { x: 100, y: 0 }, velocity: { x: 0, y: 0 } }));
     w.step(1 / 60);
-    w.step(1 / 60);
+    const fast = w.getBody("fast")!;
     const target = w.getBody("target")!;
-    expect(target.velocity.x).toBeGreaterThan(0); // momentum was transferred
+    expect(target.velocity.x).toBeGreaterThan(0); // momentum transferred
+    expect(fast.position.x).toBeLessThan(120); // stopped at impact, did NOT tunnel past
   });
 
   it("substepping preserves determinism at high speed", () => {
     const make = () => {
       const w = new PhysicsWorld(cfg());
-      w.addBody(body({ id: "fast", position: { x: 0, y: 0 }, velocity: { x: 5000, y: 0 } }));
+      w.addBody(body({ id: "fast", position: { x: 0, y: 0 }, velocity: { x: 10000, y: 0 } }));
       w.addBody(body({ id: "target", position: { x: 100, y: 0 }, velocity: { x: 0, y: 0 } }));
       return w;
     };
