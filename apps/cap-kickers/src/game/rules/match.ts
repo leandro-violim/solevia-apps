@@ -29,8 +29,8 @@ const other = (s: PlayerSide): PlayerSide => (s === 0 ? 1 : 0);
  * Advance the match by one resolved flick. Pure reducer.
  *
  * Touches 1-3 (build-up): legal iff the flick crossed the gate AND every cap
- * stayed in the pitch (ending === "rest"). Legal → advance (touch+1, same
- * attacker); illegal → turnover.
+ * stayed in the pitch (flickedEnding === "rest" and no cap left the pitch).
+ * Legal → advance (touch+1, same attacker); illegal → turnover.
  *
  * Touch 4 (the shot): the gate does not apply. If the flicked cap entered the
  * attacker's target goal → goal (score, then kickoff to the other side, or win
@@ -53,7 +53,7 @@ export const applyFlick = (
   });
 
   if (state.touch <= 3) {
-    const legal = flick.crossedGate && flick.ending === "rest";
+    const legal = flick.crossedGate && flick.flickedEnding === "rest" && !flick.anyCapLeftPitch;
     if (legal) {
       return { state: { ...state, touch: state.touch + 1 }, result: "advance" };
     }
@@ -61,7 +61,7 @@ export const applyFlick = (
   }
 
   // touch === 4: the shot.
-  const scored = flick.ending === goalZone(attackingGoal(state.attacker));
+  const scored = flick.flickedEnding === goalZone(attackingGoal(state.attacker));
   if (!scored) {
     return turnover();
   }

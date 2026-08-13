@@ -38,8 +38,8 @@ describe("resolveFlick", () => {
     const w = world({ x: 100, y: 250 }, [210, 290]); // wide gap around y=250 at x=150
     const r = resolveFlick(w, pitch, "f", ["a", "b"], { x: 300, y: 0 });
     expect(r.crossedGate).toBe(true);
-    expect(r.ending).toBe("rest");
-    expect(r.endingCapId).toBeNull();
+    expect(r.flickedEnding).toBe("rest");
+    expect(r.anyCapLeftPitch).toBe(false);
   });
 
   it("reports crossedGate=false when the cap misses the gap", () => {
@@ -47,25 +47,38 @@ describe("resolveFlick", () => {
     const w = world({ x: 100, y: 250 }, [300, 360]);
     const r = resolveFlick(w, pitch, "f", ["a", "b"], { x: 300, y: 0 });
     expect(r.crossedGate).toBe(false);
-    expect(r.ending).toBe("rest");
+    expect(r.flickedEnding).toBe("rest");
   });
 
   it("ends 'out' when a cap leaves the pitch over a sideline", () => {
     const w = world({ x: 400, y: 250 }, [210, 290], 200);
     const r = resolveFlick(w, pitch, "f", ["a", "b"], { x: 0, y: -3000 }); // slam toward y=0
-    expect(r.ending).toBe("out");
-    expect(r.endingCapId).toBe("f");
+    expect(r.flickedEnding).toBe("out");
+    expect(r.anyCapLeftPitch).toBe(true);
   });
 
   it("ends 'goalRight' when the flicked cap enters the right goal mouth", () => {
     const w = world({ x: 700, y: 250 }, [210, 290]);
     const r = resolveFlick(w, pitch, "f", ["a", "b"], { x: 3000, y: 0 }); // into x=800 at y=250
-    expect(r.ending).toBe("goalRight");
-    expect(r.endingCapId).toBe("f");
+    expect(r.flickedEnding).toBe("goalRight");
+    expect(r.anyCapLeftPitch).toBe(true);
   });
 
   it("is deterministic for identical setups", () => {
     const make = () => resolveFlick(world({ x: 100, y: 250 }, [210, 290]), pitch, "f", ["a", "b"], { x: 300, y: 0 });
     expect(make()).toEqual(make());
+  });
+
+  it("attributes the ending to the FLICKED cap, not a teammate it pushes into a goal", () => {
+    // "a" sits just inside the right goal line, in the mouth [150,350]. "f" hits
+    // it head-on, knocking "a" over the line while "f" stops short in-bounds.
+    // The flicked cap's own ending must be "rest" even though a cap scored.
+    const w = new PhysicsWorld(cfg());
+    w.addBody(cap("f", 750, 250));
+    w.addBody(cap("a", 790, 250));
+    w.addBody(cap("b", 150, 250));
+    const r = resolveFlick(w, pitch, "f", ["a", "b"], { x: 250, y: 0 });
+    expect(r.flickedEnding).toBe("rest");
+    expect(r.anyCapLeftPitch).toBe(true);
   });
 });

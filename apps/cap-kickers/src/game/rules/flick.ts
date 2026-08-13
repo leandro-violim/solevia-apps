@@ -6,19 +6,20 @@ import { type Pitch, classifyCap } from "./pitch";
 export type FlickEnding = "rest" | "out" | "goalLeft" | "goalRight";
 
 export type FlickResult = {
-  crossedGate: boolean; // did the flicked cap pass between the other two caps?
-  ending: FlickEnding; // how the flick ended
-  endingCapId: string | null; // cap that left the pitch / entered a goal (null if "rest")
+  crossedGate: boolean; // did the flicked cap pass between the other two?
+  flickedEnding: FlickEnding; // how the FLICKED cap itself ended
+  anyCapLeftPitch: boolean; // did ANY cap (incl. the flicked one) leave the pitch?
 };
 
 export type ResolveOpts = { dt?: number; maxSteps?: number };
 
 /**
- * Apply `velocity` to the flicked cap, then simulate the world until it comes to
- * rest or a cap leaves the pitch. Reports whether the flicked cap crossed the
- * "gate" (the segment between the other two caps captured at flick time) and how
- * the flick ended. The physics world MUST have bounds far larger than the pitch
- * (see Global Constraints) so its walls never mask a cap leaving the field.
+ * Apply `velocity` to the flicked cap, then simulate until the flicked cap
+ * leaves the pitch or the world comes to rest. Reports whether the flicked cap
+ * crossed the gate (segment between the other two caps at flick time), how the
+ * FLICKED cap itself ended, and whether ANY cap left the pitch during the flick.
+ * The physics world MUST have bounds far larger than the pitch (see Global
+ * Constraints) so its walls never mask a cap leaving the field.
  */
 export const resolveFlick = (
   world: PhysicsWorld,
@@ -45,6 +46,7 @@ export const resolveFlick = (
   flicked.velocity = { x: velocity.x, y: velocity.y };
 
   let crossedGate = false;
+  let anyCapLeftPitch = false;
   let prev: Vec2 = { x: flicked.position.x, y: flicked.position.y };
 
   for (let step = 0; step < maxSteps; step++) {
@@ -57,16 +59,24 @@ export const resolveFlick = (
     }
     prev = cur;
 
-    // Boundary / goal: the first cap to leave the pitch ends the flick.
-    for (const b of world.bodies) {
-      const zone = classifyCap(b, pitch);
-      if (zone !== "in") {
-        return { crossedGate, ending: zone, endingCapId: b.id };
+    // Any cap leaving the pitch (goal mouths count as leaving) sets the flag.
+    if (!anyCapLeftPitch) {
+      for (const b of world.bodies) {
+        if (classifyCap(b, pitch) !== "in") {
+          anyCapLeftPitch = true;
+          break;
+        }
       }
+    }
+
+    // The flicked cap's OWN fate decides the flick once it leaves the pitch.
+    const flickedZone = classifyCap(flicked, pitch);
+    if (flickedZone !== "in") {
+      return { crossedGate, flickedEnding: flickedZone, anyCapLeftPitch: true };
     }
 
     if (world.atRest()) break;
   }
 
-  return { crossedGate, ending: "rest", endingCapId: null };
+  return { crossedGate, flickedEnding: "rest", anyCapLeftPitch };
 };
