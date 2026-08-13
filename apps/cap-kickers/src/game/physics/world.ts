@@ -98,7 +98,39 @@ export class PhysicsWorld {
   }
 
   private resolveCollisions(): void {
-    // Implemented in Task 4.
+    const bodies = this.bodies;
+    for (let i = 0; i < bodies.length; i++) {
+      for (let j = i + 1; j < bodies.length; j++) {
+        this.resolvePair(bodies[i], bodies[j]);
+      }
+    }
+  }
+
+  private resolvePair(a: Body, b: Body): void {
+    const delta = sub(b.position, a.position); // a -> b
+    const distance = len(delta);
+    const minDist = a.radius + b.radius;
+    if (distance === 0 || distance >= minDist) return;
+
+    const normal = scale(delta, 1 / distance); // unit, a -> b
+    const invA = 1 / a.mass;
+    const invB = 1 / b.mass;
+
+    // Positional correction: push apart, split by inverse mass.
+    const penetration = minDist - distance;
+    const corr = penetration / (invA + invB);
+    a.position = sub(a.position, scale(normal, corr * invA));
+    b.position = add(b.position, scale(normal, corr * invB));
+
+    // Impulse: skip if already separating.
+    const rv = sub(b.velocity, a.velocity);
+    const velAlongNormal = dot(rv, normal);
+    if (velAlongNormal > 0) return;
+    const e = this.cfg.restitution;
+    const jImp = (-(1 + e) * velAlongNormal) / (invA + invB);
+    const impulse = scale(normal, jImp);
+    a.velocity = sub(a.velocity, scale(impulse, invA));
+    b.velocity = add(b.velocity, scale(impulse, invB));
   }
 
   private applyFriction(dt: number): void {

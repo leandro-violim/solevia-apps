@@ -41,3 +41,27 @@ describe("wall collisions", () => {
     expect(a.position.y + a.radius).toBeLessThanOrEqual(200 + 1e-6);
   });
 });
+
+describe("circle-circle collisions", () => {
+  it("swaps velocity on a head-on equal-mass elastic hit", () => {
+    const w = new PhysicsWorld(cfg({ restitution: 1, bounds: { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 } }));
+    w.addBody(body({ id: "a", position: { x: 0, y: 0 }, velocity: { x: 200, y: 0 } }));
+    w.addBody(body({ id: "b", position: { x: 40, y: 0 }, velocity: { x: 0, y: 0 } }));
+    for (let i = 0; i < 120; i++) w.step(1 / 120);
+    const a = w.getBody("a")!;
+    const b = w.getBody("b")!;
+    expect(a.velocity.x).toBeCloseTo(0, 1); // a stopped
+    expect(b.velocity.x).toBeCloseTo(200, 1); // b took the momentum
+  });
+
+  it("separates two overlapping resting bodies", () => {
+    const w = new PhysicsWorld(cfg({ bounds: { minX: -1000, minY: -1000, maxX: 1000, maxY: 1000 } }));
+    w.addBody(body({ id: "a", position: { x: 0, y: 0 }, velocity: { x: 0, y: 0 } }));
+    w.addBody(body({ id: "b", position: { x: 5, y: 0 }, velocity: { x: 0, y: 0 } }));
+    w.step(1 / 120);
+    const a = w.getBody("a")!;
+    const b = w.getBody("b")!;
+    const gap = Math.hypot(b.position.x - a.position.x, b.position.y - a.position.y);
+    expect(gap).toBeGreaterThanOrEqual(a.radius + b.radius - 1e-6);
+  });
+});
