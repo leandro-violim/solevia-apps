@@ -53,4 +53,8 @@ export class FlickTracker {
     }
     return null;
   }
+
+  snapshot(): { crossedGate: boolean; anyCapLeftPitch: boolean } {
+    return { crossedGate: this.crossedGate, anyCapLeftPitch: this.anyCapLeftPitch };
+  }
 }

@@ -69,6 +69,29 @@ describe("resolveFlick", () => {
     expect(make()).toEqual(make());
   });
 
+  it("preserves crossedGate/anyCapLeftPitch on the maxSteps-exhausted fallback", () => {
+    // Very low friction: the cap crosses the gate quickly but is still moving (and
+    // still in-pitch) well after step 30, so resolveFlick's own step budget runs out
+    // before the tracker ever reports a non-null result. The fallback path must
+    // reflect what the tracker actually latched, not a hardcoded false.
+    const lowFrictionCfg: PhysicsConfig = {
+      fixedDt: 1 / 120,
+      friction: 0.2,
+      restitution: 0.5,
+      restEpsilon: 1,
+      maxSubsteps: 16,
+      bounds: { minX: -100000, minY: -100000, maxX: 100000, maxY: 100000 },
+    };
+    const w = new PhysicsWorld(lowFrictionCfg);
+    w.addBody(cap("f", 100, 250));
+    w.addBody(cap("a", 150, 210));
+    w.addBody(cap("b", 150, 290));
+    const r = resolveFlick(w, pitch, "f", ["a", "b"], { x: 300, y: 0 }, { maxSteps: 30 });
+    expect(r.crossedGate).toBe(true);
+    expect(r.flickedEnding).toBe("rest");
+    expect(r.anyCapLeftPitch).toBe(false);
+  });
+
   it("attributes the ending to the FLICKED cap, not a teammate it pushes into a goal", () => {
     // "a" sits just inside the right goal line, in the mouth [150,350]. "f" hits
     // it head-on, knocking "a" over the line while "f" stops short in-bounds.

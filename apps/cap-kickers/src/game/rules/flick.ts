@@ -52,5 +52,6 @@ export const resolveFlick = (
     if (result) return result;
   }
 
-  return { crossedGate: false, flickedEnding: "rest", anyCapLeftPitch: false };
+  const s = tracker.snapshot();
+  return { crossedGate: s.crossedGate, flickedEnding: "rest", anyCapLeftPitch: s.anyCapLeftPitch };
 };
