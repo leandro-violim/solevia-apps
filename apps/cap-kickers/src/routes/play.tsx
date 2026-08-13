@@ -250,7 +250,11 @@ function PlayPage() {
     const session = sessionRef.current;
     if (!session || session.phase !== "aiming" || session.match.phase === "won") return;
     if (session.selectedCapId !== drag.capId) return;
-    const velocity = swipeToVelocity(drag.start, drag.current, SWIPE);
+    // Use the pointer-up position as the swipe end (falling back to the last
+    // tracked move) so a fast flick with no intermediate pointermove still
+    // produces a real velocity.
+    const end = pitchPointFromEvent(e) ?? drag.current;
+    const velocity = swipeToVelocity(drag.start, end, SWIPE);
     if (velocity.x !== 0 || velocity.y !== 0) {
       session.beginFlick(drag.capId, velocity);
     }
