@@ -78,8 +78,23 @@ export class PhysicsWorld {
     }
   }
 
-  private collideWalls(_b: Body): void {
-    // Implemented in Task 3.
+  private collideWalls(b: Body): void {
+    const { minX, minY, maxX, maxY } = this.cfg.bounds;
+    const e = this.cfg.restitution;
+    if (b.position.x - b.radius < minX) {
+      b.position.x = minX + b.radius;
+      b.velocity.x = Math.abs(b.velocity.x) * e;
+    } else if (b.position.x + b.radius > maxX) {
+      b.position.x = maxX - b.radius;
+      b.velocity.x = -Math.abs(b.velocity.x) * e;
+    }
+    if (b.position.y - b.radius < minY) {
+      b.position.y = minY + b.radius;
+      b.velocity.y = Math.abs(b.velocity.y) * e;
+    } else if (b.position.y + b.radius > maxY) {
+      b.position.y = maxY - b.radius;
+      b.velocity.y = -Math.abs(b.velocity.y) * e;
+    }
   }
 
   private resolveCollisions(): void {
