@@ -39,7 +39,7 @@ implementation at coquinhos.com.
 | Area | Decision |
 |------|----------|
 | Pieces / scoring | **3 identical caps** (classic). On the shooting touch the struck cap acts as "the ball" at goal. |
-| Touches per turn | **4 touches**, must shoot on the 4th. |
+| Touches per turn | **4 touches**, must shoot on the 4th. The "pass between" gate applies only on **build-up touches 1–3**; the **4th touch is a free shot** (no gate). A cap crossing any boundary (goal lines included) during build-up is out of bounds = turn loss. **Only the 4th touch can score.** (Refined in Plan 2.) |
 | Goalkeeper | **AI moving keeper**, slides along the goal line. **Always AI, in both solo and 2-player.** |
 | Win condition | **First to N goals** (N selectable, default 3). |
 | Modes | **Solo vs AI** + **2-player hotseat** (rotate the phone). |
