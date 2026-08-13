@@ -408,6 +408,11 @@ export class FlickTracker {
     }
     return null;
   }
+
+  /** Latched state so far — used by resolveFlick's maxSteps-exhausted fallback. */
+  snapshot(): { crossedGate: boolean; anyCapLeftPitch: boolean } {
+    return { crossedGate: this.crossedGate, anyCapLeftPitch: this.anyCapLeftPitch };
+  }
 }
 ```
 
@@ -473,7 +478,9 @@ export const resolveFlick = (
     if (result) return result;
   }
 
-  return { crossedGate: false, flickedEnding: "rest", anyCapLeftPitch: false };
+  // maxSteps exhausted before rest: preserve the latched gate/boundary state.
+  const s = tracker.snapshot();
+  return { crossedGate: s.crossedGate, flickedEnding: "rest", anyCapLeftPitch: s.anyCapLeftPitch };
 };
 ```
 
