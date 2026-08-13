@@ -8,6 +8,20 @@
 
 **Tech Stack:** TypeScript (strict), Vitest (node), bun. No new dependencies.
 
+> **⚠️ Post-implementation refinement (final review, commit `c6d72dc`).** The final
+> whole-branch review caught a match-deciding bug: the shot must score only when the
+> **flicked** cap enters the goal, but the original Task 4/5 code below scored on *any*
+> cap (phantom goals) and stopped the sim on the *first* cap to leave (robbed goals).
+> The shipped code therefore differs from the Task 4/5 listings below:
+> - `FlickResult` is `{ crossedGate: boolean; flickedEnding: FlickEnding; anyCapLeftPitch: boolean }`
+>   (not `ending`/`endingCapId`). `resolveFlick` decides on the **flicked cap's own** zone
+>   (returns when the flicked cap leaves the pitch) while separately flagging whether **any**
+>   cap left.
+> - `applyFlick`: build-up legal = `crossedGate && flickedEnding === "rest" && !anyCapLeftPitch`;
+>   shot scored = `flickedEnding === goalZone(attackingGoal(attacker))`.
+> The Task 4/5 sections below are kept as originally written for history; **the code in the
+> repo is the source of truth.**
+
 ## Global Constraints
 
 - **Package manager:** bun. Tests: `cd apps/cap-kickers && bunx vitest run <file>`; full suite `bunx vitest run`.
