@@ -55,6 +55,9 @@ export class PhysicsWorld {
     for (let s = 0; s < subs; s++) {
       this.integrate(h);
       this.resolveCollisions();
+      // A collision's positional correction can push a body past a wall;
+      // re-clamp so no body ever ends a substep out of bounds.
+      for (const b of this.bodies) this.collideWalls(b);
     }
     this.applyFriction(dt);
   }

@@ -65,3 +65,28 @@ describe("circle-circle collisions", () => {
     expect(gap).toBeGreaterThanOrEqual(a.radius + b.radius - 1e-6);
   });
 });
+
+describe("collision near a wall", () => {
+  it("keeps a body inside the wall when a collision pushes it outward", () => {
+    const w = new PhysicsWorld(cfg({ restitution: 1 }));
+    // "pinned" sits flush against the left wall (center at radius, edge at minX=0).
+    // "driver" slams left into it, so the collision's positional correction tries
+    // to push "pinned" left, through the wall.
+    w.addBody(body({ id: "pinned", position: { x: 10, y: 100 }, velocity: { x: 0, y: 0 } }));
+    w.addBody(body({ id: "driver", position: { x: 45, y: 100 }, velocity: { x: -600, y: 0 } }));
+    const pinned = w.getBody("pinned")!;
+    const driver = w.getBody("driver")!;
+    // Check the invariant after every fixed step, not just the final one: without the
+    // wall re-clamp, a body can be pushed out of bounds by resolveCollisions() and then
+    // get silently reclamped by the *next* step's integrate(), masking the bug if we
+    // only inspect the end state. Checking every step catches the violation whenever it
+    // occurs.
+    for (let i = 0; i < 120; i++) {
+      w.step(1 / 120);
+      expect(pinned.position.x - pinned.radius).toBeGreaterThanOrEqual(0 - 1e-6);
+      expect(driver.position.x - driver.radius).toBeGreaterThanOrEqual(0 - 1e-6);
+      expect(pinned.position.y - pinned.radius).toBeGreaterThanOrEqual(0 - 1e-6);
+      expect(driver.position.y - driver.radius).toBeGreaterThanOrEqual(0 - 1e-6);
+    }
+  });
+});
