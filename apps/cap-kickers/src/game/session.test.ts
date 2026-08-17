@@ -46,7 +46,9 @@ describe("GameSession", () => {
   it("scores on a 4th-touch shot into the right goal, then kicks off to side 1", () => {
     const s = new GameSession();
     s.match = { ...s.match, touch: 4 };
-    const report = runFlick(s, "c2", { x: 6000, y: 0 }); // across the pitch into the right goal
+    // Off-center (not dead-on-keeper) so this predates-the-keeper test still
+    // scores now that touch 4 spawns a defender at the goal-mouth center (Task 4).
+    const report = runFlick(s, "c2", { x: 6000, y: 400 }); // across the pitch into the right goal
     expect(report!.result).toBe("goal");
     expect(s.match.scores).toEqual([1, 0]);
     expect(s.match.attacker).toBe(1);
