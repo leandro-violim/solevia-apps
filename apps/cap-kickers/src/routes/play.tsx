@@ -247,6 +247,12 @@ function PlayPage() {
       }
       render(session);
     };
+
+    // Paint an initial frame synchronously so the board is visible immediately,
+    // without waiting for the first rAF (which also never fires while the tab
+    // is backgrounded) — avoids a black flash on load.
+    const initialSession = sessionRef.current;
+    if (initialSession) render(initialSession);
     rafRef.current = requestAnimationFrame(loop);
 
     return () => {
