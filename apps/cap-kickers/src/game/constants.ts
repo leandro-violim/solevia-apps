@@ -6,6 +6,7 @@ import { type SwipeOpts } from "./input-mapping";
 // Landscape pitch, ~1.6:1. Goal mouth is the middle 220 of the 620-tall end lines.
 export const PITCH: Pitch = { width: 1000, height: 620, goalWidth: 220 };
 export const CAP_RADIUS = 16;
+export const KEEPER = { radius: CAP_RADIUS * 1.4, mass: 40, inset: 6 };
 
 export const PHYSICS: PhysicsConfig = {
   fixedDt: 1 / 120,
