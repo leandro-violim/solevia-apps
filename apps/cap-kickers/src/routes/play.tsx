@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
@@ -7,12 +7,16 @@ import { PITCH, PHYSICS, CAP_RADIUS, SWIPE } from "../game/constants";
 import { makePresentation, pitchToScreen, screenToPitch } from "../game/presentation";
 import { capAtPoint, swipeToVelocity } from "../game/input-mapping";
 import { chooseAiFlick } from "../game/ai/policy";
+import { completeLevel, levelById, nextLevelId } from "../game/campaign/ladder";
+import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 
 const searchSchema = z.object({
   mode: z.enum(["2p", "practice", "ai"]).catch("practice"),
   difficulty: z.enum(["easy", "normal", "hard"]).catch("normal"),
+  goals: z.coerce.number().int().min(1).max(20).catch(3),
+  campaign: z.string().optional(),
 });
 
 export const Route = createFileRoute("/play")({
@@ -39,12 +43,13 @@ const AI_SIDE = 1; // human is side 0
 const AI_THINK_SECONDS = 0.5;
 
 function PlayPage() {
-  const { mode, difficulty } = Route.useSearch();
+  const { mode, difficulty, goals, campaign } = Route.useSearch();
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sessionRef = useRef<GameSession | null>(null);
   if (sessionRef.current === null)
     sessionRef.current = new GameSession({
+      match: { goalsToWin: goals },
       keeperDifficulty: mode === "ai" ? difficulty : "normal",
     });
 
@@ -54,6 +59,9 @@ function PlayPage() {
   const lastTimeRef = useRef<number | null>(null);
   const bannerTimeoutRef = useRef<number | null>(null);
   const bannerKeyRef = useRef(0);
+  // Guards against double-recording campaign completion when the "won"
+  // match state triggers more than one re-render.
+  const recordedRef = useRef(false);
 
   const [match, setMatch] = useState<MatchState>(() => sessionRef.current!.match);
   const [banner, setBanner] = useState<Banner | null>(null);
@@ -98,6 +106,7 @@ function PlayPage() {
 
   const handleNewMatch = useCallback(() => {
     sessionRef.current = new GameSession({
+      match: { goalsToWin: goals },
       keeperDifficulty: mode === "ai" ? difficulty : "normal",
     });
     dragRef.current = null;
@@ -105,7 +114,8 @@ function PlayPage() {
     setBanner(null);
     setViewAttacker(sessionRef.current.match.attacker);
     setHandoffTo(null);
-  }, [mode, difficulty]);
+    recordedRef.current = false;
+  }, [mode, difficulty, goals]);
 
   // rAF render/tick loop. Owns the canvas backing-store sizing and never
   // touches React state except to publish HUD-relevant snapshots.
@@ -328,6 +338,20 @@ function PlayPage() {
     [],
   );
 
+  // Record campaign level completion exactly once, the moment a campaign
+  // match is won by the human player.
+  useEffect(() => {
+    if (
+      campaign &&
+      match.phase === "won" &&
+      match.winner === 0 &&
+      !recordedRef.current
+    ) {
+      recordedRef.current = true;
+      saveProgress(completeLevel(campaign, loadProgress()));
+    }
+  }, [campaign, match.phase, match.winner]);
+
   const pitchPointFromEvent = (e: { clientX: number; clientY: number }): Vec2 | null => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -389,6 +413,7 @@ function PlayPage() {
   };
 
   const won = match.phase === "won";
+  const nextLevel = campaign ? levelById(nextLevelId(campaign) ?? "") : undefined;
 
   return (
     <div className="relative h-dvh w-dvw touch-none overflow-hidden bg-black">
@@ -471,7 +496,60 @@ function PlayPage() {
         </div>
       )}
 
-      {won && (
+      {won && campaign && (
+        <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/65">
+          {match.winner === 0 ? (
+            <>
+              <div className="text-3xl font-bold text-white">
+                {nextLevel ? "Level complete!" : "Campaign complete!"}
+              </div>
+              <div className="flex gap-3">
+                {nextLevel && (
+                  <Link
+                    to="/play"
+                    search={{
+                      mode: "ai",
+                      difficulty: nextLevel.difficulty,
+                      goals: nextLevel.goalsToWin,
+                      campaign: nextLevel.id,
+                    }}
+                    className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
+                  >
+                    Next level
+                  </Link>
+                )}
+                <Link
+                  to="/campaign"
+                  className="rounded-full border-2 border-primary bg-transparent px-6 py-3 text-base font-semibold text-primary shadow-lg active:scale-[0.98]"
+                >
+                  Back to campaign
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-3xl font-bold text-white">You lost</div>
+              <div className="flex gap-3">
+                <Link
+                  to="/play"
+                  search={{ mode: "ai", difficulty, goals, campaign }}
+                  className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
+                >
+                  Try again
+                </Link>
+                <Link
+                  to="/campaign"
+                  className="rounded-full border-2 border-primary bg-transparent px-6 py-3 text-base font-semibold text-primary shadow-lg active:scale-[0.98]"
+                >
+                  Back to campaign
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {won && !campaign && (
         <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/65">
           <div className="text-3xl font-bold text-white">Player {match.winner! + 1} wins!</div>
           <button
