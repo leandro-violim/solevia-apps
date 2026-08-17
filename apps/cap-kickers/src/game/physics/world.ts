@@ -33,6 +33,11 @@ export class PhysicsWorld {
     return b;
   }
 
+  removeBody(id: string): void {
+    const i = this.bodies.findIndex((b) => b.id === id);
+    if (i !== -1) this.bodies.splice(i, 1);
+  }
+
   getBody(id: string): Body | undefined {
     return this.bodies.find((b) => b.id === id);
   }

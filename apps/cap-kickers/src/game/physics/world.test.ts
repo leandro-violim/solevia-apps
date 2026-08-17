@@ -59,3 +59,17 @@ describe("PhysicsWorld integration", () => {
     expect(w1.getBody("a")!.velocity).toEqual(w2.getBody("a")!.velocity);
   });
 });
+
+describe("PhysicsWorld.removeBody", () => {
+  it("removes a body by id and is a no-op for an unknown id", () => {
+    const w = new PhysicsWorld(cfg());
+    w.addBody(body({ id: "a" }));
+    w.addBody(body({ id: "b" }));
+    w.removeBody("a");
+    expect(w.getBody("a")).toBeUndefined();
+    expect(w.getBody("b")?.id).toBe("b");
+    expect(w.bodies.length).toBe(1);
+    w.removeBody("missing"); // no throw
+    expect(w.bodies.length).toBe(1);
+  });
+});
