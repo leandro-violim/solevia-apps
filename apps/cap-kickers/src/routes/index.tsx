@@ -1,4 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+
+import { hasSeenTutorial } from "../game/tutorial/storage";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -19,6 +22,13 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const nav = useNavigate();
+
+  useEffect(() => {
+    if (!hasSeenTutorial()) nav({ to: "/tutorial" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div
       className="relative flex min-h-dvh flex-col items-center justify-center px-6 pt-14 text-center"
@@ -76,6 +86,10 @@ function Home() {
             </Link>
           </div>
         </div>
+
+        <Link to="/tutorial" className="mt-2 text-xs font-medium text-muted-foreground underline underline-offset-4">
+          How to Play
+        </Link>
       </div>
     </div>
   );
