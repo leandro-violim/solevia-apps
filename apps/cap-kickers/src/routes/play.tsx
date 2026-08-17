@@ -58,6 +58,10 @@ function PlayPage() {
     });
 
   const sizeRef = useRef<CanvasSize>({ cssW: 0, cssH: 0, dpr: 1 });
+  // Camera: zoom (z) + focus point (fx,fy) in CSS-pixel base-screen space. It
+  // frames the caps up close so they're big/easy to tap, and eases to follow
+  // the action. `init` snaps to the target on the first frame (no fly-in flash).
+  const camRef = useRef({ z: 1, fx: 0, fy: 0, init: false });
   const dragRef = useRef<Drag | null>(null);
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number | null>(null);
@@ -162,6 +166,49 @@ function PlayPage() {
       const pitchH = Math.abs(bottomRight.y - topLeft.y);
       if (pitchW < 8 || pitchH < 8) return; // skip degenerate/first-layout frames
 
+      // Camera: frame the caps up close (big, tappable), easing to follow play.
+      const cam = camRef.current;
+      {
+        const cs = session.caps();
+        let minX = Infinity,
+          minY = Infinity,
+          maxX = -Infinity,
+          maxY = -Infinity;
+        for (const cap of cs) {
+          const s = pitchToScreen(cap.position, pres);
+          const rr = cap.radius * pres.viewport.scale;
+          minX = Math.min(minX, s.x - rr);
+          minY = Math.min(minY, s.y - rr);
+          maxX = Math.max(maxX, s.x + rr);
+          maxY = Math.max(maxY, s.y + rr);
+        }
+        const pad = 72;
+        const bw = maxX - minX + pad * 2;
+        const bh = maxY - minY + pad * 2;
+        const tz = Math.max(1, Math.min(2.4, Math.min(cssW / bw, cssH / bh)));
+        const halfW = cssW / 2 / tz;
+        const halfH = cssH / 2 / tz;
+        const clamp1 = (f: number, lo: number, hi: number, half: number): number =>
+          hi - lo <= 2 * half ? (lo + hi) / 2 : Math.max(lo + half, Math.min(hi - half, f));
+        const tfx = clamp1((minX + maxX) / 2, rectX, rectX + pitchW, halfW);
+        const tfy = clamp1((minY + maxY) / 2, rectY, rectY + pitchH, halfH);
+        if (!cam.init) {
+          cam.z = tz;
+          cam.fx = tfx;
+          cam.fy = tfy;
+          cam.init = true;
+        } else {
+          const k = 0.14;
+          cam.z += (tz - cam.z) * k;
+          cam.fx += (tfx - cam.fx) * k;
+          cam.fy += (tfy - cam.fy) * k;
+        }
+      }
+      ctx.save();
+      ctx.translate(cssW / 2, cssH / 2);
+      ctx.scale(cam.z, cam.z);
+      ctx.translate(-cam.fx, -cam.fy);
+
       const scale = pres.viewport.scale;
 
       // Pitch: grass stripes + markings.
@@ -243,6 +290,8 @@ function PlayPage() {
           ctx.restore();
         }
       }
+
+      ctx.restore(); // close the camera transform
     };
 
     const loop = (t: number) => {
@@ -346,7 +395,13 @@ function PlayPage() {
     const rect = canvas.getBoundingClientRect();
     const pres = makePresentation(PITCH, { width: rect.width, height: rect.height }, flipped);
     const local = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    return screenToPitch(local, pres);
+    // Invert the camera zoom/pan (see the render loop) to reach base-screen space.
+    const cam = camRef.current;
+    const base = {
+      x: (local.x - rect.width / 2) / cam.z + cam.fx,
+      y: (local.y - rect.height / 2) / cam.z + cam.fy,
+    };
+    return screenToPitch(base, pres);
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
