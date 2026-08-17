@@ -2,6 +2,16 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* Self-hosted arcade type: Barlow Condensed (display) + Barlow (body). Bundled
+   so they work offline in the native iOS build. */
+@import "@fontsource/barlow-condensed/600.css";
+@import "@fontsource/barlow-condensed/700.css";
+@import "@fontsource/barlow-condensed/800.css";
+@import "@fontsource/barlow/400.css";
+@import "@fontsource/barlow/500.css";
+@import "@fontsource/barlow/600.css";
+@import "@fontsource/barlow/700.css";
+
 @custom-variant dark (&:is(.dark *));
 
 /*
@@ -64,50 +74,58 @@
 }
 
 :root {
-  --radius: 0.9rem;
+  --radius: 1.2rem;
 
-  /* Neutral light theme with a pitch-green primary accent. */
-  --background: oklch(0.99 0.002 265);
-  --foreground: oklch(0.2 0.02 265);
+  /* Vibrant cartoon-arcade sports palette. */
+  --background: #e9f8ef;
+  --foreground: #12281c;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.02 265);
-  --popover: oklch(1 0 0 / 0.98);
-  --popover-foreground: oklch(0.2 0.02 265);
+  --card: #ffffff;
+  --card-foreground: #12281c;
+  --popover: #ffffff;
+  --popover-foreground: #12281c;
 
-  /* Pitch green — the primary accent. */
-  --primary: oklch(0.5 0.14 152);
-  --primary-foreground: oklch(0.99 0.005 265);
+  /* Grass-green primary CTA (chunky arcade button). */
+  --primary: #1fb457;
+  --primary-foreground: #ffffff;
+  --primary-shadow: #128040;
 
-  --secondary: oklch(0.96 0.005 265);
-  --secondary-foreground: oklch(0.2 0.02 265);
-  --muted: oklch(0.96 0.005 265);
-  --muted-foreground: oklch(0.5 0.01 265);
+  --secondary: #eef6f0;
+  --secondary-foreground: #12281c;
+  --muted: #eef4f0;
+  --muted-foreground: #5f7869;
 
-  --accent: oklch(0.94 0.02 152);
-  --accent-foreground: oklch(0.2 0.02 265);
+  /* Reward gold accent. */
+  --accent: #ffcf33;
+  --accent-foreground: #4a3600;
+  --accent-shadow: #d8a400;
 
-  --destructive: oklch(0.63 0.2 25);
-  --destructive-foreground: oklch(0.99 0.005 265);
+  --destructive: #ff5a3c;
+  --destructive-foreground: #ffffff;
 
-  --border: oklch(0.9 0.005 265);
-  --input: oklch(0.9 0.005 265);
-  --ring: oklch(0.5 0.14 152 / 0.5);
+  --border: #d7e7dd;
+  --input: #d7e7dd;
+  --ring: rgba(31, 180, 87, 0.55);
 
-  --chart-1: oklch(0.5 0.14 152);
-  --chart-2: oklch(0.65 0.15 40);
-  --chart-3: oklch(0.6 0.15 260);
-  --chart-4: oklch(0.75 0.15 90);
-  --chart-5: oklch(0.6 0.17 320);
+  /* Team + keeper accents (mirrors the canvas constants for HUD parity). */
+  --team-1: #2f7bff;
+  --team-2: #ff5a3c;
+  --keeper: #ffbe2e;
 
-  --sidebar: oklch(0.98 0.003 265);
-  --sidebar-foreground: oklch(0.2 0.02 265);
-  --sidebar-primary: oklch(0.5 0.14 152);
-  --sidebar-primary-foreground: oklch(0.99 0.005 265);
-  --sidebar-accent: oklch(0.96 0.005 265);
-  --sidebar-accent-foreground: oklch(0.2 0.02 265);
-  --sidebar-border: oklch(0.9 0.005 265);
-  --sidebar-ring: oklch(0.5 0.14 152 / 0.5);
+  --chart-1: #1fb457;
+  --chart-2: #2f7bff;
+  --chart-3: #ff5a3c;
+  --chart-4: #ffcf33;
+  --chart-5: #8b5cf6;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #12281c;
+  --sidebar-primary: #1fb457;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef6f0;
+  --sidebar-accent-foreground: #12281c;
+  --sidebar-border: #d7e7dd;
+  --sidebar-ring: rgba(31, 180, 87, 0.55);
 }
 
 /* The app renders the light theme by default; .dark mirrors it so any dark: *
@@ -158,7 +176,11 @@
 
   body {
     color: var(--color-foreground);
-    background: var(--background);
+    font-family: "Barlow", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    /* Sunny stadium: sky blue fading into pitch mint. */
+    background:
+      radial-gradient(125% 95% at 50% -12%, #bfe9ff 0%, #e9f8ef 52%, #dcf1e4 100%)
+      fixed;
     /* 100dvh = the *visible* (dynamic) viewport, so a screen that fits is exactly
        the screen height and never overflows into a stray scroll. (100vh is the
        LARGE viewport — taller than what's actually visible on device — which is
@@ -167,6 +189,55 @@
     overscroll-behavior: none;
     -webkit-font-smoothing: antialiased;
   }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: "Barlow Condensed", "Barlow", ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.01em;
+    font-weight: 800;
+  }
+}
+
+/* Chunky "sticker" arcade button: bold fill + a solid drop that reads as depth,
+   and a satisfying press. Add `arcade-btn` (and a color modifier) to any button/link. */
+.arcade-btn {
+  border-radius: 999px;
+  font-family: "Barlow Condensed", "Barlow", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  box-shadow:
+    0 6px 0 0 var(--primary-shadow),
+    0 10px 18px -6px rgba(18, 40, 28, 0.35);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    filter 120ms ease;
+}
+.arcade-btn:active {
+  transform: translateY(4px);
+  box-shadow:
+    0 2px 0 0 var(--primary-shadow),
+    0 4px 10px -4px rgba(18, 40, 28, 0.35);
+}
+.arcade-btn:hover {
+  filter: brightness(1.04);
+}
+.arcade-btn--gold {
+  color: var(--accent-foreground);
+  background: var(--accent);
+  box-shadow:
+    0 6px 0 0 var(--accent-shadow),
+    0 10px 18px -6px rgba(74, 54, 0, 0.3);
+}
+.arcade-btn--gold:active {
+  box-shadow:
+    0 2px 0 0 var(--accent-shadow),
+    0 4px 10px -4px rgba(74, 54, 0, 0.3);
 }
 
 /* Respect the user's reduced-motion preference across the app. */

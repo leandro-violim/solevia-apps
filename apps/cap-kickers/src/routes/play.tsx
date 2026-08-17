@@ -7,6 +7,7 @@ import { PITCH, PHYSICS, CAP_RADIUS, SWIPE } from "../game/constants";
 import { makePresentation, pitchToScreen, screenToPitch } from "../game/presentation";
 import { capAtPoint, swipeToVelocity } from "../game/input-mapping";
 import { chooseAiFlick } from "../game/ai/policy";
+import { drawPitch, drawGoal, drawCap, drawKeeper } from "../game/render/draw";
 import { completeLevel, levelById, nextLevelId } from "../game/campaign/ladder";
 import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
@@ -39,13 +40,8 @@ type Drag = { capId: string; start: Vec2; current: Vec2 };
 type Banner = { text: string; key: number };
 type CanvasSize = { cssW: number; cssH: number; dpr: number };
 
-const PITCH_FILL = "#1f7a44";
-const LINE_COLOR = "#eaf6ee";
-const SELECT_RING = "#ffd54a";
-const ATTACKER_COLOR: [string, string] = ["#3b82f6", "#f4841f"];
-const CAP_STROKE = "#0b3d20";
-const KEEPER_FILL = "#f4c542";
-const KEEPER_STROKE = "#5a3d00";
+const SELECT_RING = "#ffcf33"; // reward gold (HUD touch pips)
+const TEAM_COLOR: [string, string] = ["#2f7bff", "#ff5a3c"]; // P1 blue, P2/AI red
 const GOAL_DEPTH = 40; // pitch units the goal frame protrudes outward
 const AI_SIDE = 1; // human is side 0
 const AI_THINK_SECONDS = 0.5;
@@ -164,74 +160,47 @@ function PlayPage() {
       const rectY = Math.min(topLeft.y, bottomRight.y);
       const pitchW = Math.abs(bottomRight.x - topLeft.x);
       const pitchH = Math.abs(bottomRight.y - topLeft.y);
+      if (pitchW < 8 || pitchH < 8) return; // skip degenerate/first-layout frames
 
-      // Pitch fill + boundary.
-      ctx.fillStyle = PITCH_FILL;
-      ctx.fillRect(rectX, rectY, pitchW, pitchH);
-      ctx.strokeStyle = LINE_COLOR;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(rectX, rectY, pitchW, pitchH);
+      const scale = pres.viewport.scale;
 
-      // Halfway line.
-      const midTop = pitchToScreen({ x: PITCH.width / 2, y: 0 }, pres);
-      const midBottom = pitchToScreen({ x: PITCH.width / 2, y: PITCH.height }, pres);
-      ctx.beginPath();
-      ctx.moveTo(midTop.x, midTop.y);
-      ctx.lineTo(midBottom.x, midBottom.y);
-      ctx.stroke();
+      // Pitch: grass stripes + markings.
+      drawPitch(ctx, { x: rectX, y: rectY, w: pitchW, h: pitchH }, scale);
 
-      // Goal mouths: frames protruding outward from each end line.
+      // Goals: framed nets protruding outward from each end line.
       const half = PITCH.goalWidth / 2;
       const midY = PITCH.height / 2;
       for (const goalX of [0, PITCH.width]) {
         const outwardX = goalX === 0 ? -GOAL_DEPTH : PITCH.width + GOAL_DEPTH;
         const a = pitchToScreen({ x: Math.min(goalX, outwardX), y: midY - half }, pres);
         const b = pitchToScreen({ x: Math.max(goalX, outwardX), y: midY + half }, pres);
-        const ax = Math.min(a.x, b.x);
-        const ay = Math.min(a.y, b.y);
-        const aw = Math.abs(b.x - a.x);
-        const ah = Math.abs(b.y - a.y);
-        ctx.fillStyle = "rgba(234, 246, 238, 0.25)";
-        ctx.fillRect(ax, ay, aw, ah);
-        ctx.strokeStyle = LINE_COLOR;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(ax, ay, aw, ah);
+        const gx = Math.min(a.x, b.x);
+        const gy = Math.min(a.y, b.y);
+        const gw = Math.abs(b.x - a.x);
+        const gh = Math.abs(b.y - a.y);
+        // The back post is the OUTWARD (off-pitch) edge; the mouth stays open.
+        const outX = pitchToScreen({ x: outwardX, y: midY }, pres).x;
+        const side =
+          Math.abs(outX - gx) < Math.abs(outX - (gx + gw)) ? "left" : "right";
+        drawGoal(ctx, { x: gx, y: gy, w: gw, h: gh }, side, scale);
       }
 
-      // Caps.
-      const attackerColor = ATTACKER_COLOR[session.match.attacker];
+      // Caps (all belong to the current attacker → their team color).
+      const attacker = (session.match.attacker % 2) as 0 | 1;
+      const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 180);
       for (const cap of session.caps()) {
         const c = pitchToScreen(cap.position, pres);
-        const r = cap.radius * pres.viewport.scale;
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = attackerColor;
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = CAP_STROKE;
-        ctx.stroke();
-
-        if (session.selectedCapId === cap.id) {
-          ctx.beginPath();
-          ctx.arc(c.x, c.y, r + 4, 0, Math.PI * 2);
-          ctx.lineWidth = 3;
-          ctx.strokeStyle = SELECT_RING;
-          ctx.stroke();
-        }
+        drawCap(ctx, c.x, c.y, cap.radius * scale, attacker, {
+          selected: session.selectedCapId === cap.id,
+          pulse,
+        });
       }
 
-      // Keeper: distinct amber cap, present only mid-shot.
+      // Keeper: present only mid-shot.
       const keeper = session.keeper();
       if (keeper) {
         const kc = pitchToScreen(keeper.position, pres);
-        const kr = keeper.radius * pres.viewport.scale;
-        ctx.beginPath();
-        ctx.arc(kc.x, kc.y, kr, 0, Math.PI * 2);
-        ctx.fillStyle = KEEPER_FILL;
-        ctx.fill();
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = KEEPER_STROKE;
-        ctx.stroke();
+        drawKeeper(ctx, kc.x, kc.y, keeper.radius * scale);
       }
 
       // Aim hint while dragging.
@@ -245,22 +214,33 @@ function PlayPage() {
           const powerFrac = (speed - SWIPE.minSpeed) / Math.max(1, SWIPE.maxSpeed - SWIPE.minSpeed);
           const cap = session.caps().find((c) => c.id === drag.capId);
           const capPos = cap ? cap.position : drag.start;
-          const lineLen = CAP_RADIUS * (3 + powerFrac * 8);
+          const lineLen = CAP_RADIUS * (3 + powerFrac * 9);
           const endPitch = { x: capPos.x + dir.x * lineLen, y: capPos.y + dir.y * lineLen };
-          const capCanvas = pitchToScreen(capPos, pres);
-          const endCanvas = pitchToScreen(endPitch, pres);
+          const a = pitchToScreen(capPos, pres);
+          const b = pitchToScreen(endPitch, pres);
+          const col = powerFrac < 0.5 ? "#ffcf33" : "#ff7a1a";
 
+          ctx.save();
+          ctx.setLineDash([11, 8]);
+          ctx.lineCap = "round";
+          ctx.lineWidth = 5;
+          ctx.strokeStyle = col;
           ctx.beginPath();
-          ctx.moveTo(capCanvas.x, capCanvas.y);
-          ctx.lineTo(endCanvas.x, endCanvas.y);
-          ctx.lineWidth = 4;
-          ctx.strokeStyle = `rgba(255, 213, 74, ${0.45 + 0.55 * powerFrac})`;
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
           ctx.stroke();
-
+          ctx.setLineDash([]);
+          // Arrowhead.
+          const ang = Math.atan2(b.y - a.y, b.x - a.x);
+          const ah = 13 + powerFrac * 7;
+          ctx.fillStyle = col;
           ctx.beginPath();
-          ctx.arc(endCanvas.x, endCanvas.y, 5 + powerFrac * 4, 0, Math.PI * 2);
-          ctx.fillStyle = SELECT_RING;
+          ctx.moveTo(b.x, b.y);
+          ctx.lineTo(b.x - Math.cos(ang - 0.42) * ah, b.y - Math.sin(ang - 0.42) * ah);
+          ctx.lineTo(b.x - Math.cos(ang + 0.42) * ah, b.y - Math.sin(ang + 0.42) * ah);
+          ctx.closePath();
           ctx.fill();
+          ctx.restore();
         }
       }
     };
@@ -424,7 +404,12 @@ function PlayPage() {
   const nextLevel = campaign ? levelById(nextLevelId(campaign) ?? "") : undefined;
 
   return (
-    <div className="relative h-dvh w-dvw touch-none overflow-hidden bg-black">
+    <div
+      className="relative h-dvh w-dvw touch-none overflow-hidden"
+      style={{
+        background: "radial-gradient(135% 105% at 50% 0%, #12592f 0%, #0c3d23 58%, #072818 100%)",
+      }}
+    >
       <canvas
         ref={canvasRef}
         className="absolute inset-0 h-full w-full touch-none"
@@ -439,25 +424,28 @@ function PlayPage() {
         className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between px-4"
         style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
       >
-        <div className="rounded-full bg-black/50 px-4 py-1.5 text-lg font-bold tabular-nums text-white">
-          {match.scores[0]} <span className="text-white/50">–</span> {match.scores[1]}
+        <div className="font-display rounded-2xl bg-white/95 px-4 py-1 text-3xl tabular-nums shadow-[0_4px_0_rgba(7,40,24,0.4)] ring-2 ring-black/5">
+          <span style={{ color: TEAM_COLOR[0] }}>{match.scores[0]}</span>
+          <span className="px-1.5 text-foreground/25">–</span>
+          <span style={{ color: TEAM_COLOR[1] }}>{match.scores[1]}</span>
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          <div className="rounded-full bg-black/50 px-4 py-1.5 text-sm font-medium text-white">
+          <div className="font-display rounded-2xl bg-white/95 px-4 py-1 text-lg uppercase tracking-wide text-foreground shadow-[0_4px_0_rgba(7,40,24,0.4)] ring-2 ring-black/5">
             {won
               ? `Player ${match.winner! + 1} wins!`
               : mode === "ai" && match.attacker === AI_SIDE
-                ? `AI — touch ${match.touch} of 4`
-                : `Player ${match.attacker + 1} — touch ${match.touch} of 4`}
+                ? `AI — touch ${match.touch}/4`
+                : `Player ${match.attacker + 1} — touch ${match.touch}/4`}
           </div>
-          <div className="flex gap-1.5 rounded-full bg-black/50 px-3 py-1.5">
+          <div className="flex gap-1.5 rounded-full bg-white/90 px-3 py-1.5 shadow-md">
             {[1, 2, 3, 4].map((n) => (
               <span
                 key={n}
-                className="h-2.5 w-2.5 rounded-full border border-white/60"
+                className="h-3 w-3 rounded-full border-2"
                 style={{
-                  backgroundColor: !won && n === match.touch ? SELECT_RING : "transparent",
+                  backgroundColor: !won && n <= match.touch ? SELECT_RING : "transparent",
+                  borderColor: !won && n <= match.touch ? "#d8a400" : "#cbd8cf",
                 }}
               />
             ))}
@@ -467,7 +455,7 @@ function PlayPage() {
 
       <button
         onClick={handleNewMatch}
-        className="pointer-events-auto absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur active:scale-95"
+        className="font-display pointer-events-auto absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-white/90 px-4 py-1 text-xs uppercase tracking-wider text-foreground shadow-md active:scale-95"
         style={{ marginTop: "env(safe-area-inset-top)" }}
       >
         New match

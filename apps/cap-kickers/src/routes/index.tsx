@@ -39,60 +39,57 @@ function Home() {
       className="relative flex min-h-dvh flex-col items-center justify-center px-6 pt-14 text-center"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 40px)" }}
     >
-      <h1 className="text-4xl font-bold tracking-tight text-foreground">Cap Kickers</h1>
-      <p className="mt-3 max-w-xs text-sm text-muted-foreground">
+      <h1 className="font-display text-6xl uppercase leading-[0.9] tracking-tight text-foreground drop-shadow-[0_3px_0_rgba(18,40,28,0.12)]">
+        Cap<br />
+        <span className="text-primary">Kickers</span>
+      </h1>
+      <p className="mt-3 max-w-xs text-sm font-medium text-muted-foreground">
         Flick bottle caps across the pitch and score goals.
       </p>
 
-      <div className="mt-10 flex w-full max-w-xs flex-col gap-3">
-        <Link
-          to="/campaign"
-          className="rounded-full bg-primary py-4 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
-        >
+      <div className="mt-9 flex w-full max-w-xs flex-col gap-3">
+        <Link to="/campaign" className="arcade-btn arcade-btn--gold py-4 text-2xl">
           Campaign
         </Link>
-        <Link
-          to="/play"
-          search={{ mode: "2p" }}
-          className="rounded-full bg-primary py-4 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
-        >
-          Pass & Play — 2 Players
+        <Link to="/play" search={{ mode: "2p" }} className="arcade-btn py-3.5 text-xl">
+          Pass &amp; Play
         </Link>
         <Link
           to="/play"
           search={{ mode: "practice" }}
-          className="rounded-full border-2 border-primary py-4 text-base font-semibold text-primary bg-transparent shadow-lg active:scale-[0.98]"
+          className="font-display rounded-full bg-white py-3.5 text-lg uppercase tracking-wide text-primary shadow-[0_5px_0_#cdddd3] transition active:translate-y-1"
         >
-          Practice — 1 Device
+          Practice
         </Link>
         <div>
-          <p className="mb-2 text-xs font-semibold text-muted-foreground">Solo vs AI</p>
+          <p className="font-display mb-2 text-sm uppercase tracking-wider text-muted-foreground">
+            Solo vs AI
+          </p>
           <div className="flex gap-2">
-            <Link
-              to="/play"
-              search={{ mode: "ai", difficulty: "easy" }}
-              className="flex-1 rounded-full border-2 border-primary py-3 text-sm font-semibold text-primary bg-transparent shadow-lg active:scale-[0.98]"
-            >
-              Easy
-            </Link>
-            <Link
-              to="/play"
-              search={{ mode: "ai", difficulty: "normal" }}
-              className="flex-1 rounded-full border-2 border-primary py-3 text-sm font-semibold text-primary bg-transparent shadow-lg active:scale-[0.98]"
-            >
-              Normal
-            </Link>
-            <Link
-              to="/play"
-              search={{ mode: "ai", difficulty: "hard" }}
-              className="flex-1 rounded-full border-2 border-primary py-3 text-sm font-semibold text-primary bg-transparent shadow-lg active:scale-[0.98]"
-            >
-              Hard
-            </Link>
+            {(
+              [
+                ["easy", "Easy", "#1fb457", "#128040", "#ffffff"],
+                ["normal", "Normal", "#ffcf33", "#d8a400", "#4a3600"],
+                ["hard", "Hard", "#ff5a3c", "#c8341c", "#ffffff"],
+              ] as const
+            ).map(([diff, label, bg, sh, fg]) => (
+              <Link
+                key={diff}
+                to="/play"
+                search={{ mode: "ai", difficulty: diff }}
+                className="font-display flex-1 rounded-full py-3 text-base uppercase tracking-wide transition active:translate-y-1"
+                style={{ background: bg, color: fg, boxShadow: `0 4px 0 ${sh}` }}
+              >
+                {label}
+              </Link>
+            ))}
           </div>
         </div>
 
-        <Link to="/tutorial" className="mt-2 text-xs font-medium text-muted-foreground underline underline-offset-4">
+        <Link
+          to="/tutorial"
+          className="font-display mt-1 text-sm uppercase tracking-wider text-muted-foreground underline underline-offset-4"
+        >
           How to Play
         </Link>
       </div>
