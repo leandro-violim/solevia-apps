@@ -1,6 +1,8 @@
 // Pure canvas-2D drawing helpers for the "vibrant cartoon arcade" look.
 // All functions work in SCREEN space (post pitch->screen projection).
 
+import { type CapStyle } from "../caps/styles";
+
 type Ctx = CanvasRenderingContext2D;
 type Rect = { x: number; y: number; w: number; h: number };
 
@@ -169,15 +171,16 @@ export const drawGoal = (ctx: Ctx, g: Rect, side: "left" | "right", scale: numbe
 };
 
 /**
- * A bottle-cap: drop shadow, crimped rim, radial-shaded body, a top-left shine,
- * and a bold outline. `team` 0/1 picks the color; `selected` adds a pulsing ring.
+ * A bottle-cap in a chosen style: drop shadow, crimped rim, radial-shaded body,
+ * a style-specific top marking (crown dots / ribs / ring / nub), a shine, and a
+ * bold outline. `selected` adds a pulsing gold ring.
  */
 export const drawCap = (
   ctx: Ctx,
   x: number,
   y: number,
   radius: number,
-  team: 0 | 1,
+  style: CapStyle,
   opts: { selected?: boolean; pulse?: number } = {},
 ) => {
   const r = radius;
@@ -189,14 +192,14 @@ export const drawCap = (
   ctx.fill();
   ctx.restore();
 
-  // Crimped rim (slightly larger disc in the lighter rim tone) + ridge ticks.
-  ctx.fillStyle = ARCADE.teamRim[team];
+  // Crimped rim + ridge ticks (crown caps get a finer flute).
+  ctx.fillStyle = style.rim;
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = ARCADE.teamShade[team];
+  ctx.strokeStyle = style.shade;
   ctx.lineWidth = Math.max(1, r * 0.09);
-  const ticks = 16;
+  const ticks = style.pattern === "crown" ? 22 : 16;
   for (let i = 0; i < ticks; i++) {
     const a = (i / ticks) * Math.PI * 2;
     ctx.beginPath();
@@ -208,13 +211,55 @@ export const drawCap = (
   // Body (inset), radial-shaded.
   const br = r * 0.78;
   const grad = ctx.createRadialGradient(x - br * 0.35, y - br * 0.4, br * 0.15, x, y, br);
-  grad.addColorStop(0, ARCADE.teamRim[team]);
-  grad.addColorStop(0.45, ARCADE.team[team]);
-  grad.addColorStop(1, ARCADE.teamShade[team]);
+  grad.addColorStop(0, style.rim);
+  grad.addColorStop(0.45, style.base);
+  grad.addColorStop(1, style.shade);
   ctx.fillStyle = grad;
   ctx.beginPath();
   ctx.arc(x, y, br, 0, Math.PI * 2);
   ctx.fill();
+
+  // Style-specific top marking.
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, br, 0, Math.PI * 2);
+  ctx.clip();
+  if (style.pattern === "ribbed") {
+    ctx.strokeStyle = style.shade;
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = Math.max(1, r * 0.08);
+    for (let i = -3; i <= 3; i++) {
+      const rx = x + i * br * 0.28;
+      ctx.beginPath();
+      ctx.moveTo(rx, y - br);
+      ctx.lineTo(rx, y + br);
+      ctx.stroke();
+    }
+  } else if (style.pattern === "ring") {
+    ctx.strokeStyle = style.top;
+    ctx.lineWidth = Math.max(1.5, r * 0.12);
+    ctx.beginPath();
+    ctx.arc(x, y, br * 0.55, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (style.pattern === "nub") {
+    ctx.fillStyle = style.top;
+    ctx.beginPath();
+    ctx.arc(x, y, br * 0.34, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (style.pattern === "crown") {
+    ctx.fillStyle = style.top;
+    const dots = 8;
+    for (let i = 0; i < dots; i++) {
+      const a = (i / dots) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(x + Math.cos(a) * br * 0.58, y + Math.sin(a) * br * 0.58, r * 0.09, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 
   // Shine.
   ctx.fillStyle = "rgba(255,255,255,0.5)";

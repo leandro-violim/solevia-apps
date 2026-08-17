@@ -86,12 +86,20 @@ function Home() {
           </div>
         </div>
 
-        <Link
-          to="/tutorial"
-          className="font-display mt-1 text-sm uppercase tracking-wider text-muted-foreground underline underline-offset-4"
-        >
-          How to Play
-        </Link>
+        <div className="mt-1 flex items-center justify-center gap-5">
+          <Link
+            to="/caps"
+            className="font-display text-sm uppercase tracking-wider text-muted-foreground underline underline-offset-4"
+          >
+            Your Cap
+          </Link>
+          <Link
+            to="/tutorial"
+            className="font-display text-sm uppercase tracking-wider text-muted-foreground underline underline-offset-4"
+          >
+            How to Play
+          </Link>
+        </div>
       </div>
     </div>
   );

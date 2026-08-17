@@ -8,6 +8,8 @@ import { makePresentation, pitchToScreen, screenToPitch } from "../game/presenta
 import { capAtPoint, swipeToVelocity } from "../game/input-mapping";
 import { chooseAiFlick } from "../game/ai/policy";
 import { drawPitch, drawGoal, drawCap, drawKeeper } from "../game/render/draw";
+import { styleById, opponentFor } from "../game/caps/styles";
+import { loadCapStyleId } from "../game/caps/storage";
 import { completeLevel, levelById, nextLevelId } from "../game/campaign/ladder";
 import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
@@ -41,13 +43,18 @@ type Banner = { text: string; key: number };
 type CanvasSize = { cssW: number; cssH: number; dpr: number };
 
 const SELECT_RING = "#ffcf33"; // reward gold (HUD touch pips)
-const TEAM_COLOR: [string, string] = ["#2f7bff", "#ff5a3c"]; // P1 blue, P2/AI red
 const GOAL_DEPTH = 40; // pitch units the goal frame protrudes outward
 const AI_SIDE = 1; // human is side 0
 const AI_THINK_SECONDS = 0.5;
 
 function PlayPage() {
   const { mode, difficulty, goals, campaign } = Route.useSearch();
+
+  // Cap styles: the player's chosen cap vs a contrasting opponent cap. Side 0
+  // (human/Player 1) uses the chosen style; side 1 (Player 2 / AI) the opponent.
+  const playerStyle = useState(() => styleById(loadCapStyleId()))[0];
+  const oppStyle = opponentFor(playerStyle.id);
+  const teamColors: [string, string] = [playerStyle.base, oppStyle.base];
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sessionRef = useRef<GameSession | null>(null);
@@ -232,12 +239,13 @@ function PlayPage() {
         drawGoal(ctx, { x: gx, y: gy, w: gw, h: gh }, side, scale);
       }
 
-      // Caps (all belong to the current attacker → their team color).
+      // Caps (all belong to the current attacker → their chosen cap style).
       const attacker = (session.match.attacker % 2) as 0 | 1;
+      const capStyle = attacker === 0 ? playerStyle : oppStyle;
       const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 180);
       for (const cap of session.caps()) {
         const c = pitchToScreen(cap.position, pres);
-        drawCap(ctx, c.x, c.y, cap.radius * scale, attacker, {
+        drawCap(ctx, c.x, c.y, cap.radius * scale, capStyle, {
           selected: session.selectedCapId === cap.id,
           pulse,
         });
@@ -480,9 +488,9 @@ function PlayPage() {
         style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
       >
         <div className="font-display rounded-2xl bg-white/95 px-4 py-1 text-3xl tabular-nums shadow-[0_4px_0_rgba(7,40,24,0.4)] ring-2 ring-black/5">
-          <span style={{ color: TEAM_COLOR[0] }}>{match.scores[0]}</span>
+          <span style={{ color: teamColors[0] }}>{match.scores[0]}</span>
           <span className="px-1.5 text-foreground/25">–</span>
-          <span style={{ color: TEAM_COLOR[1] }}>{match.scores[1]}</span>
+          <span style={{ color: teamColors[1] }}>{match.scores[1]}</span>
         </div>
 
         <div className="flex flex-col items-end gap-2">
