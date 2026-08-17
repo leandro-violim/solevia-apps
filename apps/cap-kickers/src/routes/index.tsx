@@ -32,10 +32,24 @@ function Home() {
       <div className="mt-10 flex w-full max-w-xs flex-col gap-3">
         <Link
           to="/play"
+          search={{ mode: "2p" }}
           className="rounded-full bg-primary py-4 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
         >
-          Play
+          Pass & Play — 2 Players
         </Link>
+        <Link
+          to="/play"
+          search={{ mode: "practice" }}
+          className="rounded-full border-2 border-primary py-4 text-base font-semibold text-primary bg-transparent shadow-lg active:scale-[0.98]"
+        >
+          Practice — 1 Device
+        </Link>
+        <button
+          disabled
+          className="rounded-full bg-muted py-4 text-base font-semibold text-muted-foreground opacity-50 cursor-not-allowed"
+        >
+          Solo vs AI — Coming soon
+        </button>
       </div>
     </div>
   );
