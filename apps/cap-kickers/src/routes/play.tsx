@@ -32,6 +32,8 @@ const LINE_COLOR = "#eaf6ee";
 const SELECT_RING = "#ffd54a";
 const ATTACKER_COLOR: [string, string] = ["#3b82f6", "#f4841f"];
 const CAP_STROKE = "#0b3d20";
+const KEEPER_FILL = "#f4c542";
+const KEEPER_STROKE = "#5a3d00";
 const GOAL_DEPTH = 40; // pitch units the goal frame protrudes outward
 const AI_SIDE = 1; // human is side 0
 const AI_THINK_SECONDS = 0.5;
@@ -41,7 +43,10 @@ function PlayPage() {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sessionRef = useRef<GameSession | null>(null);
-  if (sessionRef.current === null) sessionRef.current = new GameSession();
+  if (sessionRef.current === null)
+    sessionRef.current = new GameSession({
+      keeperDifficulty: mode === "ai" ? difficulty : "normal",
+    });
 
   const sizeRef = useRef<CanvasSize>({ cssW: 0, cssH: 0, dpr: 1 });
   const dragRef = useRef<Drag | null>(null);
@@ -92,13 +97,15 @@ function PlayPage() {
   }, []);
 
   const handleNewMatch = useCallback(() => {
-    sessionRef.current = new GameSession();
+    sessionRef.current = new GameSession({
+      keeperDifficulty: mode === "ai" ? difficulty : "normal",
+    });
     dragRef.current = null;
     setMatch(sessionRef.current.match);
     setBanner(null);
     setViewAttacker(sessionRef.current.match.attacker);
     setHandoffTo(null);
-  }, []);
+  }, [mode, difficulty]);
 
   // rAF render/tick loop. Owns the canvas backing-store sizing and never
   // touches React state except to publish HUD-relevant snapshots.
@@ -193,6 +200,20 @@ function PlayPage() {
           ctx.strokeStyle = SELECT_RING;
           ctx.stroke();
         }
+      }
+
+      // Keeper: distinct amber cap, present only mid-shot.
+      const keeper = session.keeper();
+      if (keeper) {
+        const kc = pitchToScreen(keeper.position, pres);
+        const kr = keeper.radius * pres.viewport.scale;
+        ctx.beginPath();
+        ctx.arc(kc.x, kc.y, kr, 0, Math.PI * 2);
+        ctx.fillStyle = KEEPER_FILL;
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = KEEPER_STROKE;
+        ctx.stroke();
       }
 
       // Aim hint while dragging.

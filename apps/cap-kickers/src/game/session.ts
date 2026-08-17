@@ -84,7 +84,7 @@ export class GameSession {
   }
 
   caps(): { id: string; position: Vec2; radius: number }[] {
-    return this.world.bodies.map((b) => ({
+    return CAP_IDS.map((id) => this.world.getBody(id)!).map((b) => ({
       id: b.id,
       position: { x: b.position.x, y: b.position.y },
       radius: b.radius,
