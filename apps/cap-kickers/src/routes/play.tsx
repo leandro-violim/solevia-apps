@@ -9,8 +9,6 @@ import { capAtPoint, swipeToVelocity } from "../game/input-mapping";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 
-export type PlayMode = "2p" | "practice";
-
 const searchSchema = z.object({
   mode: z.enum(["2p", "practice"]).catch("practice"),
 });
@@ -54,7 +52,7 @@ function PlayPage() {
   // Which player the board is currently oriented for. Only changes when a
   // pass-the-phone handoff completes, so the outgoing player never sees the
   // board flip out from under them.
-  const [viewAttacker, setViewAttacker] = useState<0 | 1>(0);
+  const [viewAttacker, setViewAttacker] = useState<0 | 1>(sessionRef.current!.match.attacker);
   // Non-null while the "pass the phone" overlay is gating input, holding the
   // player the board will flip to once they tap Ready.
   const [handoffTo, setHandoffTo] = useState<0 | 1 | null>(null);
@@ -87,7 +85,7 @@ function PlayPage() {
     dragRef.current = null;
     setMatch(sessionRef.current.match);
     setBanner(null);
-    setViewAttacker(0);
+    setViewAttacker(sessionRef.current.match.attacker);
     setHandoffTo(null);
   }, []);
 

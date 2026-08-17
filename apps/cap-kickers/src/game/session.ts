@@ -41,7 +41,6 @@ export class GameSession {
   phase: SessionPhase = "aiming";
   selectedCapId: string | null = null;
 
-  private flickedId: string | null = null;
   private tracker: FlickTracker | null = null;
 
   constructor(cfg: Partial<SessionConfig> = {}) {
@@ -103,7 +102,6 @@ export class GameSession {
       { x: b.position.x, y: b.position.y },
     );
     this.world.getBody(capId)!.velocity = { x: velocity.x, y: velocity.y };
-    this.flickedId = capId;
     this.phase = "resolving";
     this.selectedCapId = null;
   }
@@ -118,7 +116,6 @@ export class GameSession {
     const { state, result } = applyFlick(this.match, flick, this.cfg.match);
     this.match = state;
     this.tracker = null;
-    this.flickedId = null;
     this.phase = "aiming";
     if (result === "turnover" || result === "goal") {
       this.positionTriangle(state.attacker);
