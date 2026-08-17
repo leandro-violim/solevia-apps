@@ -22,10 +22,16 @@ export class FlickTracker {
     private readonly flickedId: string,
     private readonly gateA: Vec2,
     private readonly gateB: Vec2,
+    private readonly capIds?: string[],
   ) {
     const f = world.getBody(flickedId);
     if (!f) throw new Error("FlickTracker: unknown flicked cap id");
     this.prev = { x: f.position.x, y: f.position.y };
+  }
+
+  private classifiedBodies() {
+    if (!this.capIds) return this.world.bodies;
+    return this.world.bodies.filter((b) => this.capIds!.includes(b.id));
   }
 
   observe(): FlickResult | null {
@@ -36,8 +42,9 @@ export class FlickTracker {
     }
     this.prev = cur;
 
+    const caps = this.classifiedBodies();
     let flickedEnding: FlickEnding | null = null;
-    for (const b of this.world.bodies) {
+    for (const b of caps) {
       const zone = classifyCap(b, this.pitch);
       if (zone !== "in") {
         this.anyCapLeftPitch = true;
@@ -48,7 +55,9 @@ export class FlickTracker {
     if (flickedEnding) {
       return { crossedGate: this.crossedGate, flickedEnding, anyCapLeftPitch: this.anyCapLeftPitch };
     }
-    if (this.world.atRest()) {
+    // "At rest" = the CAPS have stopped (ignore a still-moving keeper).
+    const capsAtRest = caps.every((b) => b.velocity.x === 0 && b.velocity.y === 0);
+    if (capsAtRest) {
       return { crossedGate: this.crossedGate, flickedEnding: "rest", anyCapLeftPitch: this.anyCapLeftPitch };
     }
     return null;

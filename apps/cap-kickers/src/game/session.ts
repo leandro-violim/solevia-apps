@@ -100,6 +100,7 @@ export class GameSession {
       capId,
       { x: a.position.x, y: a.position.y },
       { x: b.position.x, y: b.position.y },
+      [...CAP_IDS],
     );
     this.world.getBody(capId)!.velocity = { x: velocity.x, y: velocity.y };
     this.phase = "resolving";
