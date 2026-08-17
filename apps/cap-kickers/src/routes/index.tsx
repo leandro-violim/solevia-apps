@@ -3,6 +3,8 @@ import { useEffect } from "react";
 
 import { hasSeenTutorial } from "../game/tutorial/storage";
 
+let redirectedThisLoad = false;
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -25,7 +27,10 @@ function Home() {
   const nav = useNavigate();
 
   useEffect(() => {
-    if (!hasSeenTutorial()) nav({ to: "/tutorial" });
+    if (!redirectedThisLoad && !hasSeenTutorial()) {
+      redirectedThisLoad = true;
+      nav({ to: "/tutorial" });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
