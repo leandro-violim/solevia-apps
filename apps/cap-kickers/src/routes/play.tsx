@@ -1,14 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { z } from "zod";
 
 import { GameSession } from "../game/session";
 import { PITCH, CAP_RADIUS, SWIPE } from "../game/constants";
-import { computeViewport, pitchToCanvas, canvasToPitch } from "../game/viewport";
+import { makePresentation, pitchToScreen, screenToPitch } from "../game/presentation";
 import { capAtPoint, swipeToVelocity } from "../game/input-mapping";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 
+export type PlayMode = "2p" | "practice";
+
+const searchSchema = z.object({
+  mode: z.enum(["2p", "practice"]).catch("practice"),
+});
+
 export const Route = createFileRoute("/play")({
+  validateSearch: searchSchema,
   head: () => ({
     meta: [{ title: "Cap Kickers — Play" }],
   }),
@@ -27,6 +35,8 @@ const CAP_STROKE = "#0b3d20";
 const GOAL_DEPTH = 40; // pitch units the goal frame protrudes outward
 
 function PlayPage() {
+  const { mode } = Route.useSearch();
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sessionRef = useRef<GameSession | null>(null);
   if (sessionRef.current === null) sessionRef.current = new GameSession();
@@ -40,6 +50,27 @@ function PlayPage() {
 
   const [match, setMatch] = useState<MatchState>(() => sessionRef.current!.match);
   const [banner, setBanner] = useState<Banner | null>(null);
+
+  // Which player the board is currently oriented for. Only changes when a
+  // pass-the-phone handoff completes, so the outgoing player never sees the
+  // board flip out from under them.
+  const [viewAttacker, setViewAttacker] = useState<0 | 1>(0);
+  // Non-null while the "pass the phone" overlay is gating input, holding the
+  // player the board will flip to once they tap Ready.
+  const [handoffTo, setHandoffTo] = useState<0 | 1 | null>(null);
+
+  const flipped = mode === "2p" && viewAttacker === 1;
+
+  // Mirrored into refs for the rAF loop below, which is set up once (stable
+  // deps) and must always see the latest mode/flip state without re-running.
+  const modeRef = useRef(mode);
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+  const flippedRef = useRef(flipped);
+  useEffect(() => {
+    flippedRef.current = flipped;
+  }, [flipped]);
 
   const showBanner = useCallback((text: string) => {
     bannerKeyRef.current += 1;
@@ -56,6 +87,8 @@ function PlayPage() {
     dragRef.current = null;
     setMatch(sessionRef.current.match);
     setBanner(null);
+    setViewAttacker(0);
+    setHandoffTo(null);
   }, []);
 
   // rAF render/tick loop. Owns the canvas backing-store sizing and never
@@ -90,21 +123,24 @@ function PlayPage() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, cssW, cssH);
 
-      const vp = computeViewport(PITCH, { width: cssW, height: cssH });
-      const topLeft = pitchToCanvas({ x: 0, y: 0 }, vp);
-      const pitchW = PITCH.width * vp.scale;
-      const pitchH = PITCH.height * vp.scale;
+      const pres = makePresentation(PITCH, { width: cssW, height: cssH }, flippedRef.current);
+      const topLeft = pitchToScreen({ x: 0, y: 0 }, pres);
+      const bottomRight = pitchToScreen({ x: PITCH.width, y: PITCH.height }, pres);
+      const rectX = Math.min(topLeft.x, bottomRight.x);
+      const rectY = Math.min(topLeft.y, bottomRight.y);
+      const pitchW = Math.abs(bottomRight.x - topLeft.x);
+      const pitchH = Math.abs(bottomRight.y - topLeft.y);
 
       // Pitch fill + boundary.
       ctx.fillStyle = PITCH_FILL;
-      ctx.fillRect(topLeft.x, topLeft.y, pitchW, pitchH);
+      ctx.fillRect(rectX, rectY, pitchW, pitchH);
       ctx.strokeStyle = LINE_COLOR;
       ctx.lineWidth = 2;
-      ctx.strokeRect(topLeft.x, topLeft.y, pitchW, pitchH);
+      ctx.strokeRect(rectX, rectY, pitchW, pitchH);
 
       // Halfway line.
-      const midTop = pitchToCanvas({ x: PITCH.width / 2, y: 0 }, vp);
-      const midBottom = pitchToCanvas({ x: PITCH.width / 2, y: PITCH.height }, vp);
+      const midTop = pitchToScreen({ x: PITCH.width / 2, y: 0 }, pres);
+      const midBottom = pitchToScreen({ x: PITCH.width / 2, y: PITCH.height }, pres);
       ctx.beginPath();
       ctx.moveTo(midTop.x, midTop.y);
       ctx.lineTo(midBottom.x, midBottom.y);
@@ -115,20 +151,24 @@ function PlayPage() {
       const midY = PITCH.height / 2;
       for (const goalX of [0, PITCH.width]) {
         const outwardX = goalX === 0 ? -GOAL_DEPTH : PITCH.width + GOAL_DEPTH;
-        const a = pitchToCanvas({ x: Math.min(goalX, outwardX), y: midY - half }, vp);
-        const b = pitchToCanvas({ x: Math.max(goalX, outwardX), y: midY + half }, vp);
+        const a = pitchToScreen({ x: Math.min(goalX, outwardX), y: midY - half }, pres);
+        const b = pitchToScreen({ x: Math.max(goalX, outwardX), y: midY + half }, pres);
+        const ax = Math.min(a.x, b.x);
+        const ay = Math.min(a.y, b.y);
+        const aw = Math.abs(b.x - a.x);
+        const ah = Math.abs(b.y - a.y);
         ctx.fillStyle = "rgba(234, 246, 238, 0.25)";
-        ctx.fillRect(a.x, a.y, b.x - a.x, b.y - a.y);
+        ctx.fillRect(ax, ay, aw, ah);
         ctx.strokeStyle = LINE_COLOR;
         ctx.lineWidth = 2;
-        ctx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y);
+        ctx.strokeRect(ax, ay, aw, ah);
       }
 
       // Caps.
       const attackerColor = ATTACKER_COLOR[session.match.attacker];
       for (const cap of session.caps()) {
-        const c = pitchToCanvas(cap.position, vp);
-        const r = cap.radius * vp.scale;
+        const c = pitchToScreen(cap.position, pres);
+        const r = cap.radius * pres.viewport.scale;
         ctx.beginPath();
         ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
         ctx.fillStyle = attackerColor;
@@ -159,8 +199,8 @@ function PlayPage() {
           const capPos = cap ? cap.position : drag.start;
           const lineLen = CAP_RADIUS * (3 + powerFrac * 8);
           const endPitch = { x: capPos.x + dir.x * lineLen, y: capPos.y + dir.y * lineLen };
-          const capCanvas = pitchToCanvas(capPos, vp);
-          const endCanvas = pitchToCanvas(endPitch, vp);
+          const capCanvas = pitchToScreen(capPos, pres);
+          const endCanvas = pitchToScreen(endPitch, pres);
 
           ctx.beginPath();
           ctx.moveTo(capCanvas.x, capCanvas.y);
@@ -192,6 +232,17 @@ function PlayPage() {
           if (report.result === "goal") showBanner("GOAL!");
           else if (report.result === "win") showBanner(`Player ${report.match.winner! + 1} wins!`);
           else if (report.result === "turnover") showBanner("Turn over");
+
+          // Gate the next turn behind a pass-the-phone overlay in 2-player
+          // hotseat mode. The board itself doesn't flip yet — only when the
+          // incoming player taps Ready (see the handoff overlay below) — so
+          // the outgoing player never sees the flip happen under them.
+          if (
+            modeRef.current === "2p" &&
+            (report.result === "turnover" || report.result === "goal")
+          ) {
+            setHandoffTo(report.match.attacker);
+          }
         }
       }
       render(session);
@@ -218,14 +269,20 @@ function PlayPage() {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
-    const vp = computeViewport(PITCH, { width: rect.width, height: rect.height });
+    const pres = makePresentation(PITCH, { width: rect.width, height: rect.height }, flipped);
     const local = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    return canvasToPitch(local, vp);
+    return screenToPitch(local, pres);
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const session = sessionRef.current;
-    if (!session || session.phase !== "aiming" || session.match.phase === "won") return;
+    if (
+      !session ||
+      session.phase !== "aiming" ||
+      session.match.phase === "won" ||
+      handoffTo !== null
+    )
+      return;
     const pitchPoint = pitchPointFromEvent(e);
     if (!pitchPoint) return;
     const hitId = capAtPoint(pitchPoint, session.caps());
@@ -248,7 +305,13 @@ function PlayPage() {
     dragRef.current = null;
     if (!drag) return;
     const session = sessionRef.current;
-    if (!session || session.phase !== "aiming" || session.match.phase === "won") return;
+    if (
+      !session ||
+      session.phase !== "aiming" ||
+      session.match.phase === "won" ||
+      handoffTo !== null
+    )
+      return;
     if (session.selectedCapId !== drag.capId) return;
     // Use the pointer-up position as the swipe end (falling back to the last
     // tracked move) so a fast flick with no intermediate pointermove still
@@ -321,14 +384,34 @@ function PlayPage() {
         </div>
       )}
 
+      {/* Pass-the-phone handoff (2p only). Covers the canvas so no flick
+          input reaches the game while the phone is changing hands. The win
+          overlay below takes priority when both would otherwise apply. */}
+      {handoffTo !== null && !won && (
+        <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/80">
+          <div className="text-2xl font-bold text-white">
+            Pass the phone to Player {handoffTo + 1}
+          </div>
+          <button
+            onClick={() => {
+              setViewAttacker(handoffTo);
+              setHandoffTo(null);
+            }}
+            className="rounded-full bg-primary px-8 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
+          >
+            Ready
+          </button>
+        </div>
+      )}
+
       {won && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/65">
+        <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/65">
           <div className="text-3xl font-bold text-white">Player {match.winner! + 1} wins!</div>
           <button
             onClick={handleNewMatch}
             className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
           >
-            New match
+            Rematch
           </button>
         </div>
       )}
