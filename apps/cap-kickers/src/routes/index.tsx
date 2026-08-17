@@ -44,12 +44,32 @@ function Home() {
         >
           Practice — 1 Device
         </Link>
-        <button
-          disabled
-          className="rounded-full bg-muted py-4 text-base font-semibold text-muted-foreground opacity-50 cursor-not-allowed"
-        >
-          Solo vs AI — Coming soon
-        </button>
+        <div>
+          <p className="mb-2 text-xs font-semibold text-muted-foreground">Solo vs AI</p>
+          <div className="flex gap-2">
+            <Link
+              to="/play"
+              search={{ mode: "ai", difficulty: "easy" }}
+              className="flex-1 rounded-full border-2 border-primary py-3 text-sm font-semibold text-primary bg-transparent shadow-lg active:scale-[0.98]"
+            >
+              Easy
+            </Link>
+            <Link
+              to="/play"
+              search={{ mode: "ai", difficulty: "normal" }}
+              className="flex-1 rounded-full border-2 border-primary py-3 text-sm font-semibold text-primary bg-transparent shadow-lg active:scale-[0.98]"
+            >
+              Normal
+            </Link>
+            <Link
+              to="/play"
+              search={{ mode: "ai", difficulty: "hard" }}
+              className="flex-1 rounded-full border-2 border-primary py-3 text-sm font-semibold text-primary bg-transparent shadow-lg active:scale-[0.98]"
+            >
+              Hard
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
