@@ -31,6 +31,12 @@ function Home() {
 
       <div className="mt-10 flex w-full max-w-xs flex-col gap-3">
         <Link
+          to="/campaign"
+          className="rounded-full bg-primary py-4 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
+        >
+          Campaign
+        </Link>
+        <Link
           to="/play"
           search={{ mode: "2p" }}
           className="rounded-full bg-primary py-4 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
