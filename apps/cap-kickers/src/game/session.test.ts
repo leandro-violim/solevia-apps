@@ -62,3 +62,16 @@ describe("GameSession", () => {
     expect(report).not.toBeNull(); // the first flick still resolves normally
   });
 });
+
+describe("GameSession post-win guard", () => {
+  it("ignores beginFlick once the match is won", () => {
+    const s = new GameSession();
+    s.match = { ...s.match, phase: "won", winner: 0 };
+    const before = s.caps().map((c) => ({ ...c.position }));
+    s.beginFlick("c2", { x: 5000, y: 0 });
+    expect(s.phase).toBe("aiming"); // did not enter "resolving"
+    const report = s.tick(1 / 60);
+    expect(report).toBeNull(); // nothing is resolving
+    expect(s.caps().map((c) => c.position)).toEqual(before); // no cap moved
+  });
+});

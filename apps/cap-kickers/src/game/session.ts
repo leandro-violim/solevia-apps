@@ -86,7 +86,12 @@ export class GameSession {
 
   /** Begin an animated flick. No-op unless aiming and the id is a real cap. */
   beginFlick(capId: string, velocity: Vec2): void {
-    if (this.phase !== "aiming" || !(CAP_IDS as readonly string[]).includes(capId)) return;
+    if (
+      this.phase !== "aiming" ||
+      this.match.phase === "won" ||
+      !(CAP_IDS as readonly string[]).includes(capId)
+    )
+      return;
     const others = CAP_IDS.filter((id) => id !== capId) as CapId[];
     const a = this.world.getBody(others[0])!;
     const b = this.world.getBody(others[1])!;
