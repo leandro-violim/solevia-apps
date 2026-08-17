@@ -538,13 +538,12 @@ function PlayPage() {
             <>
               <div className="text-3xl font-bold text-white">You lost</div>
               <div className="flex gap-3">
-                <Link
-                  to="/play"
-                  search={{ mode: "ai", difficulty, goals, campaign }}
+                <button
+                  onClick={handleNewMatch}
                   className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
                 >
                   Try again
-                </Link>
+                </button>
                 <Link
                   to="/campaign"
                   className="rounded-full border-2 border-primary bg-transparent px-6 py-3 text-base font-semibold text-primary shadow-lg active:scale-[0.98]"
