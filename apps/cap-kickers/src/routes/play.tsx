@@ -21,6 +21,14 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/play")({
   validateSearch: searchSchema,
+  // Search params don't normally affect route/match identity, so navigating
+  // /play -> /play with only search params changing (e.g. "Next level",
+  // "Try again") would otherwise reuse the mounted PlayPage instead of
+  // remounting it — leaving sessionRef/match/recordedRef frozen on the
+  // finished match. Force a remount whenever any identity-relevant search
+  // param changes.
+  remountDeps: ({ search }) =>
+    `${search.mode}|${search.difficulty}|${search.goals}|${search.campaign ?? ""}`,
   head: () => ({
     meta: [{ title: "Cap Kickers — Play" }],
   }),
