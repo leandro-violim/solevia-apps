@@ -3,14 +3,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { GameSession } from "../game/session";
-import { PITCH, CAP_RADIUS, SWIPE } from "../game/constants";
+import { PITCH, PHYSICS, CAP_RADIUS, SWIPE } from "../game/constants";
 import { makePresentation, pitchToScreen, screenToPitch } from "../game/presentation";
 import { capAtPoint, swipeToVelocity } from "../game/input-mapping";
+import { chooseAiFlick } from "../game/ai/policy";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 
 const searchSchema = z.object({
-  mode: z.enum(["2p", "practice"]).catch("practice"),
+  mode: z.enum(["2p", "practice", "ai"]).catch("practice"),
+  difficulty: z.enum(["easy", "normal", "hard"]).catch("normal"),
 });
 
 export const Route = createFileRoute("/play")({
@@ -31,9 +33,11 @@ const SELECT_RING = "#ffd54a";
 const ATTACKER_COLOR: [string, string] = ["#3b82f6", "#f4841f"];
 const CAP_STROKE = "#0b3d20";
 const GOAL_DEPTH = 40; // pitch units the goal frame protrudes outward
+const AI_SIDE = 1; // human is side 0
+const AI_THINK_SECONDS = 0.5;
 
 function PlayPage() {
-  const { mode } = Route.useSearch();
+  const { mode, difficulty } = Route.useSearch();
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sessionRef = useRef<GameSession | null>(null);
@@ -65,10 +69,17 @@ function PlayPage() {
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
+  const difficultyRef = useRef(difficulty);
+  useEffect(() => {
+    difficultyRef.current = difficulty;
+  }, [difficulty]);
   const flippedRef = useRef(flipped);
   useEffect(() => {
     flippedRef.current = flipped;
   }, [flipped]);
+  // Accumulates elapsed time while it's the AI's turn, so the AI "thinks" for
+  // a visible beat before flicking rather than reacting instantly.
+  const aiThinkRef = useRef(0);
 
   const showBanner = useCallback((text: string) => {
     bannerKeyRef.current += 1;
@@ -242,6 +253,33 @@ function PlayPage() {
             setHandoffTo(report.match.attacker);
           }
         }
+
+        // AI turn driver: while it's the AI's turn to aim, accumulate think
+        // time and then let the policy choose + fire a flick. Runs every
+        // frame (not just when tick reports something) so the think-delay
+        // timer advances continuously.
+        if (
+          modeRef.current === "ai" &&
+          session.phase === "aiming" &&
+          session.match.phase !== "won" &&
+          session.match.attacker === AI_SIDE
+        ) {
+          aiThinkRef.current += dt;
+          if (aiThinkRef.current >= AI_THINK_SECONDS) {
+            aiThinkRef.current = 0;
+            const move = chooseAiFlick(session.caps(), {
+              pitch: PITCH,
+              physics: PHYSICS,
+              attacker: session.match.attacker,
+              touch: session.match.touch,
+              difficulty: difficultyRef.current,
+              maxSpeed: SWIPE.maxSpeed,
+            });
+            if (move) session.beginFlick(move.capId, move.velocity);
+          }
+        } else {
+          aiThinkRef.current = 0;
+        }
       }
       render(session);
     };
@@ -284,7 +322,8 @@ function PlayPage() {
       !session ||
       session.phase !== "aiming" ||
       session.match.phase === "won" ||
-      handoffTo !== null
+      handoffTo !== null ||
+      (mode === "ai" && session.match.attacker === AI_SIDE)
     )
       return;
     const pitchPoint = pitchPointFromEvent(e);
@@ -313,7 +352,8 @@ function PlayPage() {
       !session ||
       session.phase !== "aiming" ||
       session.match.phase === "won" ||
-      handoffTo !== null
+      handoffTo !== null ||
+      (mode === "ai" && session.match.attacker === AI_SIDE)
     )
       return;
     if (session.selectedCapId !== drag.capId) return;
@@ -353,7 +393,9 @@ function PlayPage() {
           <div className="rounded-full bg-black/50 px-4 py-1.5 text-sm font-medium text-white">
             {won
               ? `Player ${match.winner! + 1} wins!`
-              : `Player ${match.attacker + 1} — touch ${match.touch} of 4`}
+              : mode === "ai" && match.attacker === AI_SIDE
+                ? `AI — touch ${match.touch} of 4`
+                : `Player ${match.attacker + 1} — touch ${match.touch} of 4`}
           </div>
           <div className="flex gap-1.5 rounded-full bg-black/50 px-3 py-1.5">
             {[1, 2, 3, 4].map((n) => (
