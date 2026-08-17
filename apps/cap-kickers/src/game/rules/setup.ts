@@ -8,8 +8,8 @@ import { type Pitch, type PlayerSide } from "./pitch";
  */
 export const makeTriangle = (pitch: Pitch, side: PlayerSide, capRadius: number): [Vec2, Vec2, Vec2] => {
   const margin = capRadius * 4; // base distance from the goal line
-  const spread = capRadius * 3; // vertical half-spread of the base pair
-  const depth = capRadius * 4; // apex distance up-field from the base
+  const spread = capRadius * 3.6; // wider opening angle (moderate)
+  const depth = capRadius * 4.5; // apex distance up-field
   const mid = pitch.height / 2;
 
   const baseX = side === 0 ? margin : pitch.width - margin;

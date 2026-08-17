@@ -31,8 +31,10 @@ describe("goalkeeper", () => {
   it("a Hard keeper saves a shot aimed at the goal center", () => {
     const s = new GameSession({ firstAttacker: 0, keeperDifficulty: "hard" });
     expect(toShot(s)).toBe(true);
-    // aim the nearest cap straight at the right-goal center
-    const shooter = s.caps().reduce((a, b) => (b.position.x > a.position.x ? b : a));
+    // Shoot at the goal centre from the cap FARTHEST from that goal, so the shot
+    // actually travels a savable distance (a cap already parked on the goal line
+    // just nudges in — nothing for a keeper to save).
+    const shooter = s.caps().reduce((a, b) => (b.position.x < a.position.x ? b : a));
     const target = { x: PITCH.width, y: PITCH.height / 2 };
     const dx = target.x - shooter.position.x, dy = target.y - shooter.position.y;
     const len = Math.hypot(dx, dy);

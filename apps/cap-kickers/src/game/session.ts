@@ -167,9 +167,17 @@ export class GameSession {
       const params = KEEPER_DIFFS[this.cfg.keeperDifficulty];
       if (ks.reactionElapsed >= params.reactionDelay) {
         const shot = this.shotCapId ? this.world.getBody(this.shotCapId) : undefined;
-        const targetY = shot
-          ? Math.max(ks.mouthMin, Math.min(ks.mouthMax, shot.position.y))
-          : keeperBefore.position.y;
+        // Anticipate where the shot will CROSS the goal line (not its current y),
+        // so an angled shot doesn't pull the keeper the wrong way.
+        let aimY = keeperBefore.position.y;
+        if (shot) {
+          aimY = shot.position.y;
+          if (Math.abs(shot.velocity.x) > 1) {
+            const tCross = (ks.goalLineX - shot.position.x) / shot.velocity.x;
+            if (tCross > 0) aimY = shot.position.y + shot.velocity.y * tCross;
+          }
+        }
+        const targetY = Math.max(ks.mouthMin, Math.min(ks.mouthMax, aimY));
         keeperBefore.velocity = { x: 0, y: keeperTrackVelocityY(keeperBefore.position.y, targetY, params.maxSpeed) };
       } else {
         keeperBefore.velocity = { x: 0, y: 0 };

@@ -12,7 +12,7 @@ export const CAP_RADIUS = 16;
 // Shrunk to 0.75x cap radius (12) so only shots the keeper has actually moved
 // to intercept get blocked; verified this keeps a Hard keeper saving a
 // dead-center shot (integration test) while an Easy keeper is beaten to a corner.
-export const KEEPER = { radius: CAP_RADIUS * 0.75, mass: 40, inset: 6 };
+export const KEEPER = { radius: CAP_RADIUS * 1.15, mass: 40, inset: 6 };
 
 export const PHYSICS: PhysicsConfig = {
   fixedDt: 1 / 120,
