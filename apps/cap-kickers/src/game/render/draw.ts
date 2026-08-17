@@ -170,10 +170,29 @@ export const drawGoal = (ctx: Ctx, g: Rect, side: "left" | "right", scale: numbe
   ctx.restore();
 };
 
+const TAU = Math.PI * 2;
+
+// Trace a scalloped circle (a crimped bottle-cap edge): radius ripples `bumps`
+// times by ±amp. Leaves the path open for fill/stroke.
+const scallopPath = (ctx: Ctx, x: number, y: number, base: number, amp: number, bumps: number) => {
+  const steps = bumps * 6;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const a = (i / steps) * TAU;
+    const rr = base + amp * Math.cos(bumps * a);
+    const px = x + Math.cos(a) * rr;
+    const py = y + Math.sin(a) * rr;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+};
+
 /**
- * A bottle-cap in a chosen style: drop shadow, crimped rim, radial-shaded body,
- * a style-specific top marking (crown dots / ribs / ring / nub), a shine, and a
- * bold outline. `selected` adds a pulsing gold ring.
+ * A realistic bottle-cap in a chosen style: soft shadow, a crimped scalloped
+ * metal edge with grooves, a liner ring, a domed glossy top (radial shade +
+ * specular highlight), an embossed style marking, and a bold outline.
+ * `selected` adds a pulsing gold ring.
  */
 export const drawCap = (
   ctx: Ctx,
@@ -184,102 +203,126 @@ export const drawCap = (
   opts: { selected?: boolean; pulse?: number } = {},
 ) => {
   const r = radius;
-  // Drop shadow.
+  const crown = style.pattern === "crown";
+  const bumps = crown ? 21 : 30;
+  const amp = r * (crown ? 0.075 : 0.05);
+
+  // Contact shadow.
   ctx.save();
   ctx.fillStyle = ARCADE.shadow;
   ctx.beginPath();
-  ctx.ellipse(x + r * 0.12, y + r * 0.42, r * 0.98, r * 0.7, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y + r * 0.5, r * 1.02, r * 0.72, 0, 0, TAU);
   ctx.fill();
   ctx.restore();
 
-  // Crimped rim + ridge ticks (crown caps get a finer flute).
-  ctx.fillStyle = style.rim;
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
+  // Crimped scalloped metal edge, lit by a directional metallic gradient.
+  scallopPath(ctx, x, y, r - amp, amp, bumps);
+  const edge = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+  edge.addColorStop(0, style.rim);
+  edge.addColorStop(0.5, style.base);
+  edge.addColorStop(1, style.shade);
+  ctx.fillStyle = edge;
   ctx.fill();
-  ctx.strokeStyle = style.shade;
-  ctx.lineWidth = Math.max(1, r * 0.09);
-  const ticks = style.pattern === "crown" ? 22 : 16;
-  for (let i = 0; i < ticks; i++) {
-    const a = (i / ticks) * Math.PI * 2;
+  // Crimp grooves (one dark radial line per flute).
+  ctx.strokeStyle = "rgba(0,0,0,0.26)";
+  ctx.lineWidth = Math.max(0.6, r * 0.03);
+  for (let i = 0; i < bumps; i++) {
+    const a = ((i + 0.5) / bumps) * TAU;
     ctx.beginPath();
-    ctx.moveTo(x + Math.cos(a) * r * 0.82, y + Math.sin(a) * r * 0.82);
-    ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+    ctx.moveTo(x + Math.cos(a) * (r - amp * 2.2), y + Math.sin(a) * (r - amp * 2.2));
+    ctx.lineTo(x + Math.cos(a) * (r + amp * 0.2), y + Math.sin(a) * (r + amp * 0.2));
     ctx.stroke();
   }
+  // Edge outline.
+  scallopPath(ctx, x, y, r - amp, amp, bumps);
+  ctx.strokeStyle = ARCADE.capStroke;
+  ctx.lineWidth = Math.max(1, r * 0.06);
+  ctx.stroke();
 
-  // Body (inset), radial-shaded.
-  const br = r * 0.78;
-  const grad = ctx.createRadialGradient(x - br * 0.35, y - br * 0.4, br * 0.15, x, y, br);
-  grad.addColorStop(0, style.rim);
-  grad.addColorStop(0.45, style.base);
-  grad.addColorStop(1, style.shade);
-  ctx.fillStyle = grad;
+  // Liner ring (inner boundary of the crimp).
+  const br = r * 0.74;
   ctx.beginPath();
-  ctx.arc(x, y, br, 0, Math.PI * 2);
+  ctx.arc(x, y, br + r * 0.06, 0, TAU);
+  ctx.strokeStyle = "rgba(0,0,0,0.16)";
+  ctx.lineWidth = Math.max(1, r * 0.05);
+  ctx.stroke();
+
+  // Domed glossy top.
+  const dome = ctx.createRadialGradient(x - br * 0.42, y - br * 0.46, br * 0.08, x, y, br * 1.06);
+  dome.addColorStop(0, style.rim);
+  dome.addColorStop(0.42, style.base);
+  dome.addColorStop(1, style.shade);
+  ctx.fillStyle = dome;
+  ctx.beginPath();
+  ctx.arc(x, y, br, 0, TAU);
   ctx.fill();
 
-  // Style-specific top marking.
+  // Embossed style marking (drawn with a faint dark offset for a stamped look).
   ctx.save();
   ctx.beginPath();
-  ctx.arc(x, y, br, 0, Math.PI * 2);
+  ctx.arc(x, y, br, 0, TAU);
   ctx.clip();
+  const emboss = (draw: (dx: number, dy: number, color: string) => void) => {
+    draw(0, r * 0.03, "rgba(0,0,0,0.22)");
+    draw(0, 0, style.top);
+  };
   if (style.pattern === "ribbed") {
-    ctx.strokeStyle = style.shade;
-    ctx.globalAlpha = 0.5;
-    ctx.lineWidth = Math.max(1, r * 0.08);
     for (let i = -3; i <= 3; i++) {
-      const rx = x + i * br * 0.28;
+      const rx = x + i * br * 0.3;
+      ctx.strokeStyle = "rgba(0,0,0,0.18)";
+      ctx.lineWidth = Math.max(1, r * 0.07);
       ctx.beginPath();
       ctx.moveTo(rx, y - br);
       ctx.lineTo(rx, y + br);
       ctx.stroke();
     }
   } else if (style.pattern === "ring") {
-    ctx.strokeStyle = style.top;
-    ctx.lineWidth = Math.max(1.5, r * 0.12);
-    ctx.beginPath();
-    ctx.arc(x, y, br * 0.55, 0, Math.PI * 2);
-    ctx.stroke();
-  } else if (style.pattern === "nub") {
-    ctx.fillStyle = style.top;
-    ctx.beginPath();
-    ctx.arc(x, y, br * 0.34, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (style.pattern === "crown") {
-    ctx.fillStyle = style.top;
-    const dots = 8;
-    for (let i = 0; i < dots; i++) {
-      const a = (i / dots) * Math.PI * 2;
+    emboss((dx, dy, color) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(1.5, r * 0.11);
       ctx.beginPath();
-      ctx.arc(x + Math.cos(a) * br * 0.58, y + Math.sin(a) * br * 0.58, r * 0.09, 0, Math.PI * 2);
+      ctx.arc(x + dx, y + dy, br * 0.52, 0, TAU);
+      ctx.stroke();
+    });
+  } else if (style.pattern === "nub") {
+    emboss((dx, dy, color) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x + dx, y + dy, br * 0.32, 0, TAU);
       ctx.fill();
-    }
-    ctx.beginPath();
-    ctx.arc(x, y, r * 0.12, 0, Math.PI * 2);
-    ctx.fill();
+    });
+  } else if (style.pattern === "crown") {
+    emboss((dx, dy, color) => {
+      ctx.fillStyle = color;
+      const dots = 8;
+      for (let i = 0; i < dots; i++) {
+        const a = (i / dots) * TAU;
+        ctx.beginPath();
+        ctx.arc(x + dx + Math.cos(a) * br * 0.56, y + dy + Math.sin(a) * br * 0.56, r * 0.085, 0, TAU);
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.arc(x + dx, y + dy, r * 0.11, 0, TAU);
+      ctx.fill();
+    });
   }
   ctx.restore();
 
-  // Shine.
+  // Specular highlight (soft sheen + a sharp glint).
   ctx.fillStyle = "rgba(255,255,255,0.5)";
   ctx.beginPath();
-  ctx.ellipse(x - br * 0.32, y - br * 0.38, br * 0.36, br * 0.22, -0.7, 0, Math.PI * 2);
+  ctx.ellipse(x - br * 0.34, y - br * 0.4, br * 0.34, br * 0.19, -0.7, 0, TAU);
   ctx.fill();
-
-  // Bold outline.
-  ctx.strokeStyle = ARCADE.capStroke;
-  ctx.lineWidth = Math.max(1.5, r * 0.11);
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
   ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.ellipse(x - br * 0.42, y - br * 0.47, br * 0.11, br * 0.06, -0.7, 0, TAU);
+  ctx.fill();
 
   if (opts.selected) {
     const p = opts.pulse ?? 0;
     ctx.strokeStyle = ARCADE.gold;
     ctx.lineWidth = Math.max(2.5, r * 0.2);
-    ctx.beginPath();
-    ctx.arc(x, y, r + r * (0.28 + 0.1 * p), 0, Math.PI * 2);
+    scallopPath(ctx, x, y, r + r * (0.24 + 0.09 * p), amp, bumps);
     ctx.stroke();
   }
 };
