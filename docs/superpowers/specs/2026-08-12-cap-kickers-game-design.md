@@ -50,6 +50,9 @@ implementation at coquinhos.com.
 | Tutorial | **Interactive first-run tutorial** (skippable). |
 | Rendering/physics | **Option A**: single `<canvas>` + lightweight custom deterministic physics. |
 
+### Deferred — visual/layout polish (user feedback 2026-08-13)
+Gameplay feels good, but the user finds the current layout/visual design unattractive. A dedicated **visual & layout polish pass** (pitch art, cap/goal styling, HUD, menus, typography, colors) is deferred to its own plan after the core feature set (AI, campaign) is in — tracked so it isn't lost.
+
 ### Explicitly out of scope for v1 (YAGNI)
 
 - Online / networked multiplayer.
