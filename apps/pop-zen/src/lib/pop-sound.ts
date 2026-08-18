@@ -24,7 +24,9 @@ function getCtx(): AudioContext | null {
     if (!AC) return null;
     ctx = new AC();
   }
-  if (ctx.state === "suspended") {
+  // Resume from "suspended" AND iOS's post-interruption state (e.g. after a
+  // full-screen ad grabbed the audio session).
+  if (ctx.state !== "running") {
     void ctx.resume();
   }
   return ctx;
@@ -53,6 +55,28 @@ function getBus(ac: AudioContext): AudioNode {
 export function unlockAudio() {
   const ac = getCtx();
   if (ac) getBus(ac);
+}
+
+/**
+ * Recreate the audio context after a full-screen ad. On iOS the AdMob
+ * interstitial takes over the AVAudioSession, and WebAudio can stay silenced even
+ * after resume(); tearing the context down so the next pop builds a fresh one
+ * (inside a user gesture) reliably restores the pop sound.
+ */
+export function resetAudio() {
+  if (ctx) void ctx.close().catch(() => {});
+  ctx = null;
+  bus = null;
+}
+
+// Reactivate audio whenever the app returns to the foreground (returning from an
+// ad, the app switcher, a phone call, …).
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && ctx && ctx.state !== "running") {
+      void ctx.resume();
+    }
+  });
 }
 
 export function playPop() {

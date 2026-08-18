@@ -124,21 +124,48 @@ function trackBannerSize() {
   });
 }
 
-/** Show the bottom banner. Safe to call more than once. */
-export async function showBanner(): Promise<void> {
-  if (!IS_NATIVE) return;
-  trackBannerSize();
-  const options: BannerAdOptions = {
+function bannerOptions(): BannerAdOptions {
+  return {
     adId: unitIds().banner,
     adSize: BannerAdSize.ADAPTIVE_BANNER,
     position: BannerAdPosition.BOTTOM_CENTER,
     margin: 0,
     isTesting: USE_TEST_ADS,
   };
+}
+
+// When the current banner was last (re)loaded. AdMob policy: don't refresh a
+// banner faster than ~30-60s or the extra impressions can be flagged as invalid.
+let lastBannerAt = 0;
+const BANNER_MIN_REFRESH_MS = 60_000;
+
+/** Show the bottom banner. Safe to call more than once. */
+export async function showBanner(): Promise<void> {
+  if (!IS_NATIVE) return;
+  trackBannerSize();
   try {
-    await AdMob.showBanner(options);
+    await AdMob.showBanner(bannerOptions());
+    lastBannerAt = Date.now();
   } catch (e) {
     console.warn("[ads] showBanner failed:", e);
+  }
+}
+
+/**
+ * Request a FRESH banner ad — e.g. when moving to a new phase — so the player
+ * doesn't stare at the same creative all run. Rate-limited to once/minute to
+ * stay within AdMob's banner-refresh policy; no-ops if a refresh happened
+ * recently, if offline, or on web.
+ */
+export async function refreshBanner(): Promise<void> {
+  if (!IS_NATIVE || !isOnline()) return;
+  if (Date.now() - lastBannerAt < BANNER_MIN_REFRESH_MS) return;
+  try {
+    await AdMob.hideBanner();
+    await AdMob.showBanner(bannerOptions());
+    lastBannerAt = Date.now();
+  } catch (e) {
+    console.warn("[ads] refreshBanner failed:", e);
   }
 }
 
