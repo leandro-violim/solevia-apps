@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef } from "react";
 import bubbleImg from "../assets/bubble.png";
+import poppedImg from "../assets/popped-bubble.svg";
 
 type Props = {
   id: number;
@@ -14,7 +15,12 @@ type Props = {
   onPop: (id: number) => void;
 };
 
-/** One glossy plastic bubble. Uses a shared PNG for the realistic look. */
+/**
+ * One glossy plastic bubble. Popping cross-fades the inflated bubble (which
+ * bursts outward and vanishes) into a flattened, wrinkled "popped" remnant that
+ * stays on the field — so a cleared phase reads like a real sheet of popped
+ * bubble wrap.
+ */
 export const Bubble = memo(function Bubble({
   id,
   x,
@@ -39,6 +45,14 @@ export const Bubble = memo(function Bubble({
     onPop(id);
   };
 
+  const layer = {
+    position: "absolute" as const,
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    pointerEvents: "none" as const,
+  };
+
   return (
     <button
       type="button"
@@ -56,9 +70,6 @@ export const Bubble = memo(function Bubble({
         top: y,
         width: size,
         height: size,
-        transform: popped ? "scale(1.4)" : "scale(1)",
-        opacity: popped ? 0 : 1,
-        transition: "transform 180ms cubic-bezier(.34,1.56,.64,1), opacity 180ms ease-out",
         pointerEvents: popped ? "none" : "auto",
         animation:
           popped || still ? undefined : `bubbleFloat 4s ease-in-out ${driftDelay}s infinite`,
@@ -66,18 +77,31 @@ export const Bubble = memo(function Bubble({
       }}
       aria-label="Pop bubble"
     >
+      {/* Inflated bubble — bursts outward and fades away on pop. */}
       <img
         src={bubbleImg}
         alt=""
-        width={size}
-        height={size}
         draggable={false}
         decoding="async"
         loading="lazy"
         style={{
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
+          ...layer,
+          opacity: popped ? 0 : 1,
+          transform: popped ? "scale(1.35)" : "scale(1)",
+          transition: "transform 190ms cubic-bezier(.34,1.56,.64,1), opacity 150ms ease-out",
+        }}
+      />
+      {/* Flattened, wrinkled remnant — fades in, settles small, and stays. */}
+      <img
+        src={poppedImg}
+        alt=""
+        draggable={false}
+        decoding="async"
+        style={{
+          ...layer,
+          opacity: popped ? 0.5 : 0,
+          transform: popped ? "scale(0.9)" : "scale(1.15)",
+          transition: "transform 300ms cubic-bezier(.2,.75,.3,1) 30ms, opacity 240ms ease-out 30ms",
         }}
       />
     </button>
