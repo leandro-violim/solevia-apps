@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { GameSession, type FlickReport } from "../session";
 import { chooseAiFlick, type Difficulty } from "./policy";
-import { PITCH, PHYSICS, SWIPE } from "../constants";
+import { PITCH, PHYSICS, SWIPE, MATCH } from "../constants";
 
 // Plays ONE AI flick to completion, mirroring the /play route's rAF-driven AI
 // turn loop: pick a move from the policy, fire it, then step ticks until the
@@ -12,6 +12,7 @@ function aiFlickOnce(session: GameSession, difficulty: Difficulty): FlickReport 
     physics: PHYSICS,
     attacker: session.match.attacker,
     touch: session.match.touch,
+    shotTouch: MATCH.shotTouch,
     difficulty,
     maxSpeed: SWIPE.maxSpeed,
   });

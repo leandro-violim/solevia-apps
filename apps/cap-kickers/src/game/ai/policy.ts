@@ -11,9 +11,15 @@ export type AiContext = {
   pitch: Pitch;
   physics: PhysicsConfig;
   attacker: PlayerSide;
-  touch: number; // 1..4
+  touch: number; // 1..shotTouch
+  shotTouch: number; // which touch is the scoring shot
   difficulty: Difficulty;
   maxSpeed: number;
+  // Optional randomness source (0..1). When present, the AI picks at random
+  // among its near-best candidate flicks instead of always the single best —
+  // so a human opponent sees varied play, not the same move every match. Omit
+  // for fully deterministic behaviour (tests, replays).
+  rng?: () => number;
 };
 
 const DIFFS: Record<Difficulty, { samples: number }> = {
@@ -36,9 +42,10 @@ const scoreOutcome = (
   goal: Vec2,
   targetZone: CapZone,
   touch: number,
+  shotTouch: number,
 ): number => {
   const d = dist(finalFlicked, goal);
-  if (touch <= 3) {
+  if (touch < shotTouch) {
     const legal = result.crossedGate && result.flickedEnding === "rest" && !result.anyCapLeftPitch;
     if (!legal) {
       // Among illegal candidates, prefer ones that at least threaded the gate.
@@ -46,10 +53,15 @@ const scoreOutcome = (
     }
     return -d; // legal: closer to the goal is better
   }
-  // Shot (touch 4): a goal dominates everything.
+  // Shot: a goal dominates everything.
   if (result.flickedEnding === targetZone) return 1e9 - d;
   return -d;
 };
+
+// A candidate flick's score is "near-best" if it's within this margin of the
+// top score — the pool the RNG picks from. In the score's units (roughly pitch
+// units of distance-to-goal), so ~a cap-and-a-half of slack among good moves.
+const NEAR_BEST_MARGIN = 90;
 
 /**
  * Deterministically choose the AI's flick for the current touch by simulating a
@@ -62,7 +74,7 @@ export const chooseAiFlick = (caps: SimCap[], ctx: AiContext): AiFlick | null =>
   const targetZone = goalZone(attackingGoal(ctx.attacker));
   const samples = DIFFS[ctx.difficulty].samples;
 
-  let best: AiFlick | null = null;
+  const candidates: { flick: AiFlick; score: number }[] = [];
   let bestScore = -Infinity;
 
   for (const cap of caps) {
@@ -76,13 +88,19 @@ export const chooseAiFlick = (caps: SimCap[], ctx: AiContext): AiFlick | null =>
         const velocity = { x: dir.x * speed, y: dir.y * speed };
         const sim = simulateFlick(caps, ctx.pitch, ctx.physics, cap.id, velocity);
         const finalFlicked = sim.caps.find((c) => c.id === cap.id)!.position;
-        const score = scoreOutcome(sim.result, finalFlicked, goal, targetZone, ctx.touch);
-        if (score > bestScore) {
-          bestScore = score;
-          best = { capId: cap.id, velocity };
-        }
+        const score = scoreOutcome(sim.result, finalFlicked, goal, targetZone, ctx.touch, ctx.shotTouch);
+        candidates.push({ flick: { capId: cap.id, velocity }, score });
+        if (score > bestScore) bestScore = score;
       }
     }
   }
-  return best;
+  if (candidates.length === 0) return null;
+
+  // Deterministic: always the single best. With an RNG: pick at random among the
+  // near-best moves for varied, non-repetitive play (never a clearly worse one).
+  if (!ctx.rng) {
+    return candidates.reduce((a, b) => (b.score > a.score ? b : a)).flick;
+  }
+  const pool = candidates.filter((c) => c.score >= bestScore - NEAR_BEST_MARGIN);
+  return pool[Math.floor(ctx.rng() * pool.length) % pool.length].flick;
 };

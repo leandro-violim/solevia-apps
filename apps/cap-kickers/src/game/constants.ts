@@ -1,7 +1,7 @@
 import { type PhysicsConfig } from "./physics/world";
 import { type Pitch } from "./rules/pitch";
 import { type MatchConfig } from "./rules/match";
-import { type SwipeOpts } from "./input-mapping";
+import { type SwipeOpts, type FlickOpts } from "./input-mapping";
 
 // Landscape pitch, ~1.6:1. Goal mouth is the middle 220 of the 620-tall end lines.
 export const PITCH: Pitch = { width: 1000, height: 620, goalWidth: 220 };
@@ -24,7 +24,16 @@ export const PHYSICS: PhysicsConfig = {
   bounds: { minX: -100000, minY: -100000, maxX: 100000, maxY: 100000 },
 };
 
-export const MATCH: MatchConfig = { goalsToWin: 3 };
+// shotTouch 5 → four build-up threads, then the 5th touch is the free shot.
+export const MATCH: MatchConfig = { goalsToWin: 3, shotTouch: 5 };
 
 // Swipe feel — tune by playing. power multiplies swipe length (pitch units).
 export const SWIPE: SwipeOpts = { power: 5, maxSpeed: 2600, minSpeed: 120 };
+
+// Flick feel — the cap launches at the finger's RELEASE speed, so a quick/hard
+// flick sends it far and a soft one barely moves it. Tune by playing:
+//   gain     — multiplies the measured finger speed (pitch units/s) → cap speed.
+//   maxSpeed — hard cap on launch speed (shared ceiling with SWIPE).
+//   minSpeed — release speed below which the flick is ignored (dead zone).
+//   windowMs — how much of the gesture's TAIL is measured for the release speed.
+export const FLICK: FlickOpts = { gain: 0.85, maxSpeed: 2600, minSpeed: 220, windowMs: 70 };

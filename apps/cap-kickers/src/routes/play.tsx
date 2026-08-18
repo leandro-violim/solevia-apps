@@ -3,9 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { GameSession } from "../game/session";
-import { PITCH, PHYSICS, CAP_RADIUS, SWIPE } from "../game/constants";
+import { PITCH, PHYSICS, CAP_RADIUS, SWIPE, FLICK, MATCH } from "../game/constants";
 import { makePresentation, pitchToScreen, screenToPitch } from "../game/presentation";
-import { capAtPoint, swipeToVelocity } from "../game/input-mapping";
+import { capAtPoint, flickToVelocity, type FlickSample } from "../game/input-mapping";
 import { chooseAiFlick } from "../game/ai/policy";
 import { drawPitch, drawGoal, drawCap, drawKeeper } from "../game/render/draw";
 import { styleById, opponentFor } from "../game/caps/styles";
@@ -14,6 +14,16 @@ import { completeLevel, levelById, nextLevelId } from "../game/campaign/ladder";
 import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
+import {
+  createFx,
+  updateCapFx,
+  stepFx,
+  shakeOffset,
+  goalCelebration,
+  drawTrail,
+  drawDust,
+  drawConfetti,
+} from "./-play-fx";
 
 const searchSchema = z.object({
   mode: z.enum(["2p", "practice", "ai"]).catch("practice"),
@@ -38,7 +48,9 @@ export const Route = createFileRoute("/play")({
   component: PlayPage,
 });
 
-type Drag = { capId: string; start: Vec2; current: Vec2 };
+// A flick in progress: the grabbed cap plus a rolling buffer of timestamped
+// finger positions (pitch space) used to measure the release speed on lift-off.
+type Drag = { capId: string; samples: FlickSample[] };
 type Banner = { text: string; key: number };
 type CanvasSize = { cssW: number; cssH: number; dpr: number };
 
@@ -60,7 +72,7 @@ function PlayPage() {
   const sessionRef = useRef<GameSession | null>(null);
   if (sessionRef.current === null)
     sessionRef.current = new GameSession({
-      match: { goalsToWin: goals },
+      match: { ...MATCH, goalsToWin: goals },
       keeperDifficulty: mode === "ai" ? difficulty : "normal",
     });
 
@@ -69,6 +81,8 @@ function PlayPage() {
   // frames the caps up close so they're big/easy to tap, and eases to follow
   // the action. `init` snaps to the target on the first frame (no fly-in flash).
   const camRef = useRef({ z: 1, fx: 0, fy: 0, init: false });
+  // Purely-cosmetic juice state (spin, trails, dust, confetti, shake). UI-only.
+  const fxRef = useRef(createFx());
   const dragRef = useRef<Drag | null>(null);
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number | null>(null);
@@ -121,7 +135,7 @@ function PlayPage() {
 
   const handleNewMatch = useCallback(() => {
     sessionRef.current = new GameSession({
-      match: { goalsToWin: goals },
+      match: { ...MATCH, goalsToWin: goals },
       keeperDifficulty: mode === "ai" ? difficulty : "normal",
     });
     dragRef.current = null;
@@ -158,11 +172,18 @@ function PlayPage() {
     window.addEventListener("resize", resize);
     window.addEventListener("orientationchange", resize);
 
-    const render = (session: GameSession) => {
+    const render = (session: GameSession, dt: number) => {
       const { cssW, cssH, dpr } = sizeRef.current;
       if (cssW === 0 || cssH === 0) return;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, cssW, cssH);
+
+      // Advance juice particles + apply a decaying screen-shake to the whole
+      // scene (pitch, caps, and confetti all shift together).
+      const fx = fxRef.current;
+      stepFx(fx, dt);
+      const sh = shakeOffset(fx);
+      ctx.translate(sh.x, sh.y);
 
       const pres = makePresentation(PITCH, { width: cssW, height: cssH }, flippedRef.current);
       const topLeft = pitchToScreen({ x: 0, y: 0 }, pres);
@@ -173,39 +194,52 @@ function PlayPage() {
       const pitchH = Math.abs(bottomRight.y - topLeft.y);
       if (pitchW < 8 || pitchH < 8) return; // skip degenerate/first-layout frames
 
-      // Camera: frame the caps up close (big, tappable), easing to follow play.
+      // Camera: frame every point of interest — always ALL caps (so a cap left
+      // behind stays on-screen and reachable), plus the target goal while a shot
+      // is in flight (so the strike into the net is actually visible). Zoom in
+      // for big, tappable caps but never so far that a POI falls off-screen.
       const cam = camRef.current;
       {
         const cs = session.caps();
+        const pts = cs.map((cap) => pitchToScreen(cap.position, pres));
+        const shotGoal = session.shotGoalInFlight();
+        if (shotGoal) {
+          const gx = shotGoal === "left" ? -GOAL_DEPTH : PITCH.width + GOAL_DEPTH;
+          const gHalf = PITCH.goalWidth / 2;
+          pts.push(pitchToScreen({ x: gx, y: PITCH.height / 2 - gHalf }, pres));
+          pts.push(pitchToScreen({ x: gx, y: PITCH.height / 2 + gHalf }, pres));
+        }
         let minX = Infinity,
           minY = Infinity,
           maxX = -Infinity,
           maxY = -Infinity;
-        for (const cap of cs) {
-          const s = pitchToScreen(cap.position, pres);
-          const rr = cap.radius * pres.viewport.scale;
-          minX = Math.min(minX, s.x - rr);
-          minY = Math.min(minY, s.y - rr);
-          maxX = Math.max(maxX, s.x + rr);
-          maxY = Math.max(maxY, s.y + rr);
+        for (const p of pts) {
+          minX = Math.min(minX, p.x);
+          maxX = Math.max(maxX, p.x);
+          minY = Math.min(minY, p.y);
+          maxY = Math.max(maxY, p.y);
         }
-        const pad = 72;
-        const bw = maxX - minX + pad * 2;
-        const bh = maxY - minY + pad * 2;
-        const tz = Math.max(1, Math.min(2.4, Math.min(cssW / bw, cssH / bh)));
-        const halfW = cssW / 2 / tz;
-        const halfH = cssH / 2 / tz;
-        const clamp1 = (f: number, lo: number, hi: number, half: number): number =>
-          hi - lo <= 2 * half ? (lo + hi) / 2 : Math.max(lo + half, Math.min(hi - half, f));
-        const tfx = clamp1((minX + maxX) / 2, rectX, rectX + pitchW, halfW);
-        const tfy = clamp1((minY + maxY) / 2, rectY, rectY + pitchH, halfH);
+        const capScreenR = (cs[0]?.radius ?? CAP_RADIUS) * pres.viewport.scale;
+        const marginPx = capScreenR * 3; // breathing room around the framed points
+        // fitZ: the largest zoom that still fits every point (+margin) on screen.
+        const fitZ = Math.min(
+          cssW / Math.max(1, maxX - minX + marginPx * 2),
+          cssH / Math.max(1, maxY - minY + marginPx * 2),
+        );
+        // Prefer a comfortable finger-sized cap, but never zoom past fitZ (which
+        // would push a POI off-screen). Lower bound keeps it from over-zooming
+        // out on an extreme spread.
+        const targetR = Math.min(cssW, cssH) * 0.15;
+        const tz = Math.max(0.6, Math.min(4, Math.min(targetR / Math.max(1, capScreenR), fitZ)));
+        const tfx = (minX + maxX) / 2; // centre the framed points
+        const tfy = (minY + maxY) / 2;
         if (!cam.init) {
           cam.z = tz;
           cam.fx = tfx;
           cam.fy = tfy;
           cam.init = true;
         } else {
-          const k = 0.14;
+          const k = shotGoal ? 0.2 : 0.14; // track a little snappier during a shot
           cam.z += (tz - cam.z) * k;
           cam.fx += (tfx - cam.fx) * k;
           cam.fy += (tfy - cam.fy) * k;
@@ -245,11 +279,17 @@ function PlayPage() {
       const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 180);
       for (const cap of session.caps()) {
         const c = pitchToScreen(cap.position, pres);
-        drawCap(ctx, c.x, c.y, cap.radius * scale, capStyle, {
+        const r = cap.radius * scale;
+        const angle = updateCapFx(fx, cap.id, c.x, c.y, r, dt);
+        drawTrail(ctx, fx, cap.id, r, capStyle.base);
+        drawCap(ctx, c.x, c.y, r, capStyle, {
           selected: session.selectedCapId === cap.id,
           pulse,
+          angle,
         });
       }
+      // Impact dust puffs sit on top of the caps (base-screen space).
+      drawDust(ctx, fx);
 
       // Keeper: present only mid-shot.
       const keeper = session.keeper();
@@ -258,48 +298,14 @@ function PlayPage() {
         drawKeeper(ctx, kc.x, kc.y, keeper.radius * scale);
       }
 
-      // Aim hint while dragging.
-      const drag = dragRef.current;
-      if (drag && session.phase === "aiming") {
-        const delta = { x: drag.current.x - drag.start.x, y: drag.current.y - drag.start.y };
-        const dLen = Math.hypot(delta.x, delta.y);
-        if (dLen > 0) {
-          const dir = { x: delta.x / dLen, y: delta.y / dLen };
-          const speed = Math.min(SWIPE.maxSpeed, Math.max(SWIPE.minSpeed, dLen * SWIPE.power));
-          const powerFrac = (speed - SWIPE.minSpeed) / Math.max(1, SWIPE.maxSpeed - SWIPE.minSpeed);
-          const cap = session.caps().find((c) => c.id === drag.capId);
-          const capPos = cap ? cap.position : drag.start;
-          const lineLen = CAP_RADIUS * (3 + powerFrac * 9);
-          const endPitch = { x: capPos.x + dir.x * lineLen, y: capPos.y + dir.y * lineLen };
-          const a = pitchToScreen(capPos, pres);
-          const b = pitchToScreen(endPitch, pres);
-          const col = powerFrac < 0.5 ? "#ffcf33" : "#ff7a1a";
-
-          ctx.save();
-          ctx.setLineDash([11, 8]);
-          ctx.lineCap = "round";
-          ctx.lineWidth = 5;
-          ctx.strokeStyle = col;
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.stroke();
-          ctx.setLineDash([]);
-          // Arrowhead.
-          const ang = Math.atan2(b.y - a.y, b.x - a.x);
-          const ah = 13 + powerFrac * 7;
-          ctx.fillStyle = col;
-          ctx.beginPath();
-          ctx.moveTo(b.x, b.y);
-          ctx.lineTo(b.x - Math.cos(ang - 0.42) * ah, b.y - Math.sin(ang - 0.42) * ah);
-          ctx.lineTo(b.x - Math.cos(ang + 0.42) * ah, b.y - Math.sin(ang + 0.42) * ah);
-          ctx.closePath();
-          ctx.fill();
-          ctx.restore();
-        }
-      }
+      // No aim line: the cap launches from the real flick gesture (direction +
+      // release speed), so there's no direction/strength preview to draw.
 
       ctx.restore(); // close the camera transform
+
+      // Goal confetti rains over the whole viewport (final-screen space, but
+      // still under the active screen-shake translate).
+      drawConfetti(ctx, fx);
     };
 
     const loop = (t: number) => {
@@ -309,12 +315,15 @@ function PlayPage() {
       const session = sessionRef.current;
       if (!session) return;
 
+      const dt = last !== null ? Math.min((t - last) / 1000, 1 / 30) : 0;
       if (last !== null) {
-        const dt = Math.min((t - last) / 1000, 1 / 30);
         const report = session.tick(dt);
         if (report) {
           setMatch(report.match);
-          if (report.result === "goal") showBanner("GOAL!");
+          if (report.result === "goal") {
+            showBanner("GOAL!");
+            goalCelebration(fxRef.current, sizeRef.current.cssW, sizeRef.current.cssH);
+          }
           else if (report.result === "win") showBanner(`Player ${report.match.winner! + 1} wins!`);
           else if (report.result === "turnover") showBanner("Turn over");
 
@@ -348,8 +357,10 @@ function PlayPage() {
               physics: PHYSICS,
               attacker: session.match.attacker,
               touch: session.match.touch,
+              shotTouch: MATCH.shotTouch,
               difficulty: difficultyRef.current,
               maxSpeed: SWIPE.maxSpeed,
+              rng: Math.random, // varied opponent play — not the same moves each match
             });
             if (move) session.beginFlick(move.capId, move.velocity);
           }
@@ -357,14 +368,14 @@ function PlayPage() {
           aiThinkRef.current = 0;
         }
       }
-      render(session);
+      render(session, dt);
     };
 
     // Paint an initial frame synchronously so the board is visible immediately,
     // without waiting for the first rAF (which also never fires while the tab
     // is backgrounded) — avoids a black flash on load.
     const initialSession = sessionRef.current;
-    if (initialSession) render(initialSession);
+    if (initialSession) render(initialSession, 0);
     rafRef.current = requestAnimationFrame(loop);
 
     return () => {
@@ -426,17 +437,28 @@ function PlayPage() {
     if (!pitchPoint) return;
     const hitId = capAtPoint(pitchPoint, session.caps());
     if (!hitId) return;
-    session.selectCap(hitId);
-    dragRef.current = { capId: hitId, start: pitchPoint, current: pitchPoint };
+    // No select step: grabbing a cap just starts tracking the flick. A real
+    // flick on release launches it; a graze does nothing.
+    dragRef.current = { capId: hitId, samples: [{ pos: pitchPoint, t: e.timeStamp }] };
     canvasRef.current?.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const drag = dragRef.current;
     if (!drag) return;
-    const pitchPoint = pitchPointFromEvent(e);
-    if (!pitchPoint) return;
-    drag.current = pitchPoint;
+    // Record every position the browser has for this move — coalesced events
+    // recover the sub-frame detail of a fast flick that a single sample misses,
+    // so the measured release speed is accurate.
+    const native = e.nativeEvent;
+    const coalesced =
+      typeof native.getCoalescedEvents === "function" ? native.getCoalescedEvents() : [];
+    const list = coalesced.length > 0 ? coalesced : [native];
+    for (const ev of list) {
+      const p = pitchPointFromEvent(ev);
+      if (p) drag.samples.push({ pos: p, t: ev.timeStamp });
+    }
+    const MAX = 16;
+    if (drag.samples.length > MAX) drag.samples.splice(0, drag.samples.length - MAX);
   };
 
   const endDrag = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -452,15 +474,13 @@ function PlayPage() {
       (mode === "ai" && session.match.attacker === AI_SIDE)
     )
       return;
-    if (session.selectedCapId !== drag.capId) return;
-    // Use the pointer-up position as the swipe end (falling back to the last
-    // tracked move) so a fast flick with no intermediate pointermove still
-    // produces a real velocity.
-    const end = pitchPointFromEvent(e) ?? drag.current;
-    const velocity = swipeToVelocity(drag.start, end, SWIPE);
-    if (velocity.x !== 0 || velocity.y !== 0) {
-      session.beginFlick(drag.capId, velocity);
-    }
+    // Add the lift-off position, then launch from the finger's release speed.
+    const up = pitchPointFromEvent(e);
+    if (up) drag.samples.push({ pos: up, t: e.timeStamp });
+    // A soft/slow gesture yields null (below the dead zone) → no launch; the cap
+    // simply stays grabbed for another try.
+    const velocity = flickToVelocity(drag.samples, FLICK);
+    if (velocity) session.beginFlick(drag.capId, velocity);
   };
 
   const won = match.phase === "won";
@@ -498,11 +518,11 @@ function PlayPage() {
             {won
               ? `Player ${match.winner! + 1} wins!`
               : mode === "ai" && match.attacker === AI_SIDE
-                ? `AI — touch ${match.touch}/4`
-                : `Player ${match.attacker + 1} — touch ${match.touch}/4`}
+                ? `AI — touch ${match.touch}/${MATCH.shotTouch}`
+                : `Player ${match.attacker + 1} — touch ${match.touch}/${MATCH.shotTouch}`}
           </div>
           <div className="flex gap-1.5 rounded-full bg-white/90 px-3 py-1.5 shadow-md">
-            {[1, 2, 3, 4].map((n) => (
+            {Array.from({ length: MATCH.shotTouch }, (_, i) => i + 1).map((n) => (
               <span
                 key={n}
                 className="h-3 w-3 rounded-full border-2"
@@ -518,22 +538,34 @@ function PlayPage() {
 
       <button
         onClick={handleNewMatch}
-        className="font-display pointer-events-auto absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-white/90 px-4 py-1 text-xs uppercase tracking-wider text-foreground shadow-md active:scale-95"
-        style={{ marginTop: "env(safe-area-inset-top)" }}
+        className="font-display pointer-events-auto absolute left-1/2 bottom-4 -translate-x-1/2 rounded-full bg-white/90 px-5 py-2 text-xs uppercase tracking-wider text-foreground shadow-md active:scale-95"
+        style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
         New match
       </button>
 
-      {banner && (
-        <div
-          key={banner.key}
-          className="pointer-events-none absolute inset-x-0 top-1/3 flex justify-center"
-        >
-          <div className="animate-in fade-in zoom-in rounded-2xl bg-black/70 px-6 py-3 text-2xl font-extrabold text-white">
-            {banner.text}
-          </div>
-        </div>
-      )}
+      {banner &&
+        (() => {
+          // The big moments (GOAL / winner) get a punchy overshoot pop in gold;
+          // routine calls ("Turn over") get a quieter fade-zoom.
+          const big = banner.text === "GOAL!" || banner.text.includes("wins");
+          return (
+            <div
+              key={banner.key}
+              className="pointer-events-none absolute inset-x-0 top-1/3 flex justify-center"
+            >
+              <div
+                className={
+                  big
+                    ? "goal-pop font-display rounded-2xl bg-black/75 px-8 py-4 text-5xl font-extrabold uppercase tracking-wide text-[#ffcf33] shadow-[0_8px_0_rgba(0,0,0,0.35)]"
+                    : "animate-in fade-in zoom-in rounded-2xl bg-black/70 px-6 py-3 text-2xl font-extrabold text-white"
+                }
+              >
+                {banner.text}
+              </div>
+            </div>
+          );
+        })()}
 
       {/* Pass-the-phone handoff (2p only). Covers the canvas so no flick
           input reaches the game while the phone is changing hands. The win

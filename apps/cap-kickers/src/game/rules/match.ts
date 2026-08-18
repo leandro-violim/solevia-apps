@@ -1,13 +1,16 @@
 import { type PlayerSide, attackingGoal, goalZone } from "./pitch";
 import { type FlickResult } from "./flick";
 
-export type MatchConfig = { goalsToWin: number };
+// shotTouch: which touch number is the free SHOT (the goal-scoring touch).
+// Touches 1..shotTouch-1 are build-up (must thread the gate). Default 5 → four
+// build-up threads then a shot.
+export type MatchConfig = { goalsToWin: number; shotTouch: number };
 export type MatchPhase = "playing" | "won";
 
 export type MatchState = {
   scores: [number, number];
   attacker: PlayerSide;
-  touch: number; // 1..4
+  touch: number; // 1..shotTouch
   phase: MatchPhase;
   winner: PlayerSide | null;
 };
@@ -28,13 +31,13 @@ const other = (s: PlayerSide): PlayerSide => (s === 0 ? 1 : 0);
 /**
  * Advance the match by one resolved flick. Pure reducer.
  *
- * Touches 1-3 (build-up): legal iff the flick crossed the gate AND every cap
- * stayed in the pitch (flickedEnding === "rest" and no cap left the pitch).
- * Legal → advance (touch+1, same attacker); illegal → turnover.
+ * Build-up touches (1..shotTouch-1): legal iff the flick crossed the gate AND
+ * every cap stayed in the pitch (flickedEnding === "rest" and no cap left the
+ * pitch). Legal → advance (touch+1, same attacker); illegal → turnover.
  *
- * Touch 4 (the shot): the gate does not apply. If the flicked cap entered the
- * attacker's target goal → goal (score, then kickoff to the other side, or win
- * at goalsToWin). Otherwise → turnover. Only the 4th touch can score.
+ * The shot (touch === shotTouch): the gate does not apply. If the flicked cap
+ * entered the attacker's target goal → goal (score, then kickoff to the other
+ * side, or win at goalsToWin). Otherwise → turnover. Only the shot can score.
  *
  * On turnover/goal the caller repositions caps for the new attacker (makeTriangle).
  */
@@ -52,7 +55,7 @@ export const applyFlick = (
     result: "turnover",
   });
 
-  if (state.touch <= 3) {
+  if (state.touch < config.shotTouch) {
     const legal = flick.crossedGate && flick.flickedEnding === "rest" && !flick.anyCapLeftPitch;
     if (legal) {
       return { state: { ...state, touch: state.touch + 1 }, result: "advance" };
@@ -60,7 +63,7 @@ export const applyFlick = (
     return turnover();
   }
 
-  // touch === 4: the shot.
+  // touch === shotTouch: the shot.
   const scored = flick.flickedEnding === goalZone(attackingGoal(state.attacker));
   if (!scored) {
     return turnover();

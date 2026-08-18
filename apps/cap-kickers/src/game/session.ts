@@ -120,9 +120,20 @@ export class GameSession {
     this.world.getBody(capId)!.velocity = { x: velocity.x, y: velocity.y };
     this.phase = "resolving";
     this.selectedCapId = null;
-    if (this.match.touch === 4) {
+    if (this.match.touch === this.cfg.match.shotTouch) {
       this.spawnKeeper();
     }
+  }
+
+  /**
+   * While a SHOT is resolving, the goal side being shot at — so the camera can
+   * keep the target goal in frame and the strike stays visible (otherwise a fast
+   * shot flies off-screen). Null at all other times.
+   */
+  shotGoalInFlight(): GoalSide | null {
+    return this.phase === "resolving" && this.match.touch === this.cfg.match.shotTouch
+      ? attackingGoal(this.match.attacker)
+      : null;
   }
 
   private spawnKeeper(): void {

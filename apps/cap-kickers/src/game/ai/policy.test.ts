@@ -26,6 +26,7 @@ const ctx = (over: Partial<AiContext> = {}): AiContext => ({
   physics,
   attacker: 0,
   touch: 1,
+  shotTouch: 5,
   difficulty: "hard",
   maxSpeed: 2600,
   ...over,
@@ -51,14 +52,14 @@ describe("chooseAiFlick", () => {
     expect(d(after)).toBeLessThan(d(before));
   });
 
-  it("chooses a scoring shot on the 4th touch when one is available", () => {
+  it("chooses a scoring shot on the shot touch when one is available", () => {
     // a cap near the right goal mouth with a clear shot
     const shotCaps: SimCap[] = [
       { id: "c0", position: { x: 860, y: 310 }, radius: 16 },
       { id: "c1", position: { x: 500, y: 200 }, radius: 16 },
       { id: "c2", position: { x: 500, y: 420 }, radius: 16 },
     ];
-    const move = chooseAiFlick(shotCaps, ctx({ touch: 4 }));
+    const move = chooseAiFlick(shotCaps, ctx({ touch: 5 }));
     expect(move).not.toBeNull();
     const sim = simulateFlick(shotCaps, pitch, physics, move!.capId, move!.velocity);
     expect(sim.result.flickedEnding).toBe("goalRight");

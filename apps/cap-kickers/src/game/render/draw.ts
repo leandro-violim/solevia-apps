@@ -200,20 +200,31 @@ export const drawCap = (
   y: number,
   radius: number,
   style: CapStyle,
-  opts: { selected?: boolean; pulse?: number } = {},
+  opts: { selected?: boolean; pulse?: number; angle?: number } = {},
 ) => {
   const r = radius;
   const crown = style.pattern === "crown";
   const bumps = crown ? 21 : 30;
   const amp = r * (crown ? 0.075 : 0.05);
 
-  // Contact shadow.
+  // Contact shadow (stays on the ground — never spins).
   ctx.save();
   ctx.fillStyle = ARCADE.shadow;
   ctx.beginPath();
   ctx.ellipse(x, y + r * 0.5, r * 1.02, r * 0.72, 0, 0, TAU);
   ctx.fill();
   ctx.restore();
+
+  // Spin the cap body (edge, grooves, dome, marking) about its centre while it
+  // travels. The specular glint is drawn afterwards, unrotated, so the sheen
+  // stays put under a fixed light and only the cap appears to spin.
+  ctx.save();
+  const spin = opts.angle ?? 0;
+  if (spin) {
+    ctx.translate(x, y);
+    ctx.rotate(spin);
+    ctx.translate(-x, -y);
+  }
 
   // Crimped scalloped metal edge, lit by a directional metallic gradient.
   scallopPath(ctx, x, y, r - amp, amp, bumps);
@@ -307,6 +318,8 @@ export const drawCap = (
     });
   }
   ctx.restore();
+
+  ctx.restore(); // end spin transform — highlight below stays fixed to the light
 
   // Specular highlight (soft sheen + a sharp glint).
   ctx.fillStyle = "rgba(255,255,255,0.5)";

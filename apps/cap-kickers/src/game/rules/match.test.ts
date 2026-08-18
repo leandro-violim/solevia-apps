@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { initialMatch, applyFlick, type MatchConfig } from "./match";
 import { type FlickResult } from "./flick";
 
-const config: MatchConfig = { goalsToWin: 3 };
+const config: MatchConfig = { goalsToWin: 3, shotTouch: 5 };
 const legalBuildup: FlickResult = { crossedGate: true, flickedEnding: "rest", anyCapLeftPitch: false };
 
 describe("applyFlick — build-up (touches 1-3)", () => {
@@ -40,8 +40,8 @@ describe("applyFlick — build-up (touches 1-3)", () => {
   });
 });
 
-describe("applyFlick — the shot (touch 4)", () => {
-  const atShot = (attacker: 0 | 1) => ({ ...initialMatch(attacker), touch: 4 });
+describe("applyFlick — the shot (touch 5)", () => {
+  const atShot = (attacker: 0 | 1) => ({ ...initialMatch(attacker), touch: 5 });
 
   it("scores when attacker 0 puts the cap in the right goal, then kicks off to side 1", () => {
     const shot: FlickResult = { crossedGate: false, flickedEnding: "goalRight", anyCapLeftPitch: true };
@@ -72,7 +72,7 @@ describe("applyFlick — the shot (touch 4)", () => {
   });
 
   it("declares a win when the scoring goal reaches goalsToWin", () => {
-    const s = { ...initialMatch(1), touch: 4, scores: [0, 2] as [number, number] };
+    const s = { ...initialMatch(1), touch: 5, scores: [0, 2] as [number, number] };
     const shot: FlickResult = { crossedGate: false, flickedEnding: "goalLeft", anyCapLeftPitch: true }; // side 1 attacks left
     const { state, result } = applyFlick(s, shot, config);
     expect(result).toBe("win");
@@ -90,7 +90,7 @@ describe("applyFlick — the shot (touch 4)", () => {
 
   it("still scores on the shot when the flicked cap enters the goal even if another cap left the pitch", () => {
     const shot: FlickResult = { crossedGate: false, flickedEnding: "goalRight", anyCapLeftPitch: true };
-    const { state, result } = applyFlick({ ...initialMatch(0), touch: 4 }, shot, config);
+    const { state, result } = applyFlick({ ...initialMatch(0), touch: 5 }, shot, config);
     expect(result).toBe("goal");
     expect(state.scores).toEqual([1, 0]);
   });
