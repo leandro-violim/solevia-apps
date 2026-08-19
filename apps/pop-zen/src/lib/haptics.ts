@@ -8,12 +8,16 @@
  */
 import { Capacitor } from "@capacitor/core";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
+import { isVibrationEnabled } from "./settings";
 
 const IS_NATIVE = Capacitor.isNativePlatform();
 
-/** A crisp, light tap — fired the instant a bubble pops. */
+/**
+ * A crisp, light tap — fired the instant a bubble pops. No-ops when the in-app
+ * Vibration toggle is off, on web, and (via the OS) when System Haptics is off.
+ */
 export function popHaptic() {
-  if (!IS_NATIVE) return;
+  if (!IS_NATIVE || !isVibrationEnabled()) return;
   void Haptics.impact({ style: ImpactStyle.Light }).catch(() => {
     /* haptics unavailable / disabled — ignore */
   });

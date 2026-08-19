@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { APP_VERSION, useSoundSetting } from "../lib/settings";
+import { APP_VERSION, useSoundSetting, useVibrationSetting } from "../lib/settings";
 import { usePhaseRecords } from "../lib/records";
 
 export const Route = createFileRoute("/settings")({
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsPage() {
   const { enabled, toggle } = useSoundSetting();
+  const { enabled: vibrationEnabled, toggle: toggleVibration } = useVibrationSetting();
   const { reset } = usePhaseRecords();
 
   return (
@@ -66,6 +67,35 @@ function SettingsPage() {
         <p className="mt-3 text-[11px] text-muted-foreground">
           Motion is reduced automatically when your device has "Reduce Motion" turned on in
           accessibility settings.
+        </p>
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm font-medium text-foreground">Vibration</div>
+            <div className="text-xs text-muted-foreground">
+              Feel a light tap each time a bubble pops.
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={vibrationEnabled}
+            onClick={() => toggleVibration(!vibrationEnabled)}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+              vibrationEnabled ? "bg-primary" : "bg-muted"
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                vibrationEnabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Works on iPhone only, and follows your device's System Haptics setting.
         </p>
       </section>
 

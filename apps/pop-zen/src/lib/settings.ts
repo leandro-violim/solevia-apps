@@ -47,3 +47,49 @@ export function useSoundSetting() {
 
   return { enabled, toggle };
 }
+
+// ── Vibration (haptics) ─────────────────────────────────────────────────────
+const VIBE_KEY = "bubble-vibration-enabled-v1";
+
+function readVibe(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const raw = window.localStorage.getItem(VIBE_KEY);
+    if (raw === null) return true; // default ON
+    return raw === "1";
+  } catch {
+    return true;
+  }
+}
+
+/** Module-level cache so haptics can read without a hook. */
+let cachedVibe = true;
+if (typeof window !== "undefined") {
+  cachedVibe = readVibe();
+}
+
+export function isVibrationEnabled(): boolean {
+  return cachedVibe;
+}
+
+export function useVibrationSetting() {
+  const [enabled, setEnabled] = useState<boolean>(() => cachedVibe);
+
+  useEffect(() => {
+    const v = readVibe();
+    cachedVibe = v;
+    setEnabled(v);
+  }, []);
+
+  const toggle = useCallback((next: boolean) => {
+    cachedVibe = next;
+    setEnabled(next);
+    try {
+      window.localStorage.setItem(VIBE_KEY, next ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  return { enabled, toggle };
+}
