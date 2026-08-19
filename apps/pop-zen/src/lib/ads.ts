@@ -61,9 +61,10 @@ const LIVE_IDS = {
     interstitial: "ca-app-pub-9628521678374705/7191467566",
   },
   android: {
-    // TODO: create the Android app + ad units in AdMob and paste them here.
-    banner: "ca-app-pub-XXXXXXXXXXXXXXXX/BBBBBBBBBB",
-    interstitial: "ca-app-pub-XXXXXXXXXXXXXXXX/IIIIIIIIII",
+    // Sole Via — Bubble Pop Calm (Android). AdMob App ID:
+    // ca-app-pub-9628521678374705~9477972092
+    banner: "ca-app-pub-9628521678374705/3973580155",
+    interstitial: "ca-app-pub-9628521678374705/1211685446",
   },
 };
 
