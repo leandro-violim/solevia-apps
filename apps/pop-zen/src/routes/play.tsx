@@ -9,6 +9,7 @@ import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
 import { layoutBubbles, type BubbleState } from "../lib/layout";
 import { playPop, unlockAudio, resetAudio } from "../lib/pop-sound";
+import { popHaptic } from "../lib/haptics";
 import {
   usePhaseRecords,
   resetRun,
@@ -174,6 +175,7 @@ function PlayPage() {
       setState("playing");
     }
     playPop();
+    popHaptic(); // light Taptic-Engine tap on each pop (native iOS; respects system haptics)
     // Pure state update only — no side effects here, so React re-running this
     // updater (StrictMode/concurrent) can't submit the score twice.
     setBubbles((prev) => prev.map((b) => (b.id === id ? { ...b, popped: true } : b)));
