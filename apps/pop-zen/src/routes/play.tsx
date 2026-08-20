@@ -19,6 +19,7 @@ import {
   commitRunTotal,
 } from "../lib/records";
 import { pickQuote } from "../lib/quotes";
+import { t } from "../lib/i18n";
 
 const searchSchema = z.object({
   phase: z.number().int().min(1).max(TOTAL_PHASES).optional().default(1),
@@ -246,13 +247,13 @@ function PlayPage() {
     <div className="flex min-h-dvh flex-col" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <header className="flex items-center justify-between px-4 py-3">
         <Link to="/" className="text-sm font-medium text-muted-foreground">
-          ← Exit
+          {t("play.exit")}
         </Link>
         <div className="text-center">
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-            Phase {phase} of {TOTAL_PHASES}
+            {t("play.phaseOf", { phase, total: TOTAL_PHASES })}
           </div>
-          <div className="text-sm font-semibold text-foreground">{cfg.label} bubbles</div>
+          <div className="text-sm font-semibold text-foreground">{t(cfg.key)}</div>
         </div>
         <div className="w-10 text-right font-mono text-sm tabular-nums text-foreground">
           {state === "playing" && startAt !== null ? (
@@ -264,7 +265,7 @@ function PlayPage() {
       </header>
 
       <div className="px-4 pb-2 text-center text-xs text-muted-foreground">
-        {remaining} bubbles left · Best: {record?.bestScore ?? 0} pts
+        {t("play.bubblesLeft", { n: remaining, best: record?.bestScore ?? 0 })}
       </div>
 
       <div className="relative flex flex-1 px-2">
@@ -289,7 +290,7 @@ function PlayPage() {
           {state === "ready" && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <div className="rounded-full bg-foreground/70 px-5 py-2 text-sm font-medium text-primary-foreground">
-                Tap any bubble to start
+                {t("play.tapToStart")}
               </div>
             </div>
           )}
@@ -298,17 +299,20 @@ function PlayPage() {
             <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
               <div className="mx-4 w-full max-w-xs rounded-2xl bg-card p-6 text-center shadow-xl">
                 <div className="text-xs uppercase tracking-widest text-muted-foreground">
-                  Phase {phase} complete
+                  {t("play.phaseComplete", { phase })}
                 </div>
                 <div className="mt-2 text-4xl font-bold text-primary">{result.score}</div>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  Time {formatTime(result.timeMs)}
+                  {t("play.time", { time: formatTime(result.timeMs) })}
                 </div>
                 <div className="mt-3 rounded-lg bg-muted p-2 text-xs text-muted-foreground">
-                  {isNewBestScore ? "New best score! " : ""}
-                  {isNewBestTime ? "New best time! " : ""}
+                  {isNewBestScore ? t("play.newBestScore") : ""}
+                  {isNewBestTime ? t("play.newBestTime") : ""}
                   {!isNewBestScore && !isNewBestTime
-                    ? `Best ${record?.bestScore ?? 0} · ${formatTime(record?.bestTimeMs ?? 0)}`
+                    ? t("play.bestLine", {
+                        score: record?.bestScore ?? 0,
+                        time: formatTime(record?.bestTimeMs ?? 0),
+                      })
                     : null}
                 </div>
                 {isLast && (
@@ -338,17 +342,17 @@ function PlayPage() {
                   >
                     {showAdOnFinish
                       ? isLast
-                        ? "Watch ad · Finish"
-                        : "Watch ad · Next phase"
+                        ? t("play.watchFinish")
+                        : t("play.watchNext")
                       : isLast
-                        ? "Finish"
-                        : "Next phase"}
+                        ? t("play.finish")
+                        : t("play.nextPhase")}
                   </button>
                   <button
                     onClick={restart}
                     className="rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground"
                   >
-                    Replay this phase
+                    {t("play.replayPhase")}
                   </button>
                 </div>
               </div>

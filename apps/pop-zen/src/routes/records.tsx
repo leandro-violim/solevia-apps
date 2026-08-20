@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
 import { formatTime, PHASES } from "../lib/game-config";
 import { usePhaseRecords } from "../lib/records";
+import { t } from "../lib/i18n";
 
 export const Route = createFileRoute("/records")({
   head: () => ({
@@ -28,9 +29,9 @@ function RecordsPage() {
     >
       <header className="mb-6 flex items-center justify-between">
         <Link to="/" className="text-sm text-muted-foreground">
-          ← Home
+          {t("common.home")}
         </Link>
-        <h1 className="text-lg font-semibold text-foreground">Your records</h1>
+        <h1 className="text-lg font-semibold text-foreground">{t("records.title")}</h1>
         <div className="w-10" />
       </header>
 
@@ -55,10 +56,13 @@ function RecordsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xs uppercase tracking-widest text-muted-foreground">
-                    Phase {p.phase}
+                    {t("records.phase", { n: p.phase })}
                   </div>
                   <div className="text-sm font-medium text-foreground">
-                    {p.label} · {p.bubbles} bubbles
+                    {t("records.phaseLine", {
+                      label: t(`phaseShort${p.phase}`),
+                      bubbles: p.bubbles,
+                    })}
                   </div>
                 </div>
                 <div className="text-right">
@@ -66,18 +70,18 @@ function RecordsPage() {
                     {hasRecord ? r.bestScore : "—"}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {hasRecord ? formatTime(r.bestTimeMs) : "no time yet"}
+                    {hasRecord ? formatTime(r.bestTimeMs) : t("records.noTime")}
                   </div>
                 </div>
               </div>
               {hasLast && (
                 <div className="mt-2 flex items-center justify-between border-t border-border/40 pt-2 text-xs">
                   <span className="text-muted-foreground">
-                    Last: {r.lastScore} · {formatTime(r.lastTimeMs)}
+                    {t("records.last", { score: r.lastScore, time: formatTime(r.lastTimeMs) })}
                   </span>
                   {!hasPrevScore && !hasPrevTime ? (
                     <span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">
-                      New!
+                      {t("records.new")}
                     </span>
                   ) : (
                     <span className="flex gap-2">
@@ -124,15 +128,15 @@ function RecordsPage() {
           search={{ phase: 1 }}
           className="rounded-full bg-primary py-3 text-center text-sm font-semibold text-primary-foreground shadow"
         >
-          Play from Phase 1
+          {t("records.playFrom")}
         </Link>
         <button
           onClick={() => {
-            if (confirm("Reset all records?")) reset();
+            if (confirm(t("records.resetConfirmShort"))) reset();
           }}
           className="rounded-full border border-border bg-background py-3 text-center text-sm text-muted-foreground"
         >
-          Reset records
+          {t("settings.resetBtn")}
         </button>
       </div>
 
