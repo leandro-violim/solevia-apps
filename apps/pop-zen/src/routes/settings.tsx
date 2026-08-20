@@ -95,7 +95,7 @@ function SettingsPage() {
           </button>
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">
-          Works on iPhone only, and follows your device's System Haptics setting.
+          Follows your device's system vibration setting.
         </p>
       </section>
 
