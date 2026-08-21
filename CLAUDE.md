@@ -7,6 +7,22 @@ Vite + Tailwind v4 + Capacitor (WKWebView → native iOS). Ads via Google AdMob
 `vite.config.mobile.ts`, outputs static SPA to `dist/client`) then `bunx cap sync ios`.
 
 ------------------------------------------------------------------------
+## ⚠️ HANDOFF — Android / Google Play SUBMITTED FOR REVIEW 2026-08-21 (by Cowork/Claude in the Claude app)
+
+**Zen Bubbles' first Android release is SUBMITTED to Google Play and in review.** Managed
+publishing is OFF, so it **auto-publishes to production the moment Google approves** (US, CA,
+AU, NZ, IN, Brazil). Do NOT create a new release, bump versionCode, or re-upload the AAB
+unless the review is rejected or a new version is intentionally shipped.
+
+- Shipped branch: **`android-release`** (= `android-port` + `ptbr-i18n` merged). AAB
+  versionCode 1 / versionName 1.0, targetSdk 36, Play App Signing.
+- **Full details + "what Code should/shouldn't do next" live in
+  [`apps/pop-zen/PLAY-RELEASE-STATUS.md`](apps/pop-zen/PLAY-RELEASE-STATUS.md).** Read it
+  before any Android work.
+- Pending (handled by Cowork, no code needed): once live, wire the Play Store link into the
+  AdMob Android app so ads serve fully.
+- iOS sequencing unchanged: 1.0.1 in review, 1.0.2 built-but-unsent, 1.1.0 (Portuguese) after 1.0.2.
+
 ## ⚠️ HANDOFF — App Store submission work done 2026-08-04 (by Cowork/Claude in the Claude app)
 
 The v1.0 App Store submission was completed in App Store Connect (ASC). Apple ID (adam id)
