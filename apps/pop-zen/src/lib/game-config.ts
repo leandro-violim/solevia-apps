@@ -3,15 +3,20 @@ export type PhaseConfig = {
   bubbles: number;
   /** Bubble diameter in px on a ~360px-wide play area. */
   size: number;
-  label: string;
+  /**
+   * i18n key for this phase's name. Resolved via `t(key)` for the full phrase
+   * (play header) and `t("phaseShort" + phase)` for the records-list label —
+   * Portuguese needs whole localized phrases, not a translated adjective.
+   */
+  key: `phase${number}`;
 };
 
 export const PHASES: PhaseConfig[] = [
-  { phase: 1, bubbles: 10, size: 110, label: "Extra Large" },
-  { phase: 2, bubbles: 20, size: 82, label: "Large" },
-  { phase: 3, bubbles: 32, size: 62, label: "Medium" },
-  { phase: 4, bubbles: 45, size: 48, label: "Small" },
-  { phase: 5, bubbles: 60, size: 38, label: "Tiny" },
+  { phase: 1, bubbles: 10, size: 110, key: "phase1" },
+  { phase: 2, bubbles: 20, size: 82, key: "phase2" },
+  { phase: 3, bubbles: 32, size: 62, key: "phase3" },
+  { phase: 4, bubbles: 45, size: 48, key: "phase4" },
+  { phase: 5, bubbles: 60, size: 38, key: "phase5" },
 ];
 
 export const TOTAL_PHASES = PHASES.length;

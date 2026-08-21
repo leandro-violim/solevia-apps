@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { APP_VERSION } from "../lib/settings";
+import { t } from "../lib/i18n";
+
+const SUPPORT_EMAIL = "support@solevia.app";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -22,50 +25,43 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
+  // Splice the mailto link into the support sentence, keeping it a real link in
+  // both languages ({email} is left un-interpolated so we can split on it).
+  const [supportBefore, supportAfter] = t("about.support").split("{email}");
   return (
     <main className="mx-auto max-w-2xl px-6 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)] text-sm leading-relaxed text-foreground">
       <Link to="/" className="text-xs text-muted-foreground">
-        ← Back home
+        {t("common.backHome")}
       </Link>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight">About & Support</h1>
+      <h1 className="mt-4 text-3xl font-bold tracking-tight">{t("about.title")}</h1>
 
-      <p className="mt-6">
-        Zen Bubbles is a simple relaxation game. Pop plastic bubbles across five soothing phases —
-        bubbles shrink as you advance. The faster you clear a phase, the higher your score. Your
-        best scores and best times are saved on your device so you can beat your own record over
-        time.
-      </p>
+      <p className="mt-6">{t("about.intro")}</p>
 
-      <h2 className="mt-8 text-lg font-semibold">No account required</h2>
+      <h2 className="mt-8 text-lg font-semibold">{t("about.noAccountH")}</h2>
+      <p className="mt-2">{t("about.noAccount")}</p>
+
+      <h2 className="mt-8 text-lg font-semibold">{t("about.a11yH")}</h2>
+      <p className="mt-2">{t("about.a11y")}</p>
+
+      <h2 className="mt-8 text-lg font-semibold">{t("about.supportH")}</h2>
       <p className="mt-2">
-        The App works fully offline and does not require sign-in. Records live on your device only.
-      </p>
-
-      <h2 className="mt-8 text-lg font-semibold">Accessibility</h2>
-      <p className="mt-2">
-        The App respects your system "Reduce Motion" setting and disables idle animations when
-        enabled. Tap targets are sized for comfortable touch on phones.
-      </p>
-
-      <h2 className="mt-8 text-lg font-semibold">Support</h2>
-      <p className="mt-2">
-        Need help, want to report a bug, or have a suggestion? Email us at{" "}
-        <a href="mailto:support@solevia.app" className="font-mono underline">
-          support@solevia.app
+        {supportBefore}
+        <a href={`mailto:${SUPPORT_EMAIL}`} className="font-mono underline">
+          {SUPPORT_EMAIL}
         </a>
-        . We aim to respond within a few business days.
+        {supportAfter}
       </p>
 
-      <h2 className="mt-8 text-lg font-semibold">Legal</h2>
+      <h2 className="mt-8 text-lg font-semibold">{t("about.legalH")}</h2>
       <ul className="mt-2 list-disc pl-5">
         <li>
           <Link to="/privacy" className="underline">
-            Privacy Policy
+            {t("link.privacyPolicy")}
           </Link>
         </li>
         <li>
           <Link to="/terms" className="underline">
-            Terms of Use
+            {t("link.termsOfUse")}
           </Link>
         </li>
       </ul>

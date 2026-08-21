@@ -5,6 +5,7 @@ import { Trophy, Sparkles, RotateCcw, ArrowRight } from "lucide-react";
 import { launchConfetti } from "../lib/confetti";
 import { getAllTimeBestTotal } from "../lib/records";
 import { pickQuote } from "../lib/quotes";
+import { t } from "../lib/i18n";
 
 // beat is passed as 1/0 to survive URL (de)serialization cleanly.
 const searchSchema = z.object({
@@ -103,25 +104,27 @@ function FinishPage() {
       {beatRecord ? (
         <>
           <div className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
-            {prevBest > 0 ? "New all-time record" : "First record set"}
+            {prevBest > 0 ? t("finish.newAllTime") : t("finish.firstRecord")}
           </div>
           <h1 className="mt-2 text-4xl font-bold tracking-tight text-foreground">
-            You beat your best!
+            {t("finish.youBeatBest")}
           </h1>
         </>
       ) : (
         <>
           <div className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            Run complete
+            {t("finish.runComplete")}
           </div>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-foreground">So close!</h1>
+          <h1 className="mt-2 text-4xl font-bold tracking-tight text-foreground">
+            {t("finish.soClose")}
+          </h1>
         </>
       )}
 
       {/* Score card */}
       <div className="mt-7 w-full max-w-xs rounded-3xl bg-card p-6">
         <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
-          Your run · all 5 phases
+          {t("finish.yourRun")}
         </div>
         <div className="mt-1 text-5xl font-bold text-primary tabular-nums">
           {total.toLocaleString()}
@@ -130,22 +133,23 @@ function FinishPage() {
         {beatRecord ? (
           prevBest > 0 ? (
             <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
-              ▲ {delta.toLocaleString()} over your old best of {prevBest.toLocaleString()}
+              {t("finish.overOldBest", {
+                delta: delta.toLocaleString(),
+                prev: prevBest.toLocaleString(),
+              })}
             </div>
           ) : (
-            <div className="mt-3 text-sm text-muted-foreground">
-              This is your first all-time total — now go beat it.
-            </div>
+            <div className="mt-3 text-sm text-muted-foreground">{t("finish.firstTotal")}</div>
           )
         ) : (
           <div className="mt-3 space-y-1">
             <div className="text-sm text-muted-foreground">
-              All-time best:{" "}
+              {t("finish.allTimeBest")}{" "}
               <span className="font-semibold text-foreground">{allTimeBest.toLocaleString()}</span>
             </div>
             {pointsAway > 0 && (
               <div className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-3 py-1 text-sm font-semibold text-primary">
-                Just {pointsAway.toLocaleString()} points away
+                {t("finish.pointsAway", { n: pointsAway.toLocaleString() })}
               </div>
             )}
           </div>
@@ -157,7 +161,7 @@ function FinishPage() {
         className="mt-5 max-w-xs text-sm italic text-muted-foreground"
         style={{ animation: "floatUp 600ms ease-out 200ms both" }}
       >
-        {beatRecord ? "Ride the momentum — see if you can push it even higher." : `“${quote}”`}
+        {beatRecord ? t("finish.momentum") : `“${quote}”`}
       </p>
 
       {/* Actions */}
@@ -171,11 +175,11 @@ function FinishPage() {
         >
           {beatRecord ? (
             <>
-              <ArrowRight className="h-5 w-5" /> Optimize your record
+              <ArrowRight className="h-5 w-5" /> {t("finish.optimize")}
             </>
           ) : (
             <>
-              <RotateCcw className="h-5 w-5" /> Try again from the start
+              <RotateCcw className="h-5 w-5" /> {t("finish.tryAgain")}
             </>
           )}
         </button>
@@ -183,10 +187,10 @@ function FinishPage() {
           to="/records"
           className="rounded-full bg-card py-3 text-sm font-medium text-foreground"
         >
-          View records
+          {t("finish.viewRecords")}
         </Link>
         <Link to="/" className="py-1 text-xs text-muted-foreground hover:underline">
-          Back home
+          {t("finish.backHome")}
         </Link>
       </div>
     </div>

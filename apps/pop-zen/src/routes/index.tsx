@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import bubbleImg from "../assets/bubble.png";
 import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
+import { t } from "../lib/i18n";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,10 +39,7 @@ function Home() {
           />
         </div>
         <h1 className="mt-6 text-4xl font-bold tracking-tight text-foreground">Zen Bubbles</h1>
-        <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-          Five soothing phases. Bubbles get smaller as you go. Pop them all as fast as you can to
-          beat your record.
-        </p>
+        <p className="mt-3 max-w-xs text-sm text-muted-foreground">{t("home.tagline")}</p>
 
         <div className="mt-10 flex w-full max-w-xs flex-col gap-3">
           <Link
@@ -49,13 +47,13 @@ function Home() {
             search={{ phase: 1 }}
             className="rounded-full bg-primary py-4 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
           >
-            Play
+            {t("home.play")}
           </Link>
           <Link
             to="/records"
             className="rounded-full border border-border bg-card py-3 text-sm font-medium text-foreground"
           >
-            View records
+            {t("home.viewRecords")}
           </Link>
         </div>
 
@@ -64,19 +62,19 @@ function Home() {
           className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground"
         >
           <Link to="/settings" className="hover:underline">
-            Settings
+            {t("nav.settings")}
           </Link>
           <span aria-hidden>·</span>
           <Link to="/about" className="hover:underline">
-            About
+            {t("nav.about")}
           </Link>
           <span aria-hidden>·</span>
           <Link to="/privacy" className="hover:underline">
-            Privacy
+            {t("nav.privacy")}
           </Link>
           <span aria-hidden>·</span>
           <Link to="/terms" className="hover:underline">
-            Terms
+            {t("nav.terms")}
           </Link>
         </nav>
       </div>
