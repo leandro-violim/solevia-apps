@@ -9,6 +9,8 @@ export type BubbleState = {
   y: number;
   size: number;
   drift: number;
+  /** Which of the 4 real bubble-wrap textures to use (0–3). Stable per bubble. */
+  variant: number;
   popped: boolean;
 };
 
@@ -57,6 +59,7 @@ export function layoutBubbles(
       y: spread ? row * cellH + (cellH - size) / 2 + jitterY : offsetY + row * step + jitterY,
       size,
       drift: rand() * 3,
+      variant: Math.floor(rand() * 4),
       popped: false,
     });
   }

@@ -6,6 +6,7 @@ import { AdBanner } from "../components/AdBanner";
 import { showInterstitial, preloadInterstitial, refreshBanner } from "../lib/ads";
 import { Bubble } from "../components/Bubble";
 import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
+import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
 import { layoutBubbles, type BubbleState } from "../lib/layout";
 import { playPop, unlockAudio, resetAudio } from "../lib/pop-sound";
@@ -273,6 +274,22 @@ function PlayPage() {
           ref={fieldRef}
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm"
         >
+          {/* Bubble-wrap SHEET behind the grid — the NATURAL photo, faint and
+              teal-tinted ENTIRELY via the CSS filter (image is not pre-darkened)
+              so the Aurora shows through and tints the plastic. Sits on the
+              aurora, below the bubbles. Values ported 1:1 from
+              _reference/zen-final-look.html — do not add a dark gradient over it. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage: `url(${sheetBg})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              opacity: 0.22,
+              filter: "brightness(.5) saturate(.45) hue-rotate(150deg)",
+            }}
+          />
           {bubbles.map((b) => (
             <Bubble
               key={b.id}
@@ -281,6 +298,7 @@ function PlayPage() {
               y={b.y}
               size={b.size}
               popped={b.popped}
+              variant={b.variant}
               driftDelay={b.drift}
               still={stillBubbles}
               onPop={handlePop}
