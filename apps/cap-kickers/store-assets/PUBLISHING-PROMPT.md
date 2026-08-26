@@ -39,8 +39,13 @@ web console or your device → you, with the cloud Task guiding. Nobody should r
   Play phone 1080×1920; 5 each).
 - ✅ Play **feature graphics** — `store-assets/feature-graphic-en.png` + `-pt.png` (1024×500).
 - ✅ **Listing copy** EN + pt-BR — `store-assets/STORE-LISTING.md` (ready to paste, within char limits).
-- ⛔ Still to do (owner + guidance): real AdMob IDs → code (Claude Code pastes), hosted privacy URL,
-  `app-ads.txt`, Android release keystore/AAB, the on-device video, submit in both consoles. Details below.
+- ✅ **Real AdMob IDs already applied** in code (Info.plist + AndroidManifest app IDs, ads.ts LIVE_IDS,
+  account pub-9628521678374705). ✅ Support email **contact@solevia.app**. ✅ Cap-grab fix (owner-verified
+  on device). ✅ Hosted privacy/terms pages live on solevia.app (contact@). ✅ Xcode 26.3 (archive-ready).
+- ⛔ Still to do (owner + guidance): host **`app-ads.txt`** on solevia.app; Android release keystore/AAB;
+  the on-device video (optional); archive iOS in Xcode; fill + submit both listings. Details below.
+- ℹ️ Known-benign: the JS console logs React **#418** (TanStack Start SPA-shell hydration warning) — it
+  reproduces even in English, React recovers, the app works, and it's invisible to store review. Skip it.
 
 ---
 
@@ -99,24 +104,21 @@ below map to it.
 
 ---
 
-## STEP A — AdMob (do this FIRST; the store builds need the real IDs)
+## STEP A — AdMob
 
-1. Sign in to AdMob (account **pub-9628521678374705**). Create **two apps**: "Cap Kickers" for **iOS**
-   and "Cap Kickers" for **Android** (bundle/appId `app.solevia.capkickers` on both).
-2. For each app, create **3 ad units**: Banner, Interstitial, Rewarded. Collect the 6 unit IDs and the
-   2 App IDs (format `ca-app-pub-9628521678374705~XXXXXXXXXX` for apps, `.../XXXXXXXXXX` for units).
-3. Put them into the code (this is the only code change needed for real ads):
-   - `ios/App/App/Info.plist` → replace the `GADApplicationIdentifier` string with the iOS **App ID**.
-   - `android/app/src/main/AndroidManifest.xml` → replace the `com.google.android.gms.ads.APPLICATION_ID`
-     value with the Android **App ID**.
-   - `src/lib/ads.ts` → fill the `LIVE_IDS` object (ios & android → banner/interstitial/rewarded) with
-     the 6 **unit IDs**. (Leave `TEST_IDS` alone.)
-4. AdMob app settings: set **max ad content rating = G**; set the app as a **general-audience** app
-   (NOT child-directed — see the age-rating note in the validation doc). Under "Link to app store",
-   you can only link **after** the app is live — do it post-launch to trigger AdMob approval.
-5. Publish **`app-ads.txt`** at the root of `solevia.app` (in the `solevia-web` repo) containing:
+> ✅ **The two apps + 6 ad units are already registered, and their IDs are already in the code** (iOS app
+> id `ca-app-pub-9628521678374705~1368359859`, Android `~4321826253`, 6 unit IDs in `ads.ts` LIVE_IDS).
+> Steps 1–3 below are done — kept for reference only. **Remaining AdMob work = steps 4–5.**
+
+1. *(done)* Registered "Cap Kickers" iOS + Android in AdMob (account **pub-9628521678374705**), appId
+   `app.solevia.capkickers`.
+2. *(done)* Created Banner / Interstitial / Rewarded units for each.
+3. *(done)* IDs applied to `Info.plist`, `AndroidManifest.xml`, and `ads.ts` LIVE_IDS.
+4. **AdMob app settings:** set **max ad content rating = G** and mark the app **general-audience**
+   (NOT child-directed). Under "Link to app store", you can only link **after** the app is live — do it
+   post-launch to trigger AdMob approval (real units return no-fill until then; that's expected).
+5. **Publish `app-ads.txt`** at the root of `solevia.app` (in the `solevia-web` repo) containing:
    `google.com, pub-9628521678374705, DIRECT, f08c47fec0942fa0` — commit & let Cloudflare deploy.
-6. Rebuild after editing IDs: `bun run build:mobile && bunx cap sync ios && bunx cap sync android`.
 
 > Until the real IDs are in, you can still build and test with test ads by exporting
 > `VITE_USE_TEST_ADS=true` before `build:mobile`. NEVER tap your own LIVE ads (invalid-traffic risk).

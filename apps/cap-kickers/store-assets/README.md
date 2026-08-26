@@ -30,21 +30,38 @@ Regenerate: `bun run dev` (port 8080) → `bun <scratchpad>/capture.js store-ass
 
 **✅ Done & committed (in this repo, branch `cap-kickers`):**
 - App code: gameplay, modes, AdMob engine (test/live auto-switch), EN+pt-BR i18n, in-app legal
-  (governing law = **Florida**), tutorial with real cap art.
+  (governing law = **Florida**, support email **contact@solevia.app**), tutorial with real cap art.
+- **Real AdMob IDs applied** (account pub-9628521678374705): iOS app id `~1368359859`, Android app id
+  `~4321826253`, and all 6 live ad-unit IDs in `src/lib/ads.ts` LIVE_IDS. A production `build:mobile`
+  ships live ads automatically; `VITE_USE_TEST_ADS=true` forces test ads for device testing.
+- **On-device app name localized**: pt devices show **"Futebol de Tampinha"**, others "Cap Kickers".
+- **Cap-grab fix**: caps stay grabbable (≥~48pt target) even when the camera zooms out (fifth-touch
+  framing) — verified better on-device by the owner.
 - iOS compliance: `PrivacyInfo.xcprivacy` (wired into the target) + `ITSAppUsesNonExemptEncryption=false`.
+  Splash imageset cleaned (no more "unassigned children" warning). Xcode 26.3 / iOS SDK 26.2 on the Mac
+  (meets Apple's Xcode-26 archive requirement).
 - Android: `android/` project, AdMob meta-data, launcher icons, targetSdk 36, builds an APK.
-- Store assets: screenshots, feature graphics, listing copy (all in this folder).
-- `tsc` clean · 131 unit tests pass · `build:mobile` + `cap sync ios/android` succeed.
+  `*.jks`/`*.keystore`/`keystore.properties` gitignored; `android/keystore.properties.example` added.
+- Store assets: screenshots, feature graphics (`feature-graphic-en/-pt.png`), listing copy — all here.
+- `tsc` clean · 133 unit tests pass · `build:mobile` + `cap sync ios/android` succeed.
+- solevia-web already deployed: `privacy/cap-kickers` + `terms/cap-kickers` live, showing contact@.
 
 **⛔ Remaining — owner actions (needs your accounts/assets/logins; see PUBLISHING-PROMPT.md):**
-1. Register Cap Kickers (iOS + Android) in **AdMob** → get App IDs + 6 ad-unit IDs.
-2. Paste those IDs into `Info.plist`, `AndroidManifest.xml`, `src/lib/ads.ts` LIVE_IDS **← do this in
-   Claude Code on the Mac**, then rebuild + `cap sync`.
-3. Host the **privacy-policy URL** + **`app-ads.txt`** on solevia.app.
-4. Create the **Android upload keystore** and build a signed **AAB**.
-5. Record the **on-device video** (VIDEO-GUIDE.md).
-6. Fill listings (STORE-LISTING.md), upload assets, complete privacy/data-safety + age questionnaires
+1. Host **`app-ads.txt`** at solevia.app root: `google.com, pub-9628521678374705, DIRECT, f08c47fec0942fa0`.
+   (The privacy-policy URL is already live.) After the app is live, in AdMob use **"Link to app store"**
+   and set **max ad content rating = G**.
+2. Create the **Android upload keystore** (see `android/keystore.properties.example`) and build a signed
+   **AAB** — do the keystore + Gradle wiring in Claude Code on the Mac with help.
+3. Record the **on-device video** (VIDEO-GUIDE.md) — optional.
+4. **iOS:** archive in Xcode (Product ▸ Archive) → upload to App Store Connect.
+5. Fill listings (STORE-LISTING.md — EN "Cap Kickers" / pt-BR "Futebol de Tampinha"), upload the
+   screenshots + feature graphics, complete App Privacy / Data safety + age questionnaires
    (general-audience 4+/Everyone — NOT child-directed), and **Submit** in ASC + Play Console.
+6. Confirm **contact@solevia.app** is a real, monitored mailbox before submitting.
+
+**Known-benign (no action needed):** the JS console prints **React #418** (a hydration warning from
+TanStack Start's SPA-shell prerender). It reproduces even in English, React recovers by client-rendering,
+the app works, and it's invisible to users and to store review. Not a fix-before-launch item.
 
 **Key decisions already locked:** general-audience rating (keeps all AdMob formats) · ship **universal
 incl. iPad** · US-first launch with UMP consent disabled (re-enable before EU/Brazil).
