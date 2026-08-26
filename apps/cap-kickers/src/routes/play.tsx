@@ -18,6 +18,7 @@ import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 import { gameAudio } from "../lib/audio";
 import { notifyMatchEnded, rewardedAvailable, showRewarded } from "../lib/ads";
+import { t as tRaw, useT } from "../lib/i18n";
 import {
   createFx,
   updateCapFx,
@@ -65,6 +66,7 @@ const AI_THINK_SECONDS = 0.5;
 
 function PlayPage() {
   const { mode, difficulty, goals, campaign } = Route.useSearch();
+  const t = useT();
 
   // Cap styles: the player's chosen cap vs a contrasting opponent cap. Side 0
   // (human/Player 1) uses the chosen style; side 1 (Player 2 / AI) the opponent.
@@ -340,7 +342,11 @@ function PlayPage() {
         if (report) {
           setMatch(report.match);
           if (report.result === "goal" || report.result === "win") {
-            showBanner(report.result === "win" ? `Player ${report.match.winner! + 1} wins!` : "GOAL!");
+            showBanner(
+              report.result === "win"
+                ? tRaw("play.playerWins", { n: report.match.winner! + 1 })
+                : tRaw("play.goal"),
+            );
             goalCelebration(fxRef.current, sizeRef.current.cssW, sizeRef.current.cssH);
             gameAudio.sfx("horn");
             gameAudio.sfx("cheer");
@@ -358,7 +364,7 @@ function PlayPage() {
               session.canRetryShot() &&
               (rewardedAvailable() || import.meta.env.DEV);
             if (offerRetry) setRetry(true);
-            else showBanner("Turn over");
+            else showBanner(tRaw("play.turnOver"));
           }
 
           // Gate the next turn behind a pass-the-phone overlay in 2-player
@@ -546,7 +552,7 @@ function PlayPage() {
     } else {
       session.declineRetry();
       setMatch(session.match);
-      showBanner("Turn over");
+      showBanner(t("play.turnOver"));
     }
     setRetry(false);
   };
@@ -593,10 +599,10 @@ function PlayPage() {
         <div className="flex flex-col items-end gap-2">
           <div className="font-display rounded-2xl bg-white/95 px-4 py-1 text-lg uppercase tracking-wide text-foreground shadow-[0_4px_0_rgba(7,40,24,0.4)] ring-2 ring-black/5">
             {won
-              ? `Player ${match.winner! + 1} wins!`
+              ? t("play.playerWins", { n: match.winner! + 1 })
               : mode === "ai" && match.attacker === AI_SIDE
-                ? `AI — touch ${match.touch}/${MATCH.shotTouch}`
-                : `Player ${match.attacker + 1} — touch ${match.touch}/${MATCH.shotTouch}`}
+                ? t("play.aiTouch", { t: match.touch, shot: MATCH.shotTouch })
+                : t("play.playerTouch", { n: match.attacker + 1, t: match.touch, shot: MATCH.shotTouch })}
           </div>
           <div className="flex gap-1.5 rounded-full bg-white/90 px-3 py-1.5 shadow-md">
             {Array.from({ length: MATCH.shotTouch }, (_, i) => i + 1).map((n) => (
@@ -623,13 +629,13 @@ function PlayPage() {
           onClick={() => void notifyMatchEnded()}
           className="font-display pointer-events-auto rounded-full bg-white/90 px-5 py-2 text-xs uppercase tracking-wider text-primary shadow-md active:scale-95"
         >
-          ⌂ Menu
+          {t("play.menu")}
         </Link>
         <button
           onClick={handleNewMatch}
           className="font-display pointer-events-auto rounded-full bg-white/90 px-5 py-2 text-xs uppercase tracking-wider text-foreground shadow-md active:scale-95"
         >
-          New match
+          {t("play.newMatch")}
         </button>
       </div>
 
@@ -662,7 +668,7 @@ function PlayPage() {
       {handoffTo !== null && !won && (
         <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/80">
           <div className="text-2xl font-bold text-white">
-            Pass the phone to Player {handoffTo + 1}
+            {t("play.passPhone", { n: handoffTo + 1 })}
           </div>
           <button
             onClick={() => {
@@ -671,7 +677,7 @@ function PlayPage() {
             }}
             className="rounded-full bg-primary px-8 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
           >
-            Ready
+            {t("play.ready")}
           </button>
         </div>
       )}
@@ -679,19 +685,19 @@ function PlayPage() {
       {retryOffer && !won && (
         <div className="pointer-events-auto absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black/75 px-8 text-center">
           <h2 className="goal-pop font-display text-5xl uppercase tracking-wide text-[#ffcf33]">
-            So close!
+            {t("play.soClose")}
           </h2>
           <p className="max-w-xs text-base font-medium text-white/90">
-            Watch a short ad to take one more shot?
+            {t("play.watchPrompt")}
           </p>
           <button onClick={handleWatchAd} className="arcade-btn arcade-btn--gold mt-1 px-8 py-4 text-lg">
-            ▶ Watch &amp; shoot
+            {t("play.watchShoot")}
           </button>
           <button
             onClick={handleDeclineRetry}
             className="font-display text-sm uppercase tracking-wide text-white/70 underline underline-offset-4"
           >
-            No thanks
+            {t("play.noThanks")}
           </button>
         </div>
       )}
@@ -701,7 +707,7 @@ function PlayPage() {
           {match.winner === 0 ? (
             <>
               <div className="text-3xl font-bold text-white">
-                {nextLevel ? "Level complete!" : "Campaign complete!"}
+                {nextLevel ? t("play.levelComplete") : t("play.campaignComplete")}
               </div>
               <div className="flex gap-3">
                 {nextLevel && (
@@ -715,32 +721,32 @@ function PlayPage() {
                     }}
                     className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
                   >
-                    Next level
+                    {t("play.nextLevel")}
                   </Link>
                 )}
                 <Link
                   to="/campaign"
                   className="rounded-full border-2 border-primary bg-transparent px-6 py-3 text-base font-semibold text-primary shadow-lg active:scale-[0.98]"
                 >
-                  Back to campaign
+                  {t("play.backToCampaign")}
                 </Link>
               </div>
             </>
           ) : (
             <>
-              <div className="text-3xl font-bold text-white">You lost</div>
+              <div className="text-3xl font-bold text-white">{t("play.youLost")}</div>
               <div className="flex gap-3">
                 <button
                   onClick={handleNewMatch}
                   className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
                 >
-                  Try again
+                  {t("play.tryAgain")}
                 </button>
                 <Link
                   to="/campaign"
                   className="rounded-full border-2 border-primary bg-transparent px-6 py-3 text-base font-semibold text-primary shadow-lg active:scale-[0.98]"
                 >
-                  Back to campaign
+                  {t("play.backToCampaign")}
                 </Link>
               </div>
             </>
@@ -750,12 +756,12 @@ function PlayPage() {
 
       {won && !campaign && (
         <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/65">
-          <div className="text-3xl font-bold text-white">Player {match.winner! + 1} wins!</div>
+          <div className="text-3xl font-bold text-white">{t("play.playerWins", { n: match.winner! + 1 })}</div>
           <button
             onClick={handleNewMatch}
             className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
           >
-            Rematch
+            {t("play.rematch")}
           </button>
         </div>
       )}

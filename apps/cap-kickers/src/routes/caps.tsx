@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CAP_STYLES, styleById } from "../game/caps/styles";
 import { loadCapStyleId, saveCapStyleId } from "../game/caps/storage";
 import { drawCap } from "../game/render/draw";
+import { useT } from "../lib/i18n";
 
 /** A tiny canvas that draws one cap style as a preview. */
 function Swatch({ styleId, size }: { styleId: string; size: number }) {
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/caps")({
 });
 
 function CapsPage() {
+  const t = useT();
   const [selected, setSelected] = useState(() => loadCapStyleId());
   const choose = (id: string) => {
     setSelected(id);
@@ -40,9 +42,11 @@ function CapsPage() {
       className="flex min-h-dvh flex-col items-center px-6 py-8"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 20px)" }}
     >
-      <h1 className="font-display text-5xl uppercase tracking-tight text-foreground">Your Cap</h1>
+      <h1 className="font-display text-5xl uppercase tracking-tight text-foreground">
+        {t("caps.title")}
+      </h1>
       <p className="mt-2 max-w-xs text-center text-sm font-medium text-muted-foreground">
-        Pick your cap. Your opponent gets a contrasting one.
+        {t("caps.subtitle")}
       </p>
 
       <div className="mt-7 grid w-full max-w-md grid-cols-4 gap-3">
@@ -66,8 +70,8 @@ function CapsPage() {
         ))}
       </div>
 
-      <Link to="/" className="arcade-btn mt-9 px-12 py-3 text-xl">
-        Done
+      <Link to="/settings" className="arcade-btn mt-9 px-12 py-3 text-xl">
+        {t("common.done")}
       </Link>
     </div>
   );

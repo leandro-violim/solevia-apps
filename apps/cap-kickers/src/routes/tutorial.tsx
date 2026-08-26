@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { TUTORIAL_STEPS, isLastStep, stepCount } from "../game/tutorial/steps";
 import { markTutorialSeen } from "../game/tutorial/storage";
+import { useT } from "../lib/i18n";
 
 export const Route = createFileRoute("/tutorial")({
   head: () => ({
@@ -21,6 +22,7 @@ const KEEPER_COLOR = "#ffbe2e";
 const GOLD = "#ffcf33";
 
 function TutorialPage() {
+  const t = useT();
   const [i, setI] = useState(0);
   const step = TUTORIAL_STEPS[i];
   const nav = useNavigate();
@@ -41,7 +43,7 @@ function TutorialPage() {
         className="font-display absolute right-5 text-sm uppercase tracking-wide text-muted-foreground"
         style={{ top: "calc(env(safe-area-inset-top) + 14px)" }}
       >
-        Skip
+        {t("tutorial.skip")}
       </button>
 
       <h1 className="font-display text-4xl uppercase tracking-tight text-foreground drop-shadow-[0_3px_0_rgba(18,40,28,0.12)]">
@@ -71,9 +73,9 @@ function TutorialPage() {
       </div>
 
       <h2 className="font-display mt-6 text-2xl uppercase tracking-wide text-foreground">
-        {step.title}
+        {t(`tutorial.${step.id}.title`)}
       </h2>
-      <p className="mt-2 max-w-xs text-sm font-medium text-muted-foreground">{step.body}</p>
+      <p className="mt-2 max-w-xs text-sm font-medium text-muted-foreground">{t(`tutorial.${step.id}.body`)}</p>
 
       <div className="mt-auto flex w-full max-w-xs gap-3 pt-8">
         {i > 0 ? (
@@ -82,16 +84,16 @@ function TutorialPage() {
             onClick={() => setI(i - 1)}
             className="font-display flex-1 rounded-full bg-white py-4 text-lg uppercase tracking-wide text-primary shadow-[0_5px_0_#cdddd3] transition active:translate-y-1"
           >
-            Back
+            {t("tutorial.back")}
           </button>
         ) : null}
         {isLastStep(i) ? (
           <button type="button" onClick={finish} className="arcade-btn arcade-btn--gold flex-1 py-4 text-lg">
-            Start playing
+            {t("tutorial.start")}
           </button>
         ) : (
           <button type="button" onClick={() => setI(i + 1)} className="arcade-btn flex-1 py-4 text-lg">
-            Next
+            {t("tutorial.next")}
           </button>
         )}
       </div>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { PITCH_STYLES, pitchStyleById } from "../game/pitches/styles";
 import { loadPitchStyleId, savePitchStyleId } from "../game/pitches/storage";
 import { drawPitch } from "../game/render/draw";
+import { useT } from "../lib/i18n";
 
 /** A tiny canvas that renders one surface as a mini pitch preview. */
 function Swatch({ styleId, w, h }: { styleId: string; w: number; h: number }) {
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/pitches")({
 });
 
 function PitchesPage() {
+  const t = useT();
   const [selected, setSelected] = useState(() => loadPitchStyleId());
   const choose = (id: string) => {
     setSelected(id);
@@ -40,9 +42,11 @@ function PitchesPage() {
       className="flex min-h-dvh flex-col items-center px-6 py-8"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 20px)" }}
     >
-      <h1 className="font-display text-5xl uppercase tracking-tight text-foreground">Pitch</h1>
+      <h1 className="font-display text-5xl uppercase tracking-tight text-foreground">
+        {t("pitch.title")}
+      </h1>
       <p className="mt-2 max-w-xs text-center text-sm font-medium text-muted-foreground">
-        Play anywhere — pick your surface.
+        {t("pitch.subtitle")}
       </p>
 
       <div className="mt-7 grid w-full max-w-md grid-cols-2 gap-4">
@@ -57,13 +61,15 @@ function PitchesPage() {
             }}
           >
             <Swatch styleId={s.id} w={150} h={94} />
-            <span className="font-display text-sm uppercase tracking-wide text-foreground">{s.name}</span>
+            <span className="font-display text-sm uppercase tracking-wide text-foreground">
+              {t(`pitch.${s.id}`)}
+            </span>
           </button>
         ))}
       </div>
 
       <Link to="/settings" className="arcade-btn mt-9 px-12 py-3 text-xl">
-        Done
+        {t("common.done")}
       </Link>
     </div>
   );
