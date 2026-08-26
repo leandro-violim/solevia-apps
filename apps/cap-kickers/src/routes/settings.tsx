@@ -7,6 +7,7 @@ import { pitchStyleById } from "../game/pitches/styles";
 import { loadPitchStyleId } from "../game/pitches/storage";
 import { styleById } from "../game/caps/styles";
 import { loadCapStyleId } from "../game/caps/storage";
+import { APP_VERSION } from "./-legal-doc";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Cap Kickers — Settings" }] }),
@@ -81,6 +82,10 @@ function SettingsPage() {
 
         <NavRow to="/pitches" label="Pitch" value={pitch.name} />
         <NavRow to="/caps" label="Your Cap" value={cap.name} />
+
+        <div className="mt-2 h-px w-full bg-border" />
+
+        <NavRow to="/about" label="About & Legal" value={`v${APP_VERSION}`} />
       </div>
 
       <Link
