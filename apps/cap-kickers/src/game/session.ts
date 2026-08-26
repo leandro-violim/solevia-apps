@@ -126,12 +126,14 @@ export class GameSession {
   }
 
   /**
-   * While a SHOT is resolving, the goal side being shot at — so the camera can
-   * keep the target goal in frame and the strike stays visible (otherwise a fast
-   * shot flies off-screen). Null at all other times.
+   * The goal to keep in frame for the whole SHOT touch — from the moment it
+   * becomes the shot touch (aiming) through the strike resolving — so the camera
+   * pulls back and pre-frames the target BEFORE the flick fires. Without this a
+   * fast shot from distance crosses the goal before the camera catches up and
+   * the goal happens off-screen. Null on every other touch.
    */
-  shotGoalInFlight(): GoalSide | null {
-    return this.phase === "resolving" && this.match.touch === this.cfg.match.shotTouch
+  framedGoal(): GoalSide | null {
+    return this.match.touch === this.cfg.match.shotTouch && this.match.phase !== "won"
       ? attackingGoal(this.match.attacker)
       : null;
   }

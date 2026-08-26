@@ -10,6 +10,8 @@ import { chooseAiFlick } from "../game/ai/policy";
 import { drawPitch, drawGoal, drawCap, drawKeeper } from "../game/render/draw";
 import { styleById, opponentFor } from "../game/caps/styles";
 import { loadCapStyleId } from "../game/caps/storage";
+import { pitchStyleById } from "../game/pitches/styles";
+import { loadPitchStyleId } from "../game/pitches/storage";
 import { completeLevel, levelById, nextLevelId } from "../game/campaign/ladder";
 import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
@@ -65,6 +67,7 @@ function PlayPage() {
   // Cap styles: the player's chosen cap vs a contrasting opponent cap. Side 0
   // (human/Player 1) uses the chosen style; side 1 (Player 2 / AI) the opponent.
   const playerStyle = useState(() => styleById(loadCapStyleId()))[0];
+  const pitchStyle = useState(() => pitchStyleById(loadPitchStyleId()))[0];
   const oppStyle = opponentFor(playerStyle.id);
   const teamColors: [string, string] = [playerStyle.base, oppStyle.base];
 
@@ -202,7 +205,7 @@ function PlayPage() {
       {
         const cs = session.caps();
         const pts = cs.map((cap) => pitchToScreen(cap.position, pres));
-        const shotGoal = session.shotGoalInFlight();
+        const shotGoal = session.framedGoal();
         if (shotGoal) {
           const gx = shotGoal === "left" ? -GOAL_DEPTH : PITCH.width + GOAL_DEPTH;
           const gHalf = PITCH.goalWidth / 2;
@@ -253,7 +256,7 @@ function PlayPage() {
       const scale = pres.viewport.scale;
 
       // Pitch: grass stripes + markings.
-      drawPitch(ctx, { x: rectX, y: rectY, w: pitchW, h: pitchH }, scale);
+      drawPitch(ctx, { x: rectX, y: rectY, w: pitchW, h: pitchH }, scale, pitchStyle);
 
       // Goals: framed nets protruding outward from each end line.
       const half = PITCH.goalWidth / 2;
@@ -536,13 +539,24 @@ function PlayPage() {
         </div>
       </div>
 
-      <button
-        onClick={handleNewMatch}
-        className="font-display pointer-events-auto absolute left-1/2 bottom-4 -translate-x-1/2 rounded-full bg-white/90 px-5 py-2 text-xs uppercase tracking-wider text-foreground shadow-md active:scale-95"
+      {/* Bottom bar: leave to the main menu, or restart the current match. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-4 flex items-center justify-center gap-3 px-6"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
-        New match
-      </button>
+        <Link
+          to="/"
+          className="font-display pointer-events-auto rounded-full bg-white/90 px-5 py-2 text-xs uppercase tracking-wider text-primary shadow-md active:scale-95"
+        >
+          ⌂ Menu
+        </Link>
+        <button
+          onClick={handleNewMatch}
+          className="font-display pointer-events-auto rounded-full bg-white/90 px-5 py-2 text-xs uppercase tracking-wider text-foreground shadow-md active:scale-95"
+        >
+          New match
+        </button>
+      </div>
 
       {banner &&
         (() => {

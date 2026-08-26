@@ -88,10 +88,10 @@ function Home() {
 
         <div className="mt-1 flex items-center justify-center gap-5">
           <Link
-            to="/caps"
+            to="/settings"
             className="font-display text-sm uppercase tracking-wider text-muted-foreground underline underline-offset-4"
           >
-            Your Cap
+            Settings
           </Link>
           <Link
             to="/tutorial"

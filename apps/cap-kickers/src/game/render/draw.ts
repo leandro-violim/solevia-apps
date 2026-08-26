@@ -2,9 +2,22 @@
 // All functions work in SCREEN space (post pitch->screen projection).
 
 import { type CapStyle } from "../caps/styles";
+import { type PitchStyle } from "../pitches/styles";
 
 type Ctx = CanvasRenderingContext2D;
 type Rect = { x: number; y: number; w: number; h: number };
+
+// Deterministic pseudo-noise in [0,1) for texture placement (Math.sin is fine;
+// Math.random is banned in src/game so surfaces render identically every frame).
+const frac = (n: number): number => {
+  const x = Math.sin(n * 127.1) * 43758.5453;
+  return x - Math.floor(x);
+};
+
+const hexToRgba = (hex: string, a: number): string => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+};
 
 export const ARCADE = {
   grassLight: "#46cf6d",
@@ -39,26 +52,73 @@ const roundRectPath = (ctx: Ctx, r: Rect, radius: number) => {
   ctx.closePath();
 };
 
-/**
- * The pitch: mown grass stripes + a soft vignette + bold white markings
- * (border, halfway line, center circle/spot, penalty boxes + arcs), all
- * proportional to the screen rect so it's flip-agnostic (the rect is symmetric).
- * `scale` is pitch-units -> screen-pixels so line weights read consistently.
- */
-export const drawPitch = (ctx: Ctx, r: Rect, scale: number) => {
-  const radius = 18 * Math.max(0.5, scale);
-  ctx.save();
-  roundRectPath(ctx, r, radius);
-  ctx.clip();
-
-  // Mown vertical stripes.
-  const stripes = 10;
-  const sw = r.w / stripes;
-  for (let i = 0; i < stripes; i++) {
-    ctx.fillStyle = i % 2 === 0 ? ARCADE.grassLight : ARCADE.grassDark;
-    ctx.fillRect(r.x + i * sw, r.y, sw + 1, r.h);
+/** Fill the pitch rect with the chosen surface (grass stripes / wood / concrete). */
+const fillSurface = (ctx: Ctx, r: Rect, style: PitchStyle) => {
+  if (style.texture === "stripes") {
+    const stripes = 10;
+    const sw = r.w / stripes;
+    for (let i = 0; i < stripes; i++) {
+      ctx.fillStyle = i % 2 === 0 ? style.base : style.base2;
+      ctx.fillRect(r.x + i * sw, r.y, sw + 1, r.h);
+    }
+  } else if (style.texture === "wood") {
+    ctx.fillStyle = style.base;
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    const planks = 5;
+    const ph = r.h / planks;
+    for (let i = 0; i < planks; i++) {
+      if (i % 2 === 1) {
+        ctx.fillStyle = style.base2;
+        ctx.fillRect(r.x, r.y + i * ph, r.w, ph + 1);
+      }
+      ctx.strokeStyle = "rgba(0,0,0,0.16)"; // plank seam
+      ctx.lineWidth = Math.max(1, r.h * 0.004);
+      ctx.beginPath();
+      ctx.moveTo(r.x, r.y + i * ph);
+      ctx.lineTo(r.x + r.w, r.y + i * ph);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = "rgba(0,0,0,0.06)"; // grain streaks
+    ctx.lineWidth = Math.max(1, r.h * 0.003);
+    for (let i = 0; i < 14; i++) {
+      const y = r.y + frac(i * 3.1) * r.h;
+      const x0 = r.x + frac(i * 7.7) * r.w * 0.5;
+      const x1 = x0 + (0.3 + frac(i * 5.3) * 0.5) * r.w;
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.bezierCurveTo(x0 + r.w * 0.2, y + 2, x1 - r.w * 0.2, y - 2, x1, y);
+      ctx.stroke();
+    }
+  } else {
+    // concrete: base + soft mottled blotches + faint cracks
+    ctx.fillStyle = style.base;
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    for (let i = 0; i < 5; i++) {
+      const bx = r.x + frac(i * 4.2) * r.w;
+      const by = r.y + frac(i * 9.1) * r.h;
+      const br = (0.2 + frac(i * 2.7) * 0.25) * r.h;
+      const g = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+      g.addColorStop(0, "rgba(0,0,0,0.06)");
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(r.x, r.y, r.w, r.h);
+    }
+    ctx.strokeStyle = "rgba(0,0,0,0.12)";
+    ctx.lineWidth = Math.max(1, r.h * 0.003);
+    for (let i = 0; i < 2; i++) {
+      let x = r.x + frac(i * 1.9) * r.w;
+      let y = r.y;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      for (let s = 0; s < 5; s++) {
+        x += (frac(i * 10 + s) - 0.5) * r.w * 0.3;
+        y += r.h / 5;
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
   }
-  // Soft top-down light + edge vignette for depth.
+  // Depth vignette tinted by the surface's edge colour.
   const vg = ctx.createRadialGradient(
     r.x + r.w / 2,
     r.y + r.h * 0.35,
@@ -69,15 +129,31 @@ export const drawPitch = (ctx: Ctx, r: Rect, scale: number) => {
   );
   vg.addColorStop(0, "rgba(255,255,255,0.10)");
   vg.addColorStop(0.7, "rgba(0,0,0,0)");
-  vg.addColorStop(1, "rgba(8,40,22,0.22)");
+  vg.addColorStop(1, hexToRgba(style.edge, 0.3));
   ctx.fillStyle = vg;
   ctx.fillRect(r.x, r.y, r.w, r.h);
+};
+
+/**
+ * The pitch on a chosen surface (grass / school desk / table / cement) plus its
+ * markings (border, halfway line, center circle/spot, penalty boxes + arcs), all
+ * proportional to the screen rect so it's flip-agnostic (the rect is symmetric).
+ * `scale` is pitch-units -> screen-pixels so line weights read consistently.
+ */
+export const drawPitch = (ctx: Ctx, r: Rect, scale: number, style: PitchStyle) => {
+  const radius = 18 * Math.max(0.5, scale);
+  ctx.save();
+  roundRectPath(ctx, r, radius);
+  ctx.clip();
+  fillSurface(ctx, r, style);
   ctx.restore();
 
-  // Markings.
+  // Markings (paint on grass/cement, chalk/pencil on wood via lineAlpha).
   const lw = Math.max(2, 3 * scale);
   ctx.save();
-  ctx.strokeStyle = ARCADE.line;
+  ctx.globalAlpha = style.lineAlpha;
+  ctx.strokeStyle = style.line;
+  ctx.fillStyle = style.line;
   ctx.lineWidth = lw;
   ctx.lineJoin = "round";
   const inset = lw;
@@ -99,7 +175,6 @@ export const drawPitch = (ctx: Ctx, r: Rect, scale: number) => {
   ctx.beginPath();
   ctx.arc(cx, cy, cr, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.fillStyle = ARCADE.line;
   ctx.beginPath();
   ctx.arc(cx, cy, lw * 0.9, 0, Math.PI * 2);
   ctx.fill();

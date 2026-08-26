@@ -63,6 +63,20 @@ const scoreOutcome = (
 // units of distance-to-goal), so ~a cap-and-a-half of slack among good moves.
 const NEAR_BEST_MARGIN = 90;
 
+// Human-like aiming error (radians) added to the AI's chosen flick, scaled by
+// difficulty. Easy fluffs shots and build-ups noticeably (misses / turnovers,
+// and centred stray shots the keeper saves) while still scoring sometimes; Hard
+// is near-perfect. Only applied when an RNG is supplied (live play, not tests).
+const AIM_ERROR: Record<Difficulty, number> = { easy: 0.14, normal: 0.06, hard: 0.02 };
+
+/** Perturb a flick's direction (and shave a little speed) by the difficulty's error. */
+const addAimError = (flick: AiFlick, difficulty: Difficulty, rng: () => number): AiFlick => {
+  const err = AIM_ERROR[difficulty];
+  const angle = Math.atan2(flick.velocity.y, flick.velocity.x) + (rng() * 2 - 1) * err;
+  const speed = Math.hypot(flick.velocity.x, flick.velocity.y) * (1 - rng() * err);
+  return { capId: flick.capId, velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed } };
+};
+
 /**
  * Deterministically choose the AI's flick for the current touch by simulating a
  * spread of candidate (cap × direction × power) flicks and scoring each. Search
@@ -97,10 +111,12 @@ export const chooseAiFlick = (caps: SimCap[], ctx: AiContext): AiFlick | null =>
   if (candidates.length === 0) return null;
 
   // Deterministic: always the single best. With an RNG: pick at random among the
-  // near-best moves for varied, non-repetitive play (never a clearly worse one).
+  // near-best moves (varied, non-repetitive), then add difficulty-scaled aiming
+  // error so Easy makes visible mistakes while Hard stays sharp.
   if (!ctx.rng) {
     return candidates.reduce((a, b) => (b.score > a.score ? b : a)).flick;
   }
   const pool = candidates.filter((c) => c.score >= bestScore - NEAR_BEST_MARGIN);
-  return pool[Math.floor(ctx.rng() * pool.length) % pool.length].flick;
+  const pick = pool[Math.floor(ctx.rng() * pool.length) % pool.length].flick;
+  return addAimError(pick, ctx.difficulty, ctx.rng);
 };
