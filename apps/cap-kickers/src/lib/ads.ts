@@ -16,7 +16,6 @@ import { Capacitor } from "@capacitor/core";
 import type { PluginListenerHandle } from "@capacitor/core";
 import {
   AdMob,
-  AdmobConsentStatus,
   BannerAdPluginEvents,
   BannerAdPosition,
   BannerAdSize,
@@ -70,16 +69,21 @@ const unitIds = () => {
 const isOnline = (): boolean => typeof navigator === "undefined" || navigator.onLine !== false;
 const now = (): number => (typeof performance !== "undefined" ? performance.now() : 0);
 
-// ── Consent (UMP GDPR/LGPD) + iOS ATT — inlined; run before any ad id is used ──
+// ── Consent + iOS ATT — inlined; run before any ad id is used ──
 async function runConsentAndTracking(): Promise<void> {
-  try {
-    const info = await AdMob.requestConsentInfo();
-    if (info.isConsentFormAvailable && info.status === AdmobConsentStatus.REQUIRED) {
-      await AdMob.showConsentForm();
-    }
-  } catch (e) {
-    console.warn("[ads] UMP consent skipped:", e);
-  }
+  // NOTE: the Google UMP consent form (the "keep this app free" popup) is
+  // disabled at the owner's request — its wording is configured in the AdMob
+  // console, not here. Re-enable before an EU/EEA (GDPR) or Brazil (LGPD) launch,
+  // where showing a consent form is legally required; ads then run without it as
+  // non-personalized where consent would otherwise be needed.
+  // try {
+  //   const info = await AdMob.requestConsentInfo();
+  //   if (info.isConsentFormAvailable && info.status === AdmobConsentStatus.REQUIRED) {
+  //     await AdMob.showConsentForm();
+  //   }
+  // } catch (e) {
+  //   console.warn("[ads] UMP consent skipped:", e);
+  // }
   if (PLATFORM === "ios") {
     try {
       const att = await AdMob.trackingAuthorizationStatus();
