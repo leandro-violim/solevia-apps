@@ -7,6 +7,43 @@ Keep this file for yourself as the checklist; the agent you hand it to gets the 
 
 ---
 
+## ⚠️ HOW TO USE THIS + WHO DOES WHAT (read first — avoids cross-session confusion)
+
+There are **three actors**. Keep their jobs separate:
+
+1. **This Claude Code session (on the owner's Mac, worktree `/Users/leandroviolim/Developer/solevia-cap-kickers`, branch `cap-kickers`).**
+   Owns everything that needs the **local repo + toolchain**: editing code (e.g. pasting the AdMob IDs),
+   `bun run build:mobile`, `bunx cap sync`, the Xcode archive, the Gradle release bundle, regenerating
+   screenshots. **All app code and store assets are already produced and committed here** (see status
+   below). Hand ID-paste + build/archive tasks back to THIS session (or do them yourself on the Mac).
+
+2. **A Claude Task / cloud session (where you paste this prompt).**
+   It runs in the cloud and **cannot see this Mac's files or log into your Apple/Google/AdMob accounts.**
+   Use it as a **guide + drafting assistant**: it walks you click-by-click through the AdMob, App Store
+   Connect, and Play Console screens, drafts/adjusts copy, and answers questionnaire wording. If it needs
+   a file (e.g. the listing copy or a screenshot), **attach that file from `store-assets/` to the Task** —
+   don't assume it can read the repo. It should NOT try to rewrite the app's code.
+
+3. **You (the owner).** Do the things only you can: the **authenticated console clicks** (register apps,
+   fill listings, press Submit), the **on-device video recording**, hosting the **privacy-policy URL** +
+   **`app-ads.txt`** on solevia.app, and holding the **Android upload keystore** secret.
+
+**Rule of thumb:** anything that edits code or builds a binary → Claude Code on the Mac. Anything inside a
+web console or your device → you, with the cloud Task guiding. Nobody should re-do work marked ✅ below.
+
+### Status at handoff (all committed on branch `cap-kickers`)
+- ✅ App code complete: gameplay, modes, ads engine, i18n (EN + pt-BR), in-app legal (governing law =
+  Florida), tutorial. `tsc` clean, 131 tests pass, iOS + Android sync & build.
+- ✅ iOS compliance: privacy manifest + `ITSAppUsesNonExemptEncryption=false` (Info.plist).
+- ✅ Store **screenshots** — `store-assets/screenshots/` (iPhone 6.9" 1290×2796, iPad 13" 2048×2732,
+  Play phone 1080×1920; 5 each).
+- ✅ Play **feature graphics** — `store-assets/feature-graphic-en.png` + `-pt.png` (1024×500).
+- ✅ **Listing copy** EN + pt-BR — `store-assets/STORE-LISTING.md` (ready to paste, within char limits).
+- ⛔ Still to do (owner + guidance): real AdMob IDs → code (Claude Code pastes), hosted privacy URL,
+  `app-ads.txt`, Android release keystore/AAB, the on-device video, submit in both consoles. Details below.
+
+---
+
 ## CONTEXT (read first)
 
 You are helping publish **Cap Kickers**, the 2nd mobile game from **Sole Via Entertainment LLC** — a
@@ -53,6 +90,8 @@ Studio. The iOS Simulator's GPU is broken on this machine — test iOS on a real
   gameplay cap art.
 - **Store screenshots generated** at exact sizes in `store-assets/screenshots/` (iPhone 6.9", iPad 13",
   Play phone). Video is recorded on-device by the owner (`store-assets/VIDEO-GUIDE.md`).
+- **Feature graphics** (`store-assets/feature-graphic-en.png` + `-pt.png`, 1024×500) and **listing copy**
+  EN + pt-BR (`store-assets/STORE-LISTING.md`) are ready to paste.
 - `tsc` clean, 131 unit tests pass, both platforms sync & build.
 
 **Read `store-assets/STORE-VALIDATION.md` in this repo for the full compliance audit.** The blockers
@@ -99,11 +138,13 @@ below map to it.
      `MARKETING_VERSION = 1.0`).
 2. **Create the app record in ASC** (if not already): New App → iOS → name "Cap Kickers", bundle
    `app.solevia.capkickers`, SKU, primary language English (U.S.).
-3. **Listing metadata** (draft copy is in `store-assets/` if present; otherwise write from the CONTEXT
-   feature list): name, subtitle, promotional text, description, keywords, support URL
-   (`https://solevia.app`), marketing URL, **privacy policy URL** (host the in-app text — see validation
-   blocker #2), category **Games ▸ Sports** (secondary Arcade/Casual), **Age rating 4+** (answer the
-   questionnaire as a general-audience game — not Kids category).
+3. **Listing metadata — ready to paste from `store-assets/STORE-LISTING.md`** (EN + pt-BR, within Apple's
+   char limits): app name (**EN "Cap Kickers" / pt-BR "Futebol de Tampinha"** — Apple allows a localized
+   name per language), subtitle, promotional text, description, keywords. Plus support/marketing URL
+   (`https://solevia.app`), **privacy policy URL** (host the in-app text — validation blocker #2), category
+   **Games ▸ Sports** (secondary Arcade/Casual), **Age rating 4+** (general-audience, not Kids).
+   *(The on-device app name stays "Cap Kickers" for all locales — see the note in STORE-LISTING.md if you
+   want the pt-BR icon label localized too.)*
 4. **Screenshots — already generated** at exact sizes in `store-assets/screenshots/`:
    `ios-iphone-6.9/` (1290×2796, required) and `ios-ipad-13/` (2048×2732, required because the build is
    universal). Upload those. (5 shots each: home, campaign, gameplay, pitch skins, cap skins.) Optional:
@@ -131,10 +172,12 @@ below map to it.
      from a **gitignored** `keystore.properties` (never commit the keystore or passwords), and point
      `buildTypes.release.signingConfig` at it. (`minifyEnabled false` is fine for this app.)
    - Build the bundle: `cd android && ./gradlew :app:bundleRelease` → `app/build/outputs/bundle/release/app-release.aab`.
-2. **Create the app in Play Console:** name "Cap Kickers", default language English, category **Games ▸ Sports**
-   (or Casual), free.
-3. **Store listing:** short + full description (from the CONTEXT feature list), app icon (512×512),
-   feature graphic (1024×500 — still needs to be made), phone screenshots from
+2. **Create the app in Play Console:** default language **English** → title "Cap Kickers"; add a
+   **pt-BR (Brazil) translation** with title **"Futebol de Tampinha"**. Category **Games ▸ Sports** (or
+   Casual), free.
+3. **Store listing — copy is ready in `store-assets/STORE-LISTING.md`** (EN + pt-BR short + full
+   descriptions). Assets: app icon (512×512 — export from `assets/icon.png`), **feature graphic
+   `store-assets/feature-graphic-en.png`** (and `-pt.png` for the pt-BR listing), phone screenshots from
    `store-assets/screenshots/play-phone/` (1080×1920), optional tablet screenshots from
    `store-assets/screenshots/ios-ipad-13/`. Promo video (optional) = a **YouTube URL**: upload the
    on-device clip from `store-assets/VIDEO-GUIDE.md` to YouTube and paste the link.
@@ -160,7 +203,9 @@ below map to it.
 - [ ] Age rating = general-audience 4+/Everyone; NOT child-directed / Kids / Designed-for-Families.
 - [ ] Apple: privacy nutrition label + ATT reviewed; iPad (or iPhone-only) screenshots decided.
 - [ ] Android: release-signed AAB; Data Safety + Advertising-ID declarations filled.
-- [ ] Screenshots uploaded (ready in `store-assets/screenshots/`); **Play feature graphic 1024×500 still
-      to be created**; app-preview video recorded on-device per `store-assets/VIDEO-GUIDE.md` (optional).
+- [ ] Listing copy pasted from `store-assets/STORE-LISTING.md` (EN + pt-BR "Futebol de Tampinha").
+- [ ] Screenshots uploaded (`store-assets/screenshots/`); feature graphic uploaded to Play
+      (`store-assets/feature-graphic-en.png` / `-pt.png`); app-preview video recorded on-device per
+      `store-assets/VIDEO-GUIDE.md` (optional).
 - [ ] Tested a production-config build on a real device (ads load, gameplay unaffected offline).
 - [ ] (Before EU/Brazil later) re-enable the UMP consent block in `src/lib/ads.ts`.
