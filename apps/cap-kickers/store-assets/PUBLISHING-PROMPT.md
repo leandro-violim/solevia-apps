@@ -49,6 +49,10 @@ Studio. The iOS Simulator's GPU is broken on this machine — test iOS on a real
 - Ads engine `src/lib/ads.ts`: banner/interstitial/rewarded with frequency caps, all no-ops on web,
   test/live auto-switch. UMP consent form is intentionally commented out (US-first launch).
 - Full EN + pt-BR localization incl. legal pages; in-app About/Privacy/Terms; app icons.
+- Legal governing-law state set to **Florida** (`-legal-doc.tsx`); tutorial illustrations use the real
+  gameplay cap art.
+- **Store screenshots generated** at exact sizes in `store-assets/screenshots/` (iPhone 6.9", iPad 13",
+  Play phone). Video is recorded on-device by the owner (`store-assets/VIDEO-GUIDE.md`).
 - `tsc` clean, 131 unit tests pass, both platforms sync & build.
 
 **Read `store-assets/STORE-VALIDATION.md` in this repo for the full compliance audit.** The blockers
@@ -100,10 +104,12 @@ below map to it.
    (`https://solevia.app`), marketing URL, **privacy policy URL** (host the in-app text — see validation
    blocker #2), category **Games ▸ Sports** (secondary Arcade/Casual), **Age rating 4+** (answer the
    questionnaire as a general-audience game — not Kids category).
-4. **Screenshots:** 6.7"/6.9" iPhone required; iPad 12.9" required because the build targets iPad (or
-   switch to iPhone-only first — see validation #11). You can render them from the web build the same way
-   Zen Bubbles did (headless Chromium, banner hidden via CSS, bubbles/flicks dispatched) — ask me to
-   generate them if needed.
+4. **Screenshots — already generated** at exact sizes in `store-assets/screenshots/`:
+   `ios-iphone-6.9/` (1290×2796, required) and `ios-ipad-13/` (2048×2732, required because the build is
+   universal). Upload those. (5 shots each: home, campaign, gameplay, pitch skins, cap skins.) Optional:
+   add marketing captions before uploading.
+   **App preview video (optional):** the owner records ~20–25s on-device — see `store-assets/VIDEO-GUIDE.md`
+   for specs + a shot-list. Upload it to the 6.9" iPhone (and optionally 13" iPad) preview slot.
 5. **App Privacy "nutrition label":** declare what AdMob collects — typically **Identifiers (Device ID)**
    and **Usage Data**, "used for Third-Party Advertising / Analytics", **linked to identity = No**,
    **tracking = Yes** (because ATT + IDFA). Mirror the Zen Bubbles answers.
@@ -128,7 +134,10 @@ below map to it.
 2. **Create the app in Play Console:** name "Cap Kickers", default language English, category **Games ▸ Sports**
    (or Casual), free.
 3. **Store listing:** short + full description (from the CONTEXT feature list), app icon (512×512),
-   feature graphic (1024×500), phone screenshots (min 2; provide 4–8), optional tablet screenshots.
+   feature graphic (1024×500 — still needs to be made), phone screenshots from
+   `store-assets/screenshots/play-phone/` (1080×1920), optional tablet screenshots from
+   `store-assets/screenshots/ios-ipad-13/`. Promo video (optional) = a **YouTube URL**: upload the
+   on-device clip from `store-assets/VIDEO-GUIDE.md` to YouTube and paste the link.
 4. **Content rating questionnaire:** answer as a casual sports game with ads → **Everyone / PEGI 3**.
    Do NOT enrol in **"Designed for Families"** (it restricts ads and adds child-privacy duties).
 5. **Data safety form:** declare AdMob's collection — **Device or other IDs** + **App activity**, shared
@@ -151,5 +160,7 @@ below map to it.
 - [ ] Age rating = general-audience 4+/Everyone; NOT child-directed / Kids / Designed-for-Families.
 - [ ] Apple: privacy nutrition label + ATT reviewed; iPad (or iPhone-only) screenshots decided.
 - [ ] Android: release-signed AAB; Data Safety + Advertising-ID declarations filled.
+- [ ] Screenshots uploaded (ready in `store-assets/screenshots/`); **Play feature graphic 1024×500 still
+      to be created**; app-preview video recorded on-device per `store-assets/VIDEO-GUIDE.md` (optional).
 - [ ] Tested a production-config build on a real device (ads load, gameplay unaffected offline).
 - [ ] (Before EU/Brazil later) re-enable the UMP consent block in `src/lib/ads.ts`.
