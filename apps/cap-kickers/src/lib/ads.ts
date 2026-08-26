@@ -45,19 +45,17 @@ const TEST_IDS = {
   },
 };
 
-// TODO(owner): register "Cap Kickers" in AdMob (account pub-9628521678374705) to
-// get its App ID (goes in Info.plist GADApplicationIdentifier) + create banner /
-// interstitial / rewarded ad units, then paste their ids here. Format: ca-app-pub-…/…
+// Live Cap Kickers ad units (AdMob account pub-9628521678374705, created 2026-08-26).
 const LIVE_IDS = {
   ios: {
-    banner: "ca-app-pub-9628521678374705/0000000001",
-    interstitial: "ca-app-pub-9628521678374705/0000000002",
-    rewarded: "ca-app-pub-9628521678374705/0000000003",
+    banner: "ca-app-pub-9628521678374705/3371706669",
+    interstitial: "ca-app-pub-9628521678374705/2058624991",
+    rewarded: "ca-app-pub-9628521678374705/4750086149",
   },
   android: {
-    banner: "ca-app-pub-9628521678374705/0000000004",
-    interstitial: "ca-app-pub-9628521678374705/0000000005",
-    rewarded: "ca-app-pub-9628521678374705/0000000006",
+    banner: "ca-app-pub-9628521678374705/6237543151",
+    interstitial: "ca-app-pub-9628521678374705/2101083525",
+    rewarded: "ca-app-pub-9628521678374705/9139038667",
   },
 };
 

@@ -8,8 +8,7 @@ import { useT } from "../lib/i18n";
 export const APP_VERSION = "1.0";
 export const LEGAL_UPDATED = "August 2026";
 export const STUDIO = "Sole Via Entertainment LLC";
-// TODO(owner): confirm the real support address (Florida is the LLC's home state).
-export const SUPPORT_EMAIL = "hello@solevia.app";
+export const SUPPORT_EMAIL = "contact@solevia.app";
 export const GOVERNING_STATE = "Florida";
 
 /** Scrollable, arcade-styled legal/info page with a Back button to Settings. */

@@ -64,6 +64,12 @@ const GOAL_DEPTH = 40; // pitch units the goal frame protrudes outward
 const AI_SIDE = 1; // human is side 0
 const AI_THINK_SECONDS = 0.5;
 
+// Minimum on-screen RADIUS of a cap's touch target, in CSS px (~48pt diameter).
+// The camera zooms out to keep far-apart caps in frame, which can draw a cap at
+// ~5px radius; without this floor the touch target shrinks with it and the cap
+// becomes near-impossible to grab.
+const MIN_GRAB_PX = 24;
+
 function PlayPage() {
   const { mode, difficulty, goals, campaign } = Route.useSearch();
   const t = useT();
@@ -474,6 +480,20 @@ function PlayPage() {
     return screenToPitch(base, pres);
   };
 
+  // Grab radius in PITCH units that draws at least MIN_GRAB_PX on screen.
+  // px-per-pitch-unit is the letterbox scale times the live camera zoom — the same
+  // product the render loop uses to draw a cap — so the target always tracks the cap
+  // the player can actually see.
+  const grabRadiusPitchUnits = (): number => {
+    const canvas = canvasRef.current;
+    if (!canvas) return CAP_RADIUS;
+    const rect = canvas.getBoundingClientRect();
+    const pres = makePresentation(PITCH, { width: rect.width, height: rect.height }, flipped);
+    const pxPerUnit = pres.viewport.scale * camRef.current.z;
+    if (!(pxPerUnit > 0)) return CAP_RADIUS;
+    return Math.max(CAP_RADIUS, MIN_GRAB_PX / pxPerUnit);
+  };
+
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const session = sessionRef.current;
     if (
@@ -487,7 +507,7 @@ function PlayPage() {
       return;
     const pitchPoint = pitchPointFromEvent(e);
     if (!pitchPoint) return;
-    const hitId = capAtPoint(pitchPoint, session.caps());
+    const hitId = capAtPoint(pitchPoint, session.caps(), grabRadiusPitchUnits());
     if (!hitId) return;
     // No select step: grabbing a cap just starts tracking the flick. A real
     // flick on release launches it; a graze does nothing.

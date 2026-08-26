@@ -2,13 +2,23 @@ import { type Vec2, sub, len, scale } from "./physics/vec";
 
 export type CapHit = { id: string; position: Vec2; radius: number };
 
-/** Id of the cap whose circle contains `point`; nearest center wins ties; null if none. */
-export const capAtPoint = (point: Vec2, caps: CapHit[]): string | null => {
+/**
+ * Id of the cap whose grab circle contains `point`; nearest center wins ties;
+ * null if none.
+ *
+ * `minGrabRadius` (in PITCH units) is a FLOOR on every cap's grab circle: each
+ * cap is grabbable within `max(radius, minGrabRadius)` of its center. Callers
+ * pass a floor derived from on-screen size so a cap the camera has zoomed out to
+ * a few pixels still has a fingertip-sized touch target. When the floor makes
+ * neighbouring circles overlap, the nearest-center rule is what disambiguates.
+ */
+export const capAtPoint = (point: Vec2, caps: CapHit[], minGrabRadius = 0): string | null => {
   let best: string | null = null;
   let bestDist = Infinity;
   for (const c of caps) {
+    const r = Math.max(c.radius, minGrabRadius);
     const d = len(sub(point, c.position));
-    if (d <= c.radius && d < bestDist) {
+    if (d <= r && d < bestDist) {
       best = c.id;
       bestDist = d;
     }

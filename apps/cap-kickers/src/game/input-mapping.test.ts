@@ -22,6 +22,16 @@ describe("capAtPoint", () => {
     ];
     expect(capAtPoint(vec(122, 100), tight)).toBe("b"); // 8 from b, 22 from a
   });
+  it("grabs a zoomed-out cap via the minimum grab radius", () => {
+    // (140,100) is 40 from a and 60 from b — outside both r16 physics circles.
+    expect(capAtPoint(vec(140, 100), caps)).toBeNull();
+    // A 72u floor makes both grabbable; nearest center (a, 40 < 60) wins.
+    expect(capAtPoint(vec(140, 100), caps, 72)).toBe("a");
+  });
+  it("still picks the nearest center when the floor makes circles overlap", () => {
+    // (160,100) is 60 from a and 40 from b; with the floor, nearest (b) wins.
+    expect(capAtPoint(vec(160, 100), caps, 72)).toBe("b");
+  });
 });
 
 describe("swipeToVelocity", () => {

@@ -7,11 +7,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <!-- AdMob App ID — Google's TEST app id for now. TODO(owner): replace with
-             the real Cap Kickers Android AdMob app id once registered in AdMob. -->
+        <!-- AdMob App ID — Cap Kickers Android (AdMob pub-9628521678374705). -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"
+            android:value="ca-app-pub-9628521678374705~4321826253"
         />
 
         <activity
