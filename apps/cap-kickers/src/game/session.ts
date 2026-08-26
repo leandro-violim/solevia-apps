@@ -57,6 +57,13 @@ export class GameSession {
   private keeperState: KeeperState | null = null;
   private shotCapId: string | null = null;
 
+  // Rewarded "one more shot": snapshot of the cap positions + attacker taken
+  // right before a shot, so a missed shot can be replayed after watching an ad.
+  // One retry per possession (extraShotConsumed guards it).
+  private preShot: { positions: Array<{ id: CapId; x: number; y: number }>; attacker: PlayerSide } | null = null;
+  private extraShotConsumed = false;
+  private missedShotEligible = false;
+
   constructor(cfg: Partial<SessionConfig> = {}) {
     this.cfg = { ...defaults(), ...cfg };
     this.world = new PhysicsWorld(this.cfg.physics);
@@ -121,6 +128,16 @@ export class GameSession {
     this.phase = "resolving";
     this.selectedCapId = null;
     if (this.match.touch === this.cfg.match.shotTouch) {
+      // Snapshot the shot setup (once per possession) so a miss can be retried.
+      if (!this.extraShotConsumed) {
+        this.preShot = {
+          attacker: this.match.attacker,
+          positions: CAP_IDS.map((id) => {
+            const p = this.world.getBody(id)!.position;
+            return { id, x: p.x, y: p.y };
+          }),
+        };
+      }
       this.spawnKeeper();
     }
   }
@@ -212,6 +229,7 @@ export class GameSession {
     const flick = this.tracker.observe();
     if (!flick) return null;
 
+    const wasShotTouch = this.match.touch === this.cfg.match.shotTouch;
     const { state, result } = applyFlick(this.match, flick, this.cfg.match);
     this.match = state;
     this.tracker = null;
@@ -222,6 +240,51 @@ export class GameSession {
     if (result === "turnover" || result === "goal") {
       this.positionTriangle(state.attacker);
     }
+
+    // Rewarded "one more shot" bookkeeping. A missed shot (shot-touch turnover)
+    // with an unused retry stays eligible — the possession's caps are snapshotted
+    // and can be restored. Any other outcome ends the possession, so reset.
+    if (result === "turnover" && wasShotTouch && this.preShot && !this.extraShotConsumed) {
+      this.missedShotEligible = true;
+    } else {
+      this.missedShotEligible = false;
+      this.preShot = null;
+      this.extraShotConsumed = false;
+    }
     return { result, match: state };
+  }
+
+  /** True when the last flick was a missed shot that can be replayed via a reward. */
+  canRetryShot(): boolean {
+    return this.missedShotEligible && this.preShot !== null && !this.extraShotConsumed;
+  }
+
+  /**
+   * Replay the missed shot: restore the pre-shot cap positions and hand the shot
+   * touch back to the original attacker. One retry per possession. Returns false
+   * if not currently eligible.
+   */
+  retryShot(): boolean {
+    if (!this.canRetryShot()) return false;
+    const snap = this.preShot!;
+    for (const s of snap.positions) {
+      const b = this.world.getBody(s.id)!;
+      b.position = { x: s.x, y: s.y };
+      b.velocity = { x: 0, y: 0 };
+    }
+    this.match = { ...this.match, attacker: snap.attacker, touch: this.cfg.match.shotTouch };
+    this.phase = "aiming";
+    this.selectedCapId = null;
+    this.extraShotConsumed = true;
+    this.missedShotEligible = false;
+    this.preShot = null;
+    return true;
+  }
+
+  /** Decline the retry: proceed with the turned-over state as normal. */
+  declineRetry(): void {
+    this.missedShotEligible = false;
+    this.preShot = null;
+    this.extraShotConsumed = false;
   }
 }

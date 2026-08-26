@@ -17,7 +17,7 @@ import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 import { gameAudio } from "../lib/audio";
-import { notifyMatchEnded } from "../lib/ads";
+import { notifyMatchEnded, rewardedAvailable, showRewarded } from "../lib/ads";
 import {
   createFx,
   updateCapFx,
@@ -107,6 +107,16 @@ function PlayPage() {
   // Non-null while the "pass the phone" overlay is gating input, holding the
   // player the board will flip to once they tap Ready.
   const [handoffTo, setHandoffTo] = useState<0 | 1 | null>(null);
+
+  // True while the "one more shot?" rewarded-ad overlay is up after the human
+  // missed a shot in vs-AI. Gates the AI + input until resolved. Mirrored to a
+  // ref for the rAF loop's AI driver.
+  const [retryOffer, setRetryOffer] = useState(false);
+  const retryOfferRef = useRef(false);
+  const setRetry = (v: boolean) => {
+    retryOfferRef.current = v;
+    setRetryOffer(v);
+  };
 
   const flipped = mode === "2p" && viewAttacker === 1;
 
@@ -322,9 +332,10 @@ function PlayPage() {
 
       const dt = last !== null ? Math.min((t - last) / 1000, 1 / 30) : 0;
       if (last !== null) {
-        // Was this the shot touch? (Captured before tick resolves it, so a
-        // missed shot can play the disappointed "ohh".)
+        // Captured before tick resolves the flick: was this the shot touch, and
+        // who took it? (Used for the "ohh" and the rewarded extra-shot offer.)
         const wasShot = session.match.touch === MATCH.shotTouch;
+        const shooterSide = session.match.attacker;
         const report = session.tick(dt);
         if (report) {
           setMatch(report.match);
@@ -335,9 +346,19 @@ function PlayPage() {
             gameAudio.sfx("cheer");
             if (report.result === "win") void notifyMatchEnded(); // a match finished -> maybe an interstitial
           } else if (report.result === "turnover") {
-            showBanner("Turn over");
             if (wasShot) gameAudio.sfx("ohh"); // missed shot -> crowd groans
             gameAudio.sfx("whistle");
+            // Rewarded "one more shot": human missed a shot in vs-AI and a reward
+            // is ready — offer it instead of handing the turn over. (Dev builds
+            // offer it too so the flow is testable without a real ad.)
+            const offerRetry =
+              modeRef.current === "ai" &&
+              shooterSide === 0 &&
+              wasShot &&
+              session.canRetryShot() &&
+              (rewardedAvailable() || import.meta.env.DEV);
+            if (offerRetry) setRetry(true);
+            else showBanner("Turn over");
           }
 
           // Gate the next turn behind a pass-the-phone overlay in 2-player
@@ -360,7 +381,8 @@ function PlayPage() {
           modeRef.current === "ai" &&
           session.phase === "aiming" &&
           session.match.phase !== "won" &&
-          session.match.attacker === AI_SIDE
+          session.match.attacker === AI_SIDE &&
+          !retryOfferRef.current // pause the AI while the "one more shot?" offer is up
         ) {
           aiThinkRef.current += dt;
           if (aiThinkRef.current >= AI_THINK_SECONDS) {
@@ -453,6 +475,7 @@ function PlayPage() {
       session.phase !== "aiming" ||
       session.match.phase === "won" ||
       handoffTo !== null ||
+      retryOffer ||
       (mode === "ai" && session.match.attacker === AI_SIDE)
     )
       return;
@@ -494,6 +517,7 @@ function PlayPage() {
       session.phase !== "aiming" ||
       session.match.phase === "won" ||
       handoffTo !== null ||
+      retryOffer ||
       (mode === "ai" && session.match.attacker === AI_SIDE)
     )
       return;
@@ -507,6 +531,33 @@ function PlayPage() {
       session.beginFlick(drag.capId, velocity);
       gameAudio.sfx("flick");
     }
+  };
+
+  // Rewarded extra-shot overlay actions.
+  const handleWatchAd = async () => {
+    const session = sessionRef.current;
+    if (!session) return;
+    // Real rewarded ad on device; in dev (no native ad) the reward is granted so
+    // the flow is testable in the browser.
+    const earned = rewardedAvailable() ? await showRewarded() : import.meta.env.DEV;
+    if (earned && session.retryShot()) {
+      setMatch(session.match);
+      setViewAttacker(session.match.attacker);
+    } else {
+      session.declineRetry();
+      setMatch(session.match);
+      showBanner("Turn over");
+    }
+    setRetry(false);
+  };
+  const handleDeclineRetry = () => {
+    const session = sessionRef.current;
+    if (session) {
+      session.declineRetry();
+      setMatch(session.match);
+    }
+    setRetry(false);
+    showBanner("Turn over");
   };
 
   const won = match.phase === "won";
@@ -621,6 +672,26 @@ function PlayPage() {
             className="rounded-full bg-primary px-8 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
           >
             Ready
+          </button>
+        </div>
+      )}
+
+      {retryOffer && !won && (
+        <div className="pointer-events-auto absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black/75 px-8 text-center">
+          <h2 className="goal-pop font-display text-5xl uppercase tracking-wide text-[#ffcf33]">
+            So close!
+          </h2>
+          <p className="max-w-xs text-base font-medium text-white/90">
+            Watch a short ad to take one more shot?
+          </p>
+          <button onClick={handleWatchAd} className="arcade-btn arcade-btn--gold mt-1 px-8 py-4 text-lg">
+            ▶ Watch &amp; shoot
+          </button>
+          <button
+            onClick={handleDeclineRetry}
+            className="font-display text-sm uppercase tracking-wide text-white/70 underline underline-offset-4"
+          >
+            No thanks
           </button>
         </div>
       )}
