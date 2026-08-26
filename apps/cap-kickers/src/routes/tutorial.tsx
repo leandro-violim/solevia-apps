@@ -1,9 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { TUTORIAL_STEPS, isLastStep, stepCount } from "../game/tutorial/steps";
 import { markTutorialSeen } from "../game/tutorial/storage";
 import { useT } from "../lib/i18n";
+import { drawPitch, drawGoal, drawCap, drawKeeper } from "../game/render/draw";
+import { styleById, type CapStyle } from "../game/caps/styles";
+import { loadCapStyleId } from "../game/caps/storage";
+import { pitchStyleById, type PitchStyle } from "../game/pitches/styles";
+import { loadPitchStyleId } from "../game/pitches/storage";
 
 export const Route = createFileRoute("/tutorial")({
   head: () => ({
@@ -12,13 +17,6 @@ export const Route = createFileRoute("/tutorial")({
   component: TutorialPage,
 });
 
-// Arcade palette (mirrors the field + HUD).
-const GRASS = "#37a75a";
-const GRASS_STRIPE = "#2f9a54";
-const LINE = "rgba(255,255,255,0.9)";
-const CAP_COLOR = "#2f7bff";
-const CAP_RIM = "#1b4fb0";
-const KEEPER_COLOR = "#ffbe2e";
 const GOLD = "#ffcf33";
 
 function TutorialPage() {
@@ -69,7 +67,7 @@ function TutorialPage() {
 
       {/* Framed pitch illustration — a little arcade "screen". */}
       <div className="mt-6 w-full max-w-xs rounded-3xl bg-white p-3 shadow-[0_6px_0_#cdddd3]">
-        <TutorialIllustration stepId={step.id} />
+        <TutorialScene stepId={step.id} />
       </div>
 
       <h2 className="font-display mt-6 text-2xl uppercase tracking-wide text-foreground">
@@ -101,171 +99,153 @@ function TutorialPage() {
   );
 }
 
-/** Mown-grass pitch with an open goal mouth on the right. */
-function Pitch() {
-  return (
-    <>
-      <rect x="4" y="4" width="192" height="122" rx="12" fill={GRASS} />
-      {/* Mown vertical stripes */}
-      {[28, 76, 124, 172].map((x) => (
-        <rect key={x} x={x} y="4" width="24" height="122" fill={GRASS_STRIPE} opacity="0.55" />
-      ))}
-      <rect x="4" y="4" width="192" height="122" rx="12" fill="none" stroke={LINE} strokeWidth="2" />
-      {/* Goal mouth, open toward the pitch (right side) */}
-      <path
-        d="M 196 46 H 208 V 84 H 196"
-        fill="none"
-        stroke={LINE}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </>
-  );
+// The illustrations below are drawn on a canvas using the SAME art the game
+// uses (drawPitch / drawCap / drawGoal / drawKeeper), so the tutorial caps look
+// exactly like the caps the player flicks — including their chosen cap skin.
+const SCENE_W = 210;
+const SCENE_H = 130;
+
+/** An arrow (line + filled head) in the 210×130 illustration space. */
+function drawArrow(
+  ctx: CanvasRenderingContext2D,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  color: string,
+  dashed = false,
+) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 3.5;
+  ctx.lineCap = "round";
+  if (dashed) ctx.setLineDash([2, 6]);
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  const a = Math.atan2(y2 - y1, x2 - x1);
+  const h = 9;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - Math.cos(a - 0.42) * h, y2 - Math.sin(a - 0.42) * h);
+  ctx.lineTo(x2 - Math.cos(a + 0.42) * h, y2 - Math.sin(a + 0.42) * h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
-/** A stylised bottle-cap top. */
-function Cap({ x, y }: { x: number; y: number }) {
-  return (
-    <>
-      <circle cx={x} cy={y + 1.2} r="9" fill="rgba(0,0,0,0.18)" />
-      <circle cx={x} cy={y} r="9" fill={CAP_RIM} />
-      <circle cx={x} cy={y} r="7" fill={CAP_COLOR} />
-      <ellipse cx={x - 2.4} cy={y - 2.8} rx="2.6" ry="1.6" fill="rgba(255,255,255,0.7)" />
-    </>
-  );
-}
+/** Paint one tutorial step with the real gameplay pitch/cap/goal/keeper art. */
+function drawTutorialScene(
+  ctx: CanvasRenderingContext2D,
+  stepId: string,
+  cap: CapStyle,
+  pitch: PitchStyle,
+) {
+  ctx.clearRect(0, 0, SCENE_W, SCENE_H);
+  const field: { x: number; y: number; w: number; h: number } = { x: 4, y: 4, w: 182, h: 122 };
+  const scale = 0.5;
+  drawPitch(ctx, field, scale, pitch);
 
-function FlickArrow({ id }: { id: string }) {
-  return (
-    <marker
-      id={id}
-      viewBox="0 0 10 10"
-      refX="8"
-      refY="5"
-      markerWidth="6"
-      markerHeight="6"
-      orient="auto-start-reverse"
-    >
-      <path d="M 0 0 L 10 5 L 0 10 z" fill={GOLD} />
-    </marker>
-  );
-}
+  const R = 10; // cap radius — reads like the gameplay caps
+  const cy = field.y + field.h / 2; // vertical centre (65)
+  const drawC = (x: number, y: number, angle = 0) => drawCap(ctx, x, y, R, cap, { angle });
 
-function TutorialIllustration({ stepId }: { stepId: string }) {
+  // A real goal net on the right — this is a soccer game.
+  const goal = { x: field.x + field.w - 2, y: cy - 20, w: 16, h: 40 };
+  drawGoal(ctx, goal, "right", scale);
+
   switch (stepId) {
-    // Flick, don't aim: a cap launching with a speed trail.
-    case "flick":
-      return (
-        <svg viewBox="0 0 210 130" className="w-full" role="img" aria-label="Flick a cap with your finger">
-          <defs>
-            <FlickArrow id="flick-arrow" />
-          </defs>
-          <Pitch />
-          <Cap x={40} y={38} />
-          <Cap x={40} y={92} />
-          {/* Trailing speed ghosts behind the flicked cap */}
-          <circle cx={54} cy={65} r="5" fill={CAP_COLOR} opacity="0.2" />
-          <circle cx={68} cy={65} r="6.5" fill={CAP_COLOR} opacity="0.35" />
-          <Cap x={86} y={65} />
-          <line
-            x1="98"
-            y1="65"
-            x2="150"
-            y2="65"
-            stroke={GOLD}
-            strokeWidth="3.5"
-            strokeLinecap="round"
-            markerEnd="url(#flick-arrow)"
-          />
-        </svg>
-      );
-    case "thread":
-      return (
-        <svg viewBox="0 0 210 130" className="w-full" role="img" aria-label="Flick a cap between the other two">
-          <defs>
-            <FlickArrow id="thread-arrow" />
-          </defs>
-          <Pitch />
-          {/* Gate pair */}
-          <Cap x={116} y={38} />
-          <Cap x={116} y={92} />
-          {/* Third cap flicking through the gate */}
-          <Cap x={46} y={65} />
-          <line
-            x1="58"
-            y1="65"
-            x2="170"
-            y2="65"
-            stroke={GOLD}
-            strokeWidth="3.5"
-            strokeDasharray="2 6"
-            strokeLinecap="round"
-            markerEnd="url(#thread-arrow)"
-          />
-        </svg>
-      );
-    case "advance":
-      return (
-        <svg viewBox="0 0 210 130" className="w-full" role="img" aria-label="Five touches to work up the pitch">
-          <Pitch />
-          <Cap x={104} y={42} />
-          <Cap x={122} y={65} />
-          <Cap x={104} y={88} />
-          {/* Touch counter: 5 pips, 4 filled */}
-          {[0, 1, 2, 3, 4].map((dotIndex) => (
-            <circle
-              key={dotIndex}
-              cx={64 + dotIndex * 18}
-              cy={116}
-              r="4.5"
-              fill={dotIndex < 4 ? GOLD : "none"}
-              stroke={GOLD}
-              strokeWidth="1.5"
-            />
-          ))}
-        </svg>
-      );
-    case "shoot":
-      return (
-        <svg viewBox="0 0 210 130" className="w-full" role="img" aria-label="Shoot past the keeper into the goal">
-          <defs>
-            <FlickArrow id="shoot-arrow" />
-          </defs>
-          <Pitch />
-          <Cap x={150} y={65} />
-          <line
-            x1="160"
-            y1="65"
-            x2="190"
-            y2="65"
-            stroke={GOLD}
-            strokeWidth="3.5"
-            strokeLinecap="round"
-            markerEnd="url(#shoot-arrow)"
-          />
-          {/* Keeper guarding the mouth */}
-          <rect
-            x="196"
-            y="55"
-            width="9"
-            height="20"
-            rx="3"
-            fill={KEEPER_COLOR}
-            stroke="rgba(0,0,0,0.2)"
-            strokeWidth="1"
-          />
-        </svg>
-      );
+    case "flick": {
+      drawC(40, 40);
+      drawC(40, 90);
+      // Speed ghosts trailing the flicked cap.
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+      drawCap(ctx, 58, cy, R * 0.9, cap, {});
+      ctx.globalAlpha = 0.4;
+      drawCap(ctx, 72, cy, R, cap, {});
+      ctx.restore();
+      drawC(90, cy, 0.5);
+      drawArrow(ctx, 105, cy, 150, cy, GOLD);
+      break;
+    }
+    case "thread": {
+      drawC(120, 42); // gate (top)
+      drawC(120, 88); // gate (bottom)
+      drawC(46, cy);
+      drawArrow(ctx, 60, cy, 150, cy, GOLD, true);
+      break;
+    }
+    case "advance": {
+      drawC(96, 44);
+      drawC(116, cy);
+      drawC(96, 86);
+      // Touch counter: 5 pips, 4 filled.
+      for (let i = 0; i < 5; i++) {
+        const px = 66 + i * 15;
+        ctx.beginPath();
+        ctx.arc(px, 118, 4.2, 0, Math.PI * 2);
+        if (i < 4) {
+          ctx.fillStyle = GOLD;
+          ctx.fill();
+        } else {
+          ctx.strokeStyle = GOLD;
+          ctx.lineWidth = 1.6;
+          ctx.stroke();
+        }
+      }
+      break;
+    }
+    case "shoot": {
+      drawC(118, cy, 0.6);
+      drawArrow(ctx, 132, cy, goal.x - 2, cy, GOLD);
+      drawKeeper(ctx, goal.x - 3, cy, 8);
+      break;
+    }
     case "intro":
-    default:
-      return (
-        <svg viewBox="0 0 210 130" className="w-full" role="img" aria-label="Your three caps line up in front of the goal">
-          <Pitch />
-          <Cap x={46} y={38} />
-          <Cap x={46} y={65} />
-          <Cap x={46} y={92} />
-        </svg>
-      );
+    default: {
+      drawC(44, 42);
+      drawC(44, cy);
+      drawC(44, 88);
+      break;
+    }
   }
+}
+
+const SCENE_LABEL: Record<string, string> = {
+  flick: "Flick a cap with your finger",
+  thread: "Flick a cap between the other two",
+  advance: "Five touches to work up the pitch",
+  shoot: "Shoot past the keeper into the goal",
+  intro: "Your three caps line up in front of the goal",
+};
+
+/** Renders a tutorial step on a canvas with the real gameplay cap art. */
+function TutorialScene({ stepId }: { stepId: string }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  const cap = useMemo(() => styleById(loadCapStyleId()), []);
+  const pitch = useMemo(() => pitchStyleById(loadPitchStyleId()), []);
+  useEffect(() => {
+    const c = ref.current;
+    if (!c) return;
+    const ctx = c.getContext("2d");
+    if (!ctx) return;
+    const SS = 4; // supersample for crisp edges, then CSS-scale to fit
+    c.width = SCENE_W * SS;
+    c.height = SCENE_H * SS;
+    ctx.setTransform(SS, 0, 0, SS, 0, 0);
+    drawTutorialScene(ctx, stepId, cap, pitch);
+  }, [stepId, cap, pitch]);
+  return (
+    <canvas
+      ref={ref}
+      className="w-full"
+      style={{ aspectRatio: `${SCENE_W} / ${SCENE_H}` }}
+      role="img"
+      aria-label={SCENE_LABEL[stepId] ?? SCENE_LABEL.intro}
+    />
+  );
 }
