@@ -22,6 +22,8 @@ export const CAP_STYLES: CapStyle[] = [
   { id: "neon-pink", name: "Neon", base: "#ff3db5", rim: "#ffb0e0", shade: "#c81f86", top: "#fff0fb", pattern: "crown" },
   { id: "grape-purple", name: "Grape", base: "#8b5cf6", rim: "#cdb8fb", shade: "#6a3fd0", top: "#ffffff", pattern: "ribbed" },
   { id: "lime-green", name: "Lime", base: "#57c927", rim: "#bcf29a", shade: "#3d9614", top: "#0f3a00", pattern: "nub" },
+  // Matches the real brass beer cap the icon is built from.
+  { id: "brass-gold", name: "Gold", base: "#d4b24e", rim: "#f4e3a0", shade: "#9a7526", top: "#5a3f0a", pattern: "crown" },
 ];
 
 export const DEFAULT_PLAYER_STYLE = "soda-blue";
