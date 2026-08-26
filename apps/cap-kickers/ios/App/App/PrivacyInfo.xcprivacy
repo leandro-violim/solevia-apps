@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- This app's own first-party code performs no tracking and connects to no
+	     tracking domains, so NSPrivacyTracking is false and NSPrivacyTrackingDomains
+	     is empty here. Tracking via Google AdMob (IDFA, gated behind ATT) is done by
+	     the Google Mobile Ads / UMP SDKs, which ship their own privacy manifests
+	     declaring NSPrivacyTracking=true and their tracking domains; Apple aggregates
+	     them. (Apple rejects ITMS-91064 when NSPrivacyTracking=true is paired with an
+	     empty NSPrivacyTrackingDomains array.) -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!-- Capacitor / WKWebView read & write app preferences (UserDefaults).
+			     CA92.1 = access info stored only by this app. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
