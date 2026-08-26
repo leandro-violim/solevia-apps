@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { LegalScreen, H, APP_VERSION, STUDIO, SUPPORT_EMAIL } from "./-legal-doc";
+import { useT } from "../lib/i18n";
 
 export const Route = createFileRoute("/about")({
   head: () => ({ meta: [{ title: "Cap Kickers — About" }] }),
@@ -8,31 +9,24 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
+  const t = useT();
   return (
-    <LegalScreen title="About">
-      <p>
-        <strong>Cap Kickers</strong> is a fast, physics-driven finger-flick soccer game inspired
-        by Brazilian bottle-cap soccer — <em>futebol de tampinhas</em>. Flick your caps across the
-        pitch, thread them between your defenders, and beat the keeper to score.
-      </p>
-      <p>
-        Made by {STUDIO}. Version {APP_VERSION}.
-      </p>
+    <LegalScreen title={t("legal.about")}>
+      <p>{t("about.intro")}</p>
+      <p>{t("about.madeBy", { studio: STUDIO, version: APP_VERSION })}</p>
 
-      <H>Legal</H>
+      <H>{t("about.legalH")}</H>
       <p className="flex flex-col gap-2">
         <Link to="/privacy" className="font-display uppercase tracking-wide text-primary underline underline-offset-4">
-          Privacy Policy ›
+          {t("about.privacyLink")}
         </Link>
         <Link to="/terms" className="font-display uppercase tracking-wide text-primary underline underline-offset-4">
-          Terms of Use ›
+          {t("about.termsLink")}
         </Link>
       </p>
 
-      <H>Contact</H>
-      <p>
-        Questions or feedback? Reach us at <strong>{SUPPORT_EMAIL}</strong>.
-      </p>
+      <H>{t("about.contactH")}</H>
+      <p>{t("about.contactBody", { email: SUPPORT_EMAIL })}</p>
     </LegalScreen>
   );
 }

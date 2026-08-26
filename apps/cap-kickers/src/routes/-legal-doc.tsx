@@ -3,6 +3,8 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { useT } from "../lib/i18n";
+
 export const APP_VERSION = "1.0";
 export const LEGAL_UPDATED = "August 2026";
 export const STUDIO = "Sole Via Entertainment LLC";
@@ -12,6 +14,7 @@ export const GOVERNING_STATE = "[the LLC's home state]";
 
 /** Scrollable, arcade-styled legal/info page with a Back button to Settings. */
 export function LegalScreen({ title, children }: { title: string; children: ReactNode }) {
+  const t = useT();
   return (
     <div
       className="flex min-h-dvh flex-col items-center px-6 py-8"
@@ -25,7 +28,7 @@ export function LegalScreen({ title, children }: { title: string; children: Reac
         to="/settings"
         className="font-display mt-4 w-full max-w-md rounded-full bg-white py-3.5 text-center text-lg uppercase tracking-wide text-primary shadow-[0_5px_0_#cdddd3] transition active:translate-y-1"
       >
-        Back
+        {t("common.back")}
       </Link>
     </div>
   );
