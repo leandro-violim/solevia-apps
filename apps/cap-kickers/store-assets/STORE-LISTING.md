@@ -5,11 +5,11 @@ length-limited fields; they're within Apple's and Google's limits. **The Portugu
 "Futebol de Tampinha"** (Apple + Play both allow a per-language localized name). English stays
 "Cap Kickers".
 
-> Note on the *on-device* name: the installed app's icon label is currently **"Cap Kickers" for all
-> locales** (matches the in-game logo). If you want Brazilian devices to show **"Futebol de Tampinha"**
-> under the icon too, that's a small native change (iOS `InfoPlist.strings` pt + Android
-> `values-pt/strings.xml`) — ask and it's a 5-minute follow-up. This doc localizes the **store listing**
-> name only.
+> Note on the *on-device* name: the installed app's icon label **is now localized** — Portuguese-language
+> devices show **"Futebol de Tampinha"**, everyone else shows **"Cap Kickers"** (iOS
+> `en.lproj`/`pt-BR.lproj` `InfoPlist.strings` + Android `values-pt/strings.xml`). The in-game logo still
+> reads "Cap Kickers" (the master brand). Store listing names match: EN "Cap Kickers", pt-BR
+> "Futebol de Tampinha".
 
 ---
 

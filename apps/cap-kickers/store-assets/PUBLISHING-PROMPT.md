@@ -143,8 +143,8 @@ below map to it.
    name per language), subtitle, promotional text, description, keywords. Plus support/marketing URL
    (`https://solevia.app`), **privacy policy URL** (host the in-app text — validation blocker #2), category
    **Games ▸ Sports** (secondary Arcade/Casual), **Age rating 4+** (general-audience, not Kids).
-   *(The on-device app name stays "Cap Kickers" for all locales — see the note in STORE-LISTING.md if you
-   want the pt-BR icon label localized too.)*
+   *(The on-device icon label is already localized: Portuguese devices show "Futebol de Tampinha",
+   others show "Cap Kickers".)*
 4. **Screenshots — already generated** at exact sizes in `store-assets/screenshots/`:
    `ios-iphone-6.9/` (1290×2796, required) and `ios-ipad-13/` (2048×2732, required because the build is
    universal). Upload those. (5 shots each: home, campaign, gameplay, pitch skins, cap skins.) Optional:
