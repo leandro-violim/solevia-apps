@@ -17,6 +17,7 @@ import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 import { gameAudio } from "../lib/audio";
+import { notifyMatchEnded } from "../lib/ads";
 import {
   createFx,
   updateCapFx,
@@ -332,6 +333,7 @@ function PlayPage() {
             goalCelebration(fxRef.current, sizeRef.current.cssW, sizeRef.current.cssH);
             gameAudio.sfx("horn");
             gameAudio.sfx("cheer");
+            if (report.result === "win") void notifyMatchEnded(); // a match finished -> maybe an interstitial
           } else if (report.result === "turnover") {
             showBanner("Turn over");
             if (wasShot) gameAudio.sfx("ohh"); // missed shot -> crowd groans
@@ -567,6 +569,7 @@ function PlayPage() {
       >
         <Link
           to="/"
+          onClick={() => void notifyMatchEnded()}
           className="font-display pointer-events-auto rounded-full bg-white/90 px-5 py-2 text-xs uppercase tracking-wider text-primary shadow-md active:scale-95"
         >
           ⌂ Menu

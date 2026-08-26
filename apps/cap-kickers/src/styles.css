@@ -188,6 +188,10 @@
     min-height: 100dvh;
     overscroll-behavior: none;
     -webkit-font-smoothing: antialiased;
+    /* Reserve space for the native AdMob banner on menu screens so it never
+       covers bottom buttons. ads.ts sets --ad-banner-h to the live banner height
+       while a banner is shown, and back to 0 when hidden (and it's 0 on web). */
+    padding-bottom: var(--ad-banner-h, 0px);
   }
 
   h1,

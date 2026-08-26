@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -13,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { gameAudio } from "../lib/audio";
 import { loadSettings } from "../game/settings/storage";
+import { initAds, showBanner, hideBanner } from "../lib/ads";
 
 function NotFoundComponent() {
   return (
@@ -130,12 +132,23 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
   // Audio: load persisted settings + install the first-gesture unlock and the
   // foreground resume that recovers sound after an ad/call interruption (#13).
+  // Ads: initialize AdMob + consent (native only; no-op on web).
   useEffect(() => {
     gameAudio.setSettings(loadSettings());
     gameAudio.init();
+    void initAds();
   }, []);
+
+  // Banner shows on menu screens only — hidden during a game so it never covers
+  // the pitch.
+  useEffect(() => {
+    if (pathname.startsWith("/play")) void hideBanner();
+    else void showBanner();
+  }, [pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>
