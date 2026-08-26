@@ -16,6 +16,7 @@ import { completeLevel, levelById, nextLevelId } from "../game/campaign/ladder";
 import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
+import { gameAudio } from "../lib/audio";
 import {
   createFx,
   updateCapFx,
@@ -320,15 +321,22 @@ function PlayPage() {
 
       const dt = last !== null ? Math.min((t - last) / 1000, 1 / 30) : 0;
       if (last !== null) {
+        // Was this the shot touch? (Captured before tick resolves it, so a
+        // missed shot can play the disappointed "ohh".)
+        const wasShot = session.match.touch === MATCH.shotTouch;
         const report = session.tick(dt);
         if (report) {
           setMatch(report.match);
-          if (report.result === "goal") {
-            showBanner("GOAL!");
+          if (report.result === "goal" || report.result === "win") {
+            showBanner(report.result === "win" ? `Player ${report.match.winner! + 1} wins!` : "GOAL!");
             goalCelebration(fxRef.current, sizeRef.current.cssW, sizeRef.current.cssH);
+            gameAudio.sfx("horn");
+            gameAudio.sfx("cheer");
+          } else if (report.result === "turnover") {
+            showBanner("Turn over");
+            if (wasShot) gameAudio.sfx("ohh"); // missed shot -> crowd groans
+            gameAudio.sfx("whistle");
           }
-          else if (report.result === "win") showBanner(`Player ${report.match.winner! + 1} wins!`);
-          else if (report.result === "turnover") showBanner("Turn over");
 
           // Gate the next turn behind a pass-the-phone overlay in 2-player
           // hotseat mode. The board itself doesn't flip yet — only when the
@@ -365,7 +373,10 @@ function PlayPage() {
               maxSpeed: SWIPE.maxSpeed,
               rng: Math.random, // varied opponent play — not the same moves each match
             });
-            if (move) session.beginFlick(move.capId, move.velocity);
+            if (move) {
+              session.beginFlick(move.capId, move.velocity);
+              gameAudio.sfx("flick");
+            }
           }
         } else {
           aiThinkRef.current = 0;
@@ -389,6 +400,13 @@ function PlayPage() {
       window.removeEventListener("orientationchange", resize);
     };
   }, [showBanner]);
+
+  // Entering a game silences the menu music (event SFX + crowd take over); a tap
+  // also unlocks audio if it hasn't been yet.
+  useEffect(() => {
+    gameAudio.enterGame();
+    gameAudio.unlock();
+  }, []);
 
   useEffect(
     () => () => {
@@ -483,7 +501,10 @@ function PlayPage() {
     // A soft/slow gesture yields null (below the dead zone) → no launch; the cap
     // simply stays grabbed for another try.
     const velocity = flickToVelocity(drag.samples, FLICK);
-    if (velocity) session.beginFlick(drag.capId, velocity);
+    if (velocity) {
+      session.beginFlick(drag.capId, velocity);
+      gameAudio.sfx("flick");
+    }
   };
 
   const won = match.phase === "won";

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { loadSettings, patchSettings, type Settings } from "../game/settings/storage";
+import { gameAudio } from "../lib/audio";
 import { pitchStyleById } from "../game/pitches/styles";
 import { loadPitchStyleId } from "../game/pitches/storage";
 import { styleById } from "../game/caps/styles";
@@ -54,7 +55,11 @@ function NavRow({ to, label, value }: { to: string; label: string; value: string
 
 function SettingsPage() {
   const [s, setS] = useState<Settings>(() => loadSettings());
-  const update = (patch: Partial<Settings>) => setS(patchSettings(patch));
+  const update = (patch: Partial<Settings>) => {
+    const next = patchSettings(patch);
+    setS(next);
+    gameAudio.setSettings(next); // apply mute/music live
+  };
 
   // Current selections (read once; these persist in their own stores).
   const pitch = pitchStyleById(loadPitchStyleId());

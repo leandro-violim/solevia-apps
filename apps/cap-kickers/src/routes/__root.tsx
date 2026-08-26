@@ -11,6 +11,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { gameAudio } from "../lib/audio";
+import { loadSettings } from "../game/settings/storage";
 
 function NotFoundComponent() {
   return (
@@ -127,6 +129,13 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // Audio: load persisted settings + install the first-gesture unlock and the
+  // foreground resume that recovers sound after an ad/call interruption (#13).
+  useEffect(() => {
+    gameAudio.setSettings(loadSettings());
+    gameAudio.init();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

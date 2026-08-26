@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
 import { hasSeenTutorial } from "../game/tutorial/storage";
+import { gameAudio } from "../lib/audio";
 
 let redirectedThisLoad = false;
 
@@ -27,6 +28,7 @@ function Home() {
   const nav = useNavigate();
 
   useEffect(() => {
+    gameAudio.enterMenu(); // menu music (starts once audio is unlocked by a tap)
     if (!redirectedThisLoad && !hasSeenTutorial()) {
       redirectedThisLoad = true;
       nav({ to: "/tutorial" });
