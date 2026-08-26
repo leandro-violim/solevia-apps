@@ -37,10 +37,8 @@ These are **owner actions** (they need accounts/assets I can't create). The code
    + Play App Signing enrolled. Create/keep an upload keystore (owner-held secret). See the publishing
    prompt for the exact `signingConfigs` block.
 
-5. **Governing-law state placeholder is visible in the Terms.** `src/routes/-legal-doc.tsx` line 13:
-   `GOVERNING_STATE = "[the LLC's home state]"` renders literally in the in-app Terms. Set it to the US
-   state Sole Via Entertainment LLC is registered in. (Not a store blocker, but it looks unfinished and
-   a reviewer reads the Terms — fix before submitting.)
+5. ~~**Governing-law state placeholder visible in the Terms.**~~ ✅ FIXED — `GOVERNING_STATE = "Florida"`
+   in `src/routes/-legal-doc.tsx`; the Terms now read "governed by the laws of Florida, USA" (EN + pt-BR).
 
 ---
 
