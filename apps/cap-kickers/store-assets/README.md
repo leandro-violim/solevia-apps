@@ -19,8 +19,10 @@ Google Play. Prepared in a Claude Code session on 2026-08-26; all committed on b
 | Folder | Size | For |
 |--------|------|-----|
 | `ios-iphone-6.9/` | 1290×2796 | Apple iPhone 6.9" (required) |
-| `ios-ipad-13/` | 2048×2732 | Apple iPad 13" (required — app is universal) + reuse for Play tablet |
+| `ios-ipad-13/` | 2048×2732 | Apple iPad 13" (required — app is universal) |
 | `play-phone/` | 1080×1920 | Google Play phone |
+| `play-tablet-7/` | 1200×1920 | Google Play 7-inch tablet (required) |
+| `play-tablet-10/` | 1600×2560 | Google Play 10-inch tablet (required) |
 
 5 shots each: `01-home` · `02-campaign` · `03-play` · `04-pitches` · `05-caps`.
 Regenerate: `bun run dev` (port 8080) → `bun <scratchpad>/capture.js store-assets/screenshots`
