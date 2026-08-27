@@ -44,6 +44,11 @@ Paste this into Claude Task so it works from current state. All committed on bra
 1. **Upload the AAB to Google Play** (accept Play App Signing on first upload); add the 7"/10" tablet
    screenshots; complete **Play "App content"** declarations (privacy, ads, data safety, target
    audience = general/Everyone, NOT child-directed); then submit.
-2. **iOS**: archive in Xcode (Product ▸ Archive) → upload to App Store Connect; finish/submit the listing.
+2. **iOS is archive-ready** (LIVE-ads build synced, MARKETING_VERSION 1.0 / build 1, automatic signing
+   with team USX9U3638Z, bundle app.solevia.capkickers). Owner: open
+   `ios/App/App.xcodeproj` → Any iOS Device (arm64) → Product ▸ Archive → Distribute App ▸ App Store
+   Connect ▸ Upload (the GoogleMobileAds dSYM warning is harmless). Then finish/submit the ASC listing
+   (copy from STORE-LISTING.md, upload iPhone 6.9" + iPad 13" screenshots, App Privacy label, 4+ rating).
+   For a future re-upload of v1.0, bump CURRENT_PROJECT_VERSION (build number) in the Xcode project.
 3. Optional: record the on-device gameplay video (`VIDEO-GUIDE.md`).
 4. Confirm `contact@solevia.app` is a monitored mailbox before submitting.
