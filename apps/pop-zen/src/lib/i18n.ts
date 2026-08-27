@@ -34,6 +34,7 @@ type Params = Record<string, string | number>;
 const STRINGS: Record<Lang, Record<string, string>> = {
   en: {
     // Home
+    "home.title": "Zen Bubbles",
     "home.tagline":
       "Five soothing phases. Bubbles get smaller as you go. Pop them all as fast as you can to beat your record.",
     "home.play": "Play",
@@ -143,6 +144,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
 
   pt: {
     // Home
+    "home.title": "Plástico Bolha",
     "home.tagline":
       "Cinco fases relaxantes. As bolhas ficam menores a cada fase. Estoure todas o mais rápido que puder para superar o seu recorde.",
     "home.play": "Jogar",
