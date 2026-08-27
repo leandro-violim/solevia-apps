@@ -25,8 +25,9 @@ There are **three actors**. Keep their jobs separate:
    don't assume it can read the repo. It should NOT try to rewrite the app's code.
 
 3. **You (the owner).** Do the things only you can: the **authenticated console clicks** (register apps,
-   fill listings, press Submit), the **on-device video recording**, hosting the **privacy-policy URL** +
-   **`app-ads.txt`** on solevia.app, and holding the **Android upload keystore** secret.
+   fill listings, press Submit), the **on-device video recording**, and holding the **Android upload
+   keystore** secret. (The **privacy-policy URL** and **`app-ads.txt`** are both already live on
+   solevia.app — see the status block below.)
 
 **Rule of thumb:** anything that edits code or builds a binary → Claude Code on the Mac. Anything inside a
 web console or your device → you, with the cloud Task guiding. Nobody should re-do work marked ✅ below.
@@ -36,14 +37,23 @@ web console or your device → you, with the cloud Task guiding. Nobody should r
   Florida), tutorial. `tsc` clean, 131 tests pass, iOS + Android sync & build.
 - ✅ iOS compliance: privacy manifest + `ITSAppUsesNonExemptEncryption=false` (Info.plist).
 - ✅ Store **screenshots** — `store-assets/screenshots/` (iPhone 6.9" 1290×2796, iPad 13" 2048×2732,
-  Play phone 1080×1920; 5 each).
+  Play phone 1080×1920, **Play 7" tablet 1200×1920**, **Play 10" tablet 1600×2560**; 5 each).
 - ✅ Play **feature graphics** — `store-assets/feature-graphic-en.png` + `-pt.png` (1024×500).
 - ✅ **Listing copy** EN + pt-BR — `store-assets/STORE-LISTING.md` (ready to paste, within char limits).
 - ✅ **Real AdMob IDs already applied** in code (Info.plist + AndroidManifest app IDs, ads.ts LIVE_IDS,
   account pub-9628521678374705). ✅ Support email **contact@solevia.app**. ✅ Cap-grab fix (owner-verified
   on device). ✅ Hosted privacy/terms pages live on solevia.app (contact@). ✅ Xcode 26.3 (archive-ready).
-- ⛔ Still to do (owner + guidance): host **`app-ads.txt`** on solevia.app; Android release keystore/AAB;
-  the on-device video (optional); archive iOS in Xcode; fill + submit both listings. Details below.
+- ✅ **`app-ads.txt` is LIVE and correct** — verified 2026-08-26 at https://solevia.app/app-ads.txt,
+  served as plain text, exactly: `google.com, pub-9628521678374705, DIRECT, f08c47fec0942fa0`.
+  Nothing to do here. (It predates Cap Kickers: one file covers every app under the same publisher.)
+- ✅ **Store consoles filled** — App Store Connect (Apple ID 6805625628): listing EN + pt-BR, iPhone 6.9"
+  and iPad 13" screenshots, age rating 4+, App Privacy label published, Free, availability = AU/BR/CA/IN/
+  NZ/US, App Review contact + notes. Play Console (app 4972807227685015633, org account
+  `leandroviolim7@gmail.com`): app created, default store listing saved with icon, feature graphic and
+  5 phone screenshots.
+- ⛔ Still to do (owner + guidance): Android release keystore/AAB; the on-device video (optional);
+  archive iOS in Xcode; Play "App content" declarations; upload the 7"/10" tablet screenshots (ready in
+  `store-assets/screenshots/play-tablet-7` + `play-tablet-10`); submit both.
 - ℹ️ Known-benign: the JS console logs React **#418** (TanStack Start SPA-shell hydration warning) — it
   reproduces even in English, React recovers, the app works, and it's invisible to store review. Skip it.
 
@@ -117,8 +127,9 @@ below map to it.
 4. **AdMob app settings:** set **max ad content rating = G** and mark the app **general-audience**
    (NOT child-directed). Under "Link to app store", you can only link **after** the app is live — do it
    post-launch to trigger AdMob approval (real units return no-fill until then; that's expected).
-5. **Publish `app-ads.txt`** at the root of `solevia.app` (in the `solevia-web` repo) containing:
-   `google.com, pub-9628521678374705, DIRECT, f08c47fec0942fa0` — commit & let Cloudflare deploy.
+5. ~~**Publish `app-ads.txt`** at the root of `solevia.app`~~ ✅ **DONE — already live.** Verified
+   2026-08-26: https://solevia.app/app-ads.txt returns, as plain text,
+   `google.com, pub-9628521678374705, DIRECT, f08c47fec0942fa0`. No action needed.
 
 > Until the real IDs are in, you can still build and test with test ads by exporting
 > `VITE_USE_TEST_ADS=true` before `build:mobile`. NEVER tap your own LIVE ads (invalid-traffic risk).
@@ -201,7 +212,8 @@ below map to it.
 - [ ] Real AdMob App IDs in Info.plist + AndroidManifest; 6 real unit IDs in `ads.ts` LIVE_IDS.
 - [ ] `bun run build:mobile && bunx cap sync ios && bunx cap sync android` run **after** the ID edits.
 - [ ] `GOVERNING_STATE` set in `src/routes/-legal-doc.tsx` line 13 (no more `[the LLC's home state]`).
-- [ ] Privacy policy hosted at a public URL; `app-ads.txt` deployed on solevia.app.
+- [x] ~~Privacy policy hosted at a public URL; `app-ads.txt` deployed on solevia.app.~~ ✅ BOTH DONE —
+      https://solevia.app/privacy/cap-kickers/ and https://solevia.app/app-ads.txt (both verified live).
 - [ ] Age rating = general-audience 4+/Everyone; NOT child-directed / Kids / Designed-for-Families.
 - [ ] Apple: privacy nutrition label + ATT reviewed; iPad (or iPhone-only) screenshots decided.
 - [ ] Android: release-signed AAB; Data Safety + Advertising-ID declarations filled.
