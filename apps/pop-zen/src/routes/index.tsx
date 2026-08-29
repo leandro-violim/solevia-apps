@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import bubbleImg from "../assets/bubble.png";
 import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
+import { DailyBonus } from "../components/DailyBonus";
 import { t } from "../lib/i18n";
 import { unlockAudio } from "../lib/pop-sound";
 
@@ -29,6 +30,9 @@ function Home() {
       className="relative flex min-h-dvh flex-col items-center justify-between px-6 pt-14 text-center"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 40px)" }}
     >
+      {/* Once-a-day pre-game daily bonus pop-up (self-manages whether to show). */}
+      <DailyBonus />
+
       <div className="flex flex-1 flex-col items-center justify-center">
         <div className="relative">
           <img
