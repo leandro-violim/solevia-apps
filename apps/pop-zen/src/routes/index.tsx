@@ -11,6 +11,7 @@ import { unlockAudio } from "../lib/pop-sound";
 import { trackModeSelected } from "../lib/mode";
 import type { Difficulty } from "../lib/config";
 import { TrophyIcon } from "../components/icons";
+import { Onboarding } from "../components/Onboarding";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,6 +41,8 @@ function Home() {
     >
       {/* Once-a-day pre-game daily bonus pop-up (self-manages whether to show). */}
       <DailyBonus />
+      {/* First-run "How to Play" (self-manages; renders above the bonus on day 1). */}
+      <Onboarding />
 
       {/* Top bar: streak (left) + coins→shop pill (right). */}
       <div

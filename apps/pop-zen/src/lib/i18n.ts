@@ -61,6 +61,14 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "bonus.claim": "Claim",
     "bonus.close": "Close",
 
+    // Onboarding + loading (P1-T10)
+    "onboarding.title": "How to Play",
+    "onboarding.step1": "Tap the bubbles to pop them — feel each one.",
+    "onboarding.step2": "Clear every bubble to finish a phase. They shrink as you go.",
+    "onboarding.step3": "Pop fast for combos and beat your best score.",
+    "onboarding.cta": "Start popping",
+    "loading.tagline": "Relax and pop.",
+
     // Shop (§6)
     "shop.title": "Shop",
     "shop.skins": "Bubble skins",
@@ -233,6 +241,14 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "bonus.line": "Que bom te ver! Volte todo dia para aumentar sua sequência.",
     "bonus.claim": "Resgatar",
     "bonus.close": "Fechar",
+
+    // Onboarding + loading (P1-T10)
+    "onboarding.title": "Como Jogar",
+    "onboarding.step1": "Toque nas bolhas para estourá-las — sinta cada uma.",
+    "onboarding.step2": "Estoure todas para concluir uma fase. Elas diminuem conforme você avança.",
+    "onboarding.step3": "Estoure rápido para combos e supere seu recorde.",
+    "onboarding.cta": "Começar",
+    "loading.tagline": "Relaxe e estoure.",
 
     // Shop (§6)
     "shop.title": "Loja",

@@ -34,7 +34,7 @@ import { track } from "../lib/analytics";
 import { equippedThemeImage, unlockZenSkins } from "../lib/skins";
 import { ObjectivesHud } from "../components/ObjectivesHud";
 import { CoinIcon } from "../components/icons";
-import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
+import level1Bg from "../assets/scene/level1-bg.webp";
 import {
   computeScore,
   difficultyPhase,
@@ -538,17 +538,17 @@ function PlayPage() {
               });
             }
           }}
-          className="glass-chip px-3 py-1.5 text-sm font-semibold text-muted-foreground"
+          className="hud-chip px-3 py-1.5 text-sm font-semibold text-muted-foreground"
         >
           {t("play.exit")}
         </Link>
-        <div className="glass-chip flex-col gap-0 px-4 py-1">
+        <div className="hud-chip flex-col gap-0 px-4 py-1">
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
             {isZen ? t("home.zen") : t("play.phaseOf", { phase, total: TOTAL_PHASES })}
           </div>
           {!isZen && <div className="text-sm font-semibold text-foreground">{t(cfg.key)}</div>}
         </div>
-        <div className="glass-chip min-w-[3.25rem] justify-center px-3 py-1.5 font-mono text-sm tabular-nums">
+        <div className="hud-chip min-w-[3.25rem] justify-center px-3 py-1.5 font-mono text-sm tabular-nums">
           {isZen ? (
             <span aria-hidden>∞</span>
           ) : state === "playing" && startAt !== null ? (
@@ -568,20 +568,19 @@ function PlayPage() {
           ref={fieldRef}
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm"
         >
-          {/* Bubble-wrap SHEET behind the grid — the NATURAL photo, faint and
-              teal-tinted ENTIRELY via the CSS filter (image is not pre-darkened)
-              so the Aurora shows through and tints the plastic. Sits on the
-              aurora, below the bubbles. Values ported 1:1 from
-              _reference/zen-final-look.html — do not add a dark gradient over it. */}
+          {/* P1-T10: bright bubble-wrap-on-white sheet behind the grid. Per the
+              ticket's option (a) it's DIMMED + softly blurred + low-opacity so the
+              live, crisp, popping bubbles clearly read as the foreground and there's
+              no "double bubbles" clash. Lazy WebP, sized to device height. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{
-              backgroundImage: `url(${sheetBg})`,
+              backgroundImage: `url(${level1Bg})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
-              opacity: 0.22,
-              filter: "brightness(.5) saturate(.45) hue-rotate(150deg)",
+              opacity: 0.4,
+              filter: "brightness(0.9) blur(1px)",
             }}
           />
           {bubbles.map((b) => (
@@ -623,9 +622,7 @@ function PlayPage() {
 
           {state === "ready" && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="glass-chip px-5 py-2 text-sm font-semibold">
-                {t("play.tapToStart")}
-              </div>
+              <div className="hud-chip px-5 py-2 text-sm font-semibold">{t("play.tapToStart")}</div>
             </div>
           )}
 

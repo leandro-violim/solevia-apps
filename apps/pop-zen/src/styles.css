@@ -609,7 +609,7 @@
   }
 }
 
-/* HUD / pill chip — frosted glass over the playfield or shell. */
+/* HUD / pill chip — frosted glass over the shell (dark). */
 .glass-chip {
   display: inline-flex;
   align-items: center;
@@ -619,6 +619,21 @@
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+/* In-game HUD chip — DARK glass so it stays legible over ANY equipped theme
+   backdrop, light (bright bubble-wrap) or dark (starfield). */
+.hud-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  color: var(--ink);
+  background: rgba(10, 16, 32, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   backdrop-filter: blur(12px) saturate(140%);
 }
@@ -653,6 +668,36 @@
   .screen-fade {
     animation: none;
   }
+}
+
+/* P1-T10 — boot/loading splash. Rendered in SSR so it covers the very first
+   paint, then auto-fades with pure CSS (deterministic → no hydration mismatch,
+   no JS gate). pointer-events:none so a tap is never trapped if it lingers.
+   On an SPA it plays once per full load; client route changes don't remount it.
+   Reduced-motion collapses the animation to ~instant via the global rule. */
+@keyframes bootFade {
+  0%,
+  58% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.boot-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  pointer-events: none;
+  background-color: var(--bg-0);
+  background-image: var(--bg-grad);
+  animation: bootFade 1.15s ease forwards;
 }
 
 /* Respect the user's reduced-motion preference across the app. */
