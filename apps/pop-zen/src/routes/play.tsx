@@ -31,6 +31,7 @@ import {
 import { checkAchievements } from "../lib/achievements";
 import { seededRand, recordDailyResult } from "../lib/daily-challenge";
 import { track } from "../lib/analytics";
+import { equippedThemeImage, unlockZenSkins } from "../lib/skins";
 import { ObjectivesHud } from "../components/ObjectivesHud";
 import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
 import {
@@ -180,6 +181,12 @@ function PlayPage() {
   const completedRef = useRef<Set<string>>(new Set());
   const [objVersion, setObjVersion] = useState(0); // bump to re-render the HUD
   const [objToast, setObjToast] = useState<Objective | null>(null);
+  // P1-T7: equipped theme backdrop — read on the client (no SSR mismatch).
+  const [themeImage, setThemeImage] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    setThemeImage(equippedThemeImage());
+    if (isZen) unlockZenSkins(); // §6/P1-T7 — Zen set free once you play Zen
+  }, [isZen]);
 
   // Re-check objectives against live run-stats; toast + re-render on completion.
   const scanObjectives = useCallback(() => {
@@ -493,6 +500,14 @@ function PlayPage() {
 
   return (
     <div className="flex min-h-dvh flex-col" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      {/* P1-T7: equipped theme backdrop — full-screen, cover-fit, behind content. */}
+      {themeImage && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 bg-cover bg-center"
+          style={{ zIndex: -1, backgroundImage: `url(${themeImage})` }}
+        />
+      )}
       <header className="flex items-center justify-between px-4 py-3">
         <Link
           to="/"

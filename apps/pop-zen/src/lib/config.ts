@@ -40,7 +40,7 @@ export const CONFIG = {
 
   /** §6 Shop prices by rarity. */
   skins: {
-    prices: { common: 150, uncommon: 350, rare: 600, premium: 900 },
+    prices: { common: 150, uncommon: 350, rare: 600, premium: 900, background: 250 },
     premiumStreakMilestone: 7, // premium skin also unlockable at this streak day
   },
 

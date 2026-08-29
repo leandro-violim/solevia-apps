@@ -64,6 +64,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     // Shop (§6)
     "shop.title": "Shop",
     "shop.skins": "Bubble skins",
+    "shop.zenSkins": "Zen skins",
     "shop.themes": "Themes",
     "shop.equip": "Equip",
     "shop.equipped": "Equipped ✓",
@@ -236,6 +237,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     // Shop (§6)
     "shop.title": "Loja",
     "shop.skins": "Skins de bolha",
+    "shop.zenSkins": "Skins Zen",
     "shop.themes": "Temas",
     "shop.equip": "Equipar",
     "shop.equipped": "Equipado ✓",

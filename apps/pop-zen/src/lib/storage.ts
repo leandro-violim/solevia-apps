@@ -68,9 +68,9 @@ function defaults(): PlayerState {
       freezeWeek: null,
     },
     skins: {
-      owned: ["classic", "soft-light"],
-      equippedSkin: "classic",
-      equippedTheme: "soft-light",
+      owned: ["skin-classic", "bg-soft-light"],
+      equippedSkin: "skin-classic",
+      equippedTheme: "bg-soft-light",
     },
     achievements: { unlocked: [], progress: {} },
     stats: {

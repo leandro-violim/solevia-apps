@@ -97,7 +97,7 @@ export function claimDailyBonus(): { day: number; coins: number } {
   });
   addCoins(out.coins, "daily_bonus"); // fires coins_earned
   // §6 premium gating: reaching the streak milestone unlocks the premium skin.
-  if (out.day >= CONFIG.skins.premiumStreakMilestone) grantOwned("gold", "streak_milestone");
+  if (out.day >= CONFIG.skins.premiumStreakMilestone) grantOwned("skin-gold", "streak_milestone");
   track("streak_milestone", { days: out.day });
   track("daily_bonus_claimed", { day_count: out.day, coins: out.coins });
   checkAchievements(); // §10 — streak milestones

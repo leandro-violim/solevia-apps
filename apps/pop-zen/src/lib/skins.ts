@@ -1,13 +1,13 @@
 /**
- * Skins & themes (§6) — the cosmetics coins buy and rewarded ads unlock.
+ * Skins & themes (§6 + P1-T7) — cosmetics coins buy and rewarded ads unlock, now
+ * wired to Cowork's real art.
  *
- * ART: Cowork supplies the real assets later. Until then each cosmetic renders as
- * a placeholder — a CSS `bubbleFilter` (skins) or `fieldBg` gradient (themes) —
- * so the shop + equip are fully previewable now. Drop real art into these slots:
- *   skins:  src/assets/skins/<id>/bubble-1..4.png   (4 variants, like real-bubble-*)
- *   themes: src/assets/themes/<id>.jpg              (field background)
- * …then swap `bubbleFilter`/`fieldBg` for the imported asset. Ids/naming below are
- * the stable contract art should match.
+ * ART (P1-T7): 2K originals live in `assets-src/`; optimized runtime versions are
+ * imported below (skins → 320px PNG thumbnails, backgrounds → 1280px JPEG). The
+ * skin art drives the shop THUMBNAIL + the per-skin bubble TINT (`bubbleFilter`) —
+ * the bubbles stay programmatic (we don't paste a static grid over gameplay). The
+ * background art renders full-screen behind the play field (`image`, cover-fit).
+ * Ids match the art slot names.
  */
 import { CONFIG } from "./config";
 import { load, update } from "./storage";
@@ -15,119 +15,160 @@ import { track } from "./analytics";
 import { spendCoins } from "./economy";
 import { checkAchievements } from "./achievements";
 
+// Realistic bubble skins.
+import skinClassic from "../assets/skins/skin-classic.png";
+import skinNeon from "../assets/skins/skin-neon.png";
+import skinOcean from "../assets/skins/skin-ocean.png";
+import skinSunset from "../assets/skins/skin-sunset.png";
+import skinNight from "../assets/skins/skin-night.png";
+import skinGold from "../assets/skins/skin-gold.png";
+// Zen Mode soft/pastel skins.
+import zenPastel from "../assets/skins/zen-pastel.png";
+import zenMint from "../assets/skins/zen-mint.png";
+import zenLavender from "../assets/skins/zen-lavender.png";
+// Background themes (full-screen).
+import bgSoftLight from "../assets/backgrounds/bg-soft-light.jpg";
+import bgSunset from "../assets/backgrounds/bg-sunset.jpg";
+import bgDeepSea from "../assets/backgrounds/bg-deep-sea.jpg";
+import bgStarfield from "../assets/backgrounds/bg-starfield.jpg";
+
 export type Rarity = "starter" | "common" | "uncommon" | "rare" | "premium";
 export type ItemKind = "skin" | "theme";
 
 export type CosmeticDef = {
   id: string;
-  name: string; // proper noun — kept un-localized (like a brand); shop chrome is localized
+  name: string; // proper noun — kept un-localized; shop chrome is localized
   kind: ItemKind;
   rarity: Rarity;
-  swatch: string; // CSS background for the shop preview tile
-  bubbleFilter?: string; // skins: CSS filter applied to bubble art
-  fieldBg?: string; // themes: CSS background applied to the play field (wired in §9)
-  premiumGated?: boolean; // premium: also unlockable via streak milestone / rewarded
+  thumb: string; // shop preview image (real art)
+  bubbleFilter?: string; // skins: CSS tint applied to bubble art in-game
+  image?: string; // themes: full-screen backdrop behind the play field
+  premiumGated?: boolean; // premium: also unlockable via streak / rewarded
+  zen?: boolean; // Zen Mode set (auto-unlocked when Zen is played)
 };
 
-/** Bubble skins. `classic` is the free starter (owned by default). */
 export const SKINS: CosmeticDef[] = [
+  { id: "skin-classic", name: "Classic", kind: "skin", rarity: "starter", thumb: skinClassic },
   {
-    id: "classic",
-    name: "Classic",
-    kind: "skin",
-    rarity: "starter",
-    swatch: "radial-gradient(circle at 35% 30%, #eaf6ff, #9fbcd0)",
-  },
-  {
-    id: "pastel",
-    name: "Pastel",
-    kind: "skin",
-    rarity: "common",
-    swatch: "radial-gradient(circle at 35% 30%, #ffe6f2, #cdb8ff)",
-    bubbleFilter: "saturate(0.65) brightness(1.15) hue-rotate(-8deg)",
-  },
-  {
-    id: "neon",
+    id: "skin-neon",
     name: "Neon",
     kind: "skin",
     rarity: "uncommon",
-    swatch: "radial-gradient(circle at 35% 30%, #7cffd8, #7c5cff)",
+    thumb: skinNeon,
     bubbleFilter: "saturate(1.9) brightness(1.12) hue-rotate(-22deg)",
   },
   {
-    id: "ocean",
+    id: "skin-ocean",
     name: "Ocean",
     kind: "skin",
     rarity: "uncommon",
-    swatch: "radial-gradient(circle at 35% 30%, #bff0ff, #2a7fb8)",
+    thumb: skinOcean,
     bubbleFilter: "hue-rotate(160deg) saturate(1.25)",
   },
   {
-    id: "night",
+    id: "skin-sunset",
+    name: "Sunset",
+    kind: "skin",
+    rarity: "uncommon",
+    thumb: skinSunset,
+    bubbleFilter: "sepia(0.35) hue-rotate(-25deg) saturate(1.5) brightness(1.05)",
+  },
+  {
+    id: "skin-night",
     name: "Night",
     kind: "skin",
     rarity: "rare",
-    swatch: "radial-gradient(circle at 35% 30%, #6a7bd8, #171a33)",
+    thumb: skinNight,
     bubbleFilter: "brightness(0.78) saturate(0.85) hue-rotate(215deg)",
   },
   {
-    id: "gold",
+    id: "skin-gold",
     name: "Gold",
     kind: "skin",
     rarity: "premium",
     premiumGated: true,
-    swatch: "radial-gradient(circle at 35% 30%, #fff2c0, #d99a2b)",
+    thumb: skinGold,
     bubbleFilter: "sepia(0.55) saturate(1.7) hue-rotate(-12deg) brightness(1.06)",
   },
 ];
 
-/** Background themes. `soft-light` is the free starter (equipped by default). */
-export const THEMES: CosmeticDef[] = [
+/** Zen Mode set — free, unlocked once the player plays Zen Mode. */
+export const ZEN_SKINS: CosmeticDef[] = [
   {
-    id: "soft-light",
-    name: "Soft Light",
-    kind: "theme",
+    id: "zen-pastel",
+    name: "Pastel",
+    kind: "skin",
     rarity: "starter",
-    swatch: "linear-gradient(160deg, #e9f2ff, #c9d6ea)",
-    fieldBg: "linear-gradient(160deg, oklch(0.4 0.05 250 / 0.25), transparent)",
+    zen: true,
+    thumb: zenPastel,
+    bubbleFilter: "saturate(0.6) brightness(1.16) hue-rotate(-8deg)",
   },
   {
-    id: "sunset",
-    name: "Sunset",
-    kind: "theme",
-    rarity: "common",
-    swatch: "linear-gradient(160deg, #ffcf8f, #d1477e)",
-    fieldBg: "linear-gradient(160deg, oklch(0.55 0.15 40 / 0.3), oklch(0.4 0.15 350 / 0.25))",
+    id: "zen-mint",
+    name: "Mint",
+    kind: "skin",
+    rarity: "starter",
+    zen: true,
+    thumb: zenMint,
+    bubbleFilter: "hue-rotate(120deg) saturate(0.7) brightness(1.12)",
   },
   {
-    id: "deep-sea",
-    name: "Deep Sea",
-    kind: "theme",
-    rarity: "uncommon",
-    swatch: "linear-gradient(160deg, #1a6f9e, #04263b)",
-    fieldBg: "linear-gradient(160deg, oklch(0.4 0.1 230 / 0.4), oklch(0.2 0.08 250 / 0.3))",
-  },
-  {
-    id: "starfield",
-    name: "Starfield",
-    kind: "theme",
-    rarity: "rare",
-    swatch:
-      "radial-gradient(circle at 30% 30%, #fff 0 1px, transparent 1px), radial-gradient(circle at 70% 60%, #fff 0 1px, transparent 1px), #0a0b1e",
-    fieldBg:
-      "radial-gradient(circle at 20% 25%, oklch(0.9 0.02 260 / 0.5) 0 1.5px, transparent 1.5px), radial-gradient(circle at 75% 65%, oklch(0.9 0.02 260 / 0.4) 0 1.5px, transparent 1.5px)",
+    id: "zen-lavender",
+    name: "Lavender",
+    kind: "skin",
+    rarity: "starter",
+    zen: true,
+    thumb: zenLavender,
+    bubbleFilter: "hue-rotate(250deg) saturate(0.7) brightness(1.12)",
   },
 ];
 
-export const ALL_COSMETICS: CosmeticDef[] = [...SKINS, ...THEMES];
+export const THEMES: CosmeticDef[] = [
+  {
+    id: "bg-soft-light",
+    name: "Soft Light",
+    kind: "theme",
+    rarity: "starter",
+    thumb: bgSoftLight,
+    image: bgSoftLight,
+  },
+  {
+    id: "bg-sunset",
+    name: "Sunset",
+    kind: "theme",
+    rarity: "common",
+    thumb: bgSunset,
+    image: bgSunset,
+  },
+  {
+    id: "bg-deep-sea",
+    name: "Deep Sea",
+    kind: "theme",
+    rarity: "common",
+    thumb: bgDeepSea,
+    image: bgDeepSea,
+  },
+  {
+    id: "bg-starfield",
+    name: "Starfield",
+    kind: "theme",
+    rarity: "common",
+    thumb: bgStarfield,
+    image: bgStarfield,
+  },
+];
+
+export const ALL_COSMETICS: CosmeticDef[] = [...SKINS, ...ZEN_SKINS, ...THEMES];
+const ALL_SKINS = [...SKINS, ...ZEN_SKINS];
 
 export function getCosmetic(id: string): CosmeticDef | undefined {
   return ALL_COSMETICS.find((c) => c.id === id);
 }
 
-/** Price by rarity (starter = free/owned). */
+/** Price by rarity; starter = free, themes use the flat background price. */
 export function priceOf(item: CosmeticDef): number {
   if (item.rarity === "starter") return 0;
+  if (item.kind === "theme") return CONFIG.skins.prices.background;
   return CONFIG.skins.prices[item.rarity];
 }
 
@@ -139,12 +180,11 @@ export function isEquipped(id: string): boolean {
   return s.equippedSkin === id || s.equippedTheme === id;
 }
 export function ownedSkinCount(): number {
-  return load().skins.owned.filter((id) => SKINS.some((s) => s.id === id)).length;
+  return load().skins.owned.filter((id) => ALL_SKINS.some((s) => s.id === id)).length;
 }
 
 export type BuyResult = "ok" | "owned" | "insufficient" | "unknown";
 
-/** Buy with coins. Deducts, marks owned, mirrors stats, logs. */
 export function buy(id: string): BuyResult {
   const item = getCosmetic(id);
   if (!item) return "unknown";
@@ -154,18 +194,22 @@ export function buy(id: string): BuyResult {
   return "ok";
 }
 
-/** Grant ownership WITHOUT spending (rewarded unlock, streak milestone). */
+/** Grant ownership WITHOUT spending (rewarded unlock, streak, Zen set). */
 export function grantOwned(id: string, source: string): void {
   if (isOwned(id)) return;
   update((st) => {
     st.skins.owned.push(id);
-    st.stats.skinsOwned = st.skins.owned.filter((x) => SKINS.some((s) => s.id === x)).length;
+    st.stats.skinsOwned = st.skins.owned.filter((x) => ALL_SKINS.some((s) => s.id === x)).length;
   });
   track("skin_unlocked", { item_id: id, method: source });
   checkAchievements(); // §10 — "own 3 skins"
 }
 
-/** Equip an owned cosmetic (skin or theme). No-op if not owned. */
+/** Unlock the Zen Mode skin set (called when Zen is played). */
+export function unlockZenSkins(): void {
+  for (const s of ZEN_SKINS) grantOwned(s.id, "zen_mode");
+}
+
 export function equip(id: string): void {
   const item = getCosmetic(id);
   if (!item || !isOwned(id)) return;
@@ -183,7 +227,11 @@ export function equippedTheme(): CosmeticDef {
   return getCosmetic(load().skins.equippedTheme) ?? THEMES[0];
 }
 
-/** The CSS filter for the currently-equipped bubble skin (or undefined). */
+/** CSS filter for the equipped bubble skin (undefined for Classic). */
 export function equippedBubbleFilter(): string | undefined {
   return equippedSkin().bubbleFilter;
+}
+/** Full-screen backdrop image for the equipped theme (or undefined). */
+export function equippedThemeImage(): string | undefined {
+  return equippedTheme().image;
 }

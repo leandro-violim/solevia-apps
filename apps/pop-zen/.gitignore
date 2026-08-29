@@ -30,3 +30,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# P1-T7: 2K art originals — kept locally for re-optimization, not committed (81MB).
+# Re-downloadable from the ticket URLs while they last; optimized versions ship in src/assets.
+assets-src/

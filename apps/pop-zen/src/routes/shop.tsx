@@ -3,6 +3,7 @@ import { useState } from "react";
 import { CoinBalance } from "../components/CoinBalance";
 import {
   SKINS,
+  ZEN_SKINS,
   THEMES,
   type CosmeticDef,
   priceOf,
@@ -80,6 +81,14 @@ function ShopPage() {
         busy={busy}
       />
       <Section
+        title={t("shop.zenSkins")}
+        items={ZEN_SKINS}
+        onBuy={onBuy}
+        onEquip={onEquip}
+        onWatch={onWatchDiscount}
+        busy={busy}
+      />
+      <Section
         title={t("shop.themes")}
         items={THEMES}
         onBuy={onBuy}
@@ -117,10 +126,12 @@ function Section({
           const affordable = getCoins() >= price;
           return (
             <div key={item.id} className="rounded-2xl border border-border bg-card p-3">
-              <div
-                className="mb-2 h-16 w-full rounded-xl border border-white/10"
-                style={{ background: item.swatch }}
+              <img
+                src={item.thumb}
+                alt=""
                 aria-hidden
+                loading="lazy"
+                className="mb-2 h-20 w-full rounded-xl border border-white/10 object-cover"
               />
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-foreground">{item.name}</span>
