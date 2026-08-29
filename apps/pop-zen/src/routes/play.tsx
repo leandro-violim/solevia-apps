@@ -30,6 +30,7 @@ import {
 } from "../lib/run-stats";
 import { checkAchievements } from "../lib/achievements";
 import { seededRand, recordDailyResult } from "../lib/daily-challenge";
+import { track } from "../lib/analytics";
 import { ObjectivesHud } from "../components/ObjectivesHud";
 import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
 import {
@@ -172,6 +173,8 @@ function PlayPage() {
   const startedRef = useRef(false);
   // §7 golden/mystery bonus points accumulated this phase, added to the score.
   const bonusPointsRef = useRef(0);
+  // Wall-clock at run start, for the run_end duration_s analytics param (P1-T6).
+  const runStartAtRef = useRef(0);
   // §8 objectives — rolled once per RUN; completion tracked in a ref Set.
   const objectivesRef = useRef<Objective[]>([]);
   const completedRef = useRef<Set<string>>(new Set());
@@ -223,13 +226,15 @@ function PlayPage() {
       objectivesRef.current = isZen ? [] : rollObjectives();
       completedRef.current = new Set();
       setObjVersion((v) => v + 1);
+      runStartAtRef.current = Date.now();
+      track("run_start", { mode, difficulty, phase_start: phase }); // P1-T6
     }
     // Warm up the interstitial now so it's ready (if online) by phase end.
     void preloadInterstitial();
     // Ask for a fresh banner creative for the new phase (rate-limited internally
     // to stay within AdMob's refresh policy).
     void refreshBanner();
-  }, [phase, cfg.bubbles, cfg.size, specialsMul, isZen, isDaily]);
+  }, [phase, cfg.bubbles, cfg.size, specialsMul, isZen, isDaily, mode, difficulty]);
 
   // Re-lay-out the field when the native ad banner reports its real height,
   // so bubbles clear it exactly. Only while "ready" so an in-progress game
@@ -291,6 +296,7 @@ function PlayPage() {
       burstParticles(cx, cy, variant); // juice: tinted particle burst from the pop point
       if (milestone !== null) {
         playMilestone(milestone); // distinct calm chime
+        track("combo_milestone", { milestone, mode }); // P1-T6
         const tier = (JUICE.combo.milestones as readonly number[]).indexOf(milestone);
         // Bigger, faster, GOLD-tinted burst so a milestone reads as a reward.
         burstParticles(
@@ -305,6 +311,7 @@ function PlayPage() {
 
       // §7 special-bubble effects (a "time" mystery reward folds into points until
       // §9 adds the Time Attack countdown).
+      if (special !== "normal") track("special_bubble_popped", { type: special }); // P1-T6
       if (special === "golden") {
         addCoins(CONFIG.specials.goldenBonusCoins, "golden");
         bonusPointsRef.current += CONFIG.specials.goldenBonusPoints;
@@ -337,8 +344,8 @@ function PlayPage() {
 
       scanObjectives(); // §8 — coins + toast if a goal just completed
     },
-    [scanObjectives],
-  ); // stable: scanObjectives is itself stable, so <Bubble>'s memo still holds
+    [scanObjectives, mode],
+  ); // stable across a session (mode/scanObjectives don't change), so memo holds
 
   // Detect phase completion once the field is cleared, and record it exactly
   // once. Kept out of the pop handler's updater so it can't double-submit.
@@ -379,6 +386,11 @@ function PlayPage() {
     const t = startAt !== null ? Date.now() - startAt : 0;
     noteRunPhaseCleared(t); // §8/§10
     scanObjectives();
+    track("phase_cleared", {
+      mode,
+      phase,
+      time_left_s: Math.max(0, Math.round((cfg.timeLimitMs - t) / 1000)),
+    }); // P1-T6
     const base = computeScore(cfg.bubbles, t);
     // Best-combo × 15 feeds the Time Attack score (§9, mode-resolved).
     const maxCombo = getMaxCombo();
@@ -401,6 +413,8 @@ function PlayPage() {
     isZen,
     specialsMul,
     isDaily,
+    mode,
+    cfg.timeLimitMs,
   ]);
 
   const record = records[phase];
@@ -435,10 +449,20 @@ function PlayPage() {
     if (isDaily) recordDailyResult(total); // §12 — daily best + first-play bonus coins
     const coins = coinsForScore(total);
     addCoins(coins, "time_attack_run");
+    track("run_end", {
+      mode,
+      difficulty,
+      score: total,
+      phase_reached: phase,
+      bubbles_popped: rs.popped,
+      max_combo: rs.maxCombo,
+      duration_s: Math.round((Date.now() - runStartAtRef.current) / 1000),
+      ended_by: "completed",
+    }); // P1-T6
     noteRunCompleted();
     await maybeShowInterstitial("run_end");
     navigate({ to: "/finish", search: { total, prevBest, beat: beat ? 1 : 0, coins } });
-  }, [navigate, isDaily]);
+  }, [navigate, isDaily, mode, difficulty, phase]);
 
   const restart = useCallback(() => {
     const el = fieldRef.current;
@@ -470,7 +494,26 @@ function PlayPage() {
   return (
     <div className="flex min-h-dvh flex-col" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <header className="flex items-center justify-between px-4 py-3">
-        <Link to="/" className="text-sm font-medium text-muted-foreground">
+        <Link
+          to="/"
+          onClick={() => {
+            // P1-T6: a mid-run exit ends the run (covers Zen, which has no finish).
+            if (startedRef.current) {
+              const rs = getRunStats();
+              track("run_end", {
+                mode,
+                difficulty,
+                score: getRunTotal(),
+                phase_reached: phase,
+                bubbles_popped: rs.popped,
+                max_combo: rs.maxCombo,
+                duration_s: Math.round((Date.now() - runStartAtRef.current) / 1000),
+                ended_by: "quit",
+              });
+            }
+          }}
+          className="text-sm font-medium text-muted-foreground"
+        >
           {t("play.exit")}
         </Link>
         <div className="text-center">

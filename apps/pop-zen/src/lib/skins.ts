@@ -161,7 +161,7 @@ export function grantOwned(id: string, source: string): void {
     st.skins.owned.push(id);
     st.stats.skinsOwned = st.skins.owned.filter((x) => SKINS.some((s) => s.id === x)).length;
   });
-  track("skin_unlocked", { id, source });
+  track("skin_unlocked", { item_id: id, method: source });
   checkAchievements(); // §10 — "own 3 skins"
 }
 
@@ -173,7 +173,7 @@ export function equip(id: string): void {
     if (item.kind === "skin") st.skins.equippedSkin = id;
     else st.skins.equippedTheme = id;
   });
-  track("skin_equipped", { id, kind: item.kind });
+  track("skin_equipped", { item_id: id });
 }
 
 export function equippedSkin(): CosmeticDef {

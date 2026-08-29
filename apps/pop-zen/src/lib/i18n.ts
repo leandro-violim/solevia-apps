@@ -171,6 +171,9 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     // 1.1.0 adopts the generic wording (accurate on both iOS and Android), matching
     // the android-port copy fix — replaces the earlier "Works on iPhone only…".
     "settings.vibrationFollow": "Follows your device's system vibration setting.",
+    "settings.analytics": "Analytics",
+    "settings.analyticsDesc":
+      "Share anonymous usage data to help improve the game. No personal info.",
     "settings.yourData": "Your data",
     "settings.dataDesc": "Records are stored only on this device. Resetting cannot be undone.",
     "settings.resetBtn": "Reset records",
@@ -338,6 +341,9 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "settings.vibration": "Vibração",
     "settings.vibrationDesc": "Sinta uma leve vibração a cada bolha estourada.",
     "settings.vibrationFollow": "Segue a configuração de vibração do seu aparelho.",
+    "settings.analytics": "Análises",
+    "settings.analyticsDesc":
+      "Compartilhe dados de uso anônimos para melhorar o jogo. Sem dados pessoais.",
     "settings.yourData": "Seus dados",
     "settings.dataDesc":
       "Os recordes ficam salvos apenas neste aparelho. A redefinição não pode ser desfeita.",

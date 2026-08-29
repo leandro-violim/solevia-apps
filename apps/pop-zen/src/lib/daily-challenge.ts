@@ -74,6 +74,6 @@ export function recordDailyResult(score: number): { coins: number; best: number 
     }
   });
   if (coins > 0) addCoins(coins, "daily_challenge");
-  track("daily_challenge_played", { score, best });
+  track("daily_challenge_played", { score, date_seed: dailySeed() });
   return { coins, best };
 }

@@ -322,7 +322,7 @@ export async function maybeShowInterstitial(placement: string): Promise<boolean>
   if (shown) {
     lastInterstitialAt = Date.now();
     runsSinceInterstitial = 0;
-    track("interstitial_shown", { placement });
+    track("ad_interstitial_shown", { placement });
   }
   return shown;
 }

@@ -73,7 +73,7 @@ export function checkAchievements(): Achievement[] {
         st.achievements.unlocked.push(a.id);
       });
       addCoins(a.reward, `achievement:${a.id}`);
-      track("achievement_unlocked", { id: a.id, reward: a.reward });
+      track("achievement_unlocked", { achievement_id: a.id, coins: a.reward });
       newly.push(a);
       // Global toast (a listener lives in the root layout).
       if (typeof window !== "undefined") {

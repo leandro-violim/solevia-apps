@@ -50,7 +50,7 @@ export function checkObjectives(objectives: Objective[], completed: Set<string>)
     if (!completed.has(o.id) && o.done(s)) {
       completed.add(o.id);
       addCoins(o.reward, `objective:${o.id}`);
-      track("objective_completed", { id: o.id, reward: o.reward });
+      track("objective_completed", { objective_id: o.id, coins: o.reward });
       newly.push(o);
     }
   }
