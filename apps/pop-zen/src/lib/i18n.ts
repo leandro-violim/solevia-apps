@@ -44,6 +44,13 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "nav.privacy": "Privacy",
     "nav.terms": "Terms",
 
+    // Daily bonus (P1-T5)
+    "bonus.title": "Daily Bonus",
+    "bonus.day": "Day {n}!",
+    "bonus.line": "Welcome back — drop in each day to grow your streak.",
+    "bonus.claim": "Claim",
+    "bonus.close": "Close",
+
     // Gameplay
     "play.exit": "← Exit",
     "play.phaseOf": "Phase {phase} of {total}",
@@ -155,6 +162,13 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "nav.about": "Sobre",
     "nav.privacy": "Privacidade",
     "nav.terms": "Termos",
+
+    // Daily bonus (P1-T5)
+    "bonus.title": "Bônus diário",
+    "bonus.day": "Dia {n}!",
+    "bonus.line": "Que bom te ver! Volte todo dia para aumentar sua sequência.",
+    "bonus.claim": "Resgatar",
+    "bonus.close": "Fechar",
 
     // Gameplay
     "play.exit": "← Sair",
