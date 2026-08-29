@@ -239,6 +239,17 @@
 /* Pop: quick squish, then collapse flat, keeping a small per-bubble tilt
    (--pop-rot). Bubble.tsx uses a plain fade instead when reduced motion is on. */
 /* ── Bubble-wrap bubble + round pop — ported 1:1 from _reference/zen-final-look.html ── */
+/* ─────────────────────────────────────────────────────────────────────────
+ * P1-T1 "Juice the pop" — VISUAL tunables (the pop squash-&-stretch + flash).
+ * The particle-burst and sound values live in src/lib/juice.ts instead.
+ * ───────────────────────────────────────────────────────────────────────── */
+:root {
+  --zb-pop-dur: 0.34s; /* total pop animation length */
+  --zb-pop-overshoot: 1.15; /* squash-&-stretch peak scale before it collapses */
+  --zb-pop-flash: 1.9; /* brightness spike at the instant of pop (1 = no flash) */
+  --zb-pop-ease: cubic-bezier(0.34, 1.56, 0.5, 1); /* springy overshoot */
+}
+
 .zb {
   position: relative;
   aspect-ratio: 1;
@@ -278,7 +289,9 @@
 }
 /* POPPED — stays ROUND (no clip-path). Option A: filter dims the same image. */
 .zb.popped {
-  animation: zpop 0.34s ease forwards;
+  animation: zpop var(--zb-pop-dur) var(--zb-pop-ease) forwards;
+  /* Static dim = the animation's end-state; also the reduced-motion fallback
+     (that @media below sets animation:none and relies on this filter). */
   filter: brightness(0.58) saturate(0.6) contrast(0.8);
   opacity: 0.6;
   box-shadow: none;
@@ -293,15 +306,20 @@
 @keyframes zpop {
   0% {
     transform: scale(1);
+    /* Colour flash at the instant of the pop, then it settles to the dim shell. */
+    filter: brightness(var(--zb-pop-flash)) saturate(0.85) contrast(0.95);
   }
-  22% {
-    transform: scale(1.12);
+  18% {
+    transform: scale(var(--zb-pop-overshoot)); /* squash-&-stretch peak */
+    filter: brightness(1.25) saturate(0.8) contrast(0.9);
   }
   55% {
     transform: scale(0.55) rotate(var(--rot, -4deg));
+    filter: brightness(0.58) saturate(0.6) contrast(0.8);
   }
   100% {
     transform: scale(0.52) rotate(var(--rot, -4deg));
+    filter: brightness(0.58) saturate(0.6) contrast(0.8);
   }
 }
 

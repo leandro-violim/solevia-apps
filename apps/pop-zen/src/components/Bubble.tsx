@@ -20,8 +20,12 @@ type Props = {
   /** When true, skip the idle float animation to save CPU on dense phases. */
   still?: boolean;
   driftDelay: number;
-  /** Receives the bubble id so the parent can pass one stable callback (keeps React.memo effective). */
-  onPop: (id: number) => void;
+  /**
+   * Receives the bubble id plus its centre (field-local px) and variant so the
+   * parent can drive the pop particle burst. Passing geometry here keeps the
+   * parent's ONE callback referentially stable (keeps React.memo effective).
+   */
+  onPop: (id: number, cx: number, cy: number, variant: number) => void;
 };
 
 const R = (a: number, b: number) => a + Math.random() * (b - a);
@@ -124,7 +128,7 @@ export const Bubble = memo(function Bubble({
   const activate = () => {
     if (popped || handled.current) return;
     handled.current = true;
-    onPop(id);
+    onPop(id, x + size / 2, y + size / 2, variant);
   };
 
   return (

@@ -13,6 +13,7 @@
  * AND warm the decode so the first pop isn't silent.
  */
 import { isSoundEnabled } from "./settings";
+import { JUICE } from "./juice";
 import pop1 from "../assets/sounds/pop-1.mp3";
 import pop2 from "../assets/sounds/pop-2.mp3";
 import pop3 from "../assets/sounds/pop-3.mp3";
@@ -108,11 +109,14 @@ export function playPop(): void {
   }
   const out = getBus(ac);
   const buf = buffers[(Math.random() * buffers.length) | 0];
+  // A fresh one-shot source per pop → overlapping pops always play together and
+  // never cut each other off (Web Audio is inherently polyphonic).
   const src = ac.createBufferSource();
   src.buffer = buf;
-  src.playbackRate.value = 0.92 + Math.random() * 0.26; // subtle variation
+  const { pitchJitter, volumeJitter } = JUICE.sound;
+  src.playbackRate.value = 1 + (Math.random() * 2 - 1) * pitchJitter; // ±8% → repeats differ
   const g = ac.createGain();
-  g.gain.value = 1;
+  g.gain.value = 1 + (Math.random() * 2 - 1) * volumeJitter; // ±10%
   src.connect(g);
   g.connect(out);
   src.start();

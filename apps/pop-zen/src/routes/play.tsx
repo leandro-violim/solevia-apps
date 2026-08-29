@@ -5,6 +5,8 @@ import { z } from "zod";
 import { AdBanner } from "../components/AdBanner";
 import { showInterstitial, preloadInterstitial, refreshBanner } from "../lib/ads";
 import { Bubble } from "../components/Bubble";
+import { PopParticles } from "../components/PopParticles";
+import { burstParticles } from "../lib/pop-particles";
 import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
@@ -169,7 +171,10 @@ function PlayPage() {
     return () => document.body.classList.remove("game-playing");
   }, [state]);
 
-  const handlePop = useCallback((id: number) => {
+  // cx/cy = the popped bubble's centre (field-local px), variant = its tint.
+  // Passed in by <Bubble> so this callback stays referentially stable (reads no
+  // bubble state) and drives the particle burst without a re-render.
+  const handlePop = useCallback((id: number, cx: number, cy: number, variant: number) => {
     if (!startedRef.current) {
       startedRef.current = true;
       unlockAudio();
@@ -178,6 +183,7 @@ function PlayPage() {
     }
     playPop();
     popHaptic(); // light Taptic-Engine tap on each pop (native iOS; respects system haptics)
+    burstParticles(cx, cy, variant); // juice: tinted particle burst from the pop point
     // Pure state update only — no side effects here, so React re-running this
     // updater (StrictMode/concurrent) can't submit the score twice.
     setBubbles((prev) => prev.map((b) => (b.id === id ? { ...b, popped: true } : b)));
@@ -304,6 +310,9 @@ function PlayPage() {
               onPop={handlePop}
             />
           ))}
+
+          {/* Pop particle burst — canvas overlay above the bubbles, below the UI overlays. */}
+          <PopParticles fieldRef={fieldRef} />
 
           {state === "ready" && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
