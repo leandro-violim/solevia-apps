@@ -1,27 +1,19 @@
 /**
- * P1-T5 daily bonus — the "come back tomorrow" streak SEED.
+ * Daily bonus + streaks (§4/§5). Once-a-day gift that grants coins scaled by the
+ * streak day, with one-miss "freeze" forgiveness. State lives in the shared
+ * storage module (`storage.ts` → `streak`), not its own key.
  *
- * The point of this ticket is PERSISTENCE: we store `{ lastBonusDate,
- * consecutiveDays }` in localStorage so v1.3 can turn the day count into coins.
- * Today the reward is intentionally light — just the delight + the day count.
- * NOTHING here touches timer/score/spawn.
- *
- * Streak rule: opening the app on consecutive calendar days grows the count;
- * a gap of 2+ days resets it to 1. Both "Claim" and "Dismiss" consume the day
- * (you came back either way) — Claim just adds the flourish.
+ * Streak rule: consecutive days grow the count; the coin reward follows
+ * CONFIG.streak.coinTable (D1..D7, repeating with D7 as the weekly milestone).
+ * A single missed day is forgiven ONCE by an auto-freeze that refreshes weekly;
+ * a miss with no freeze — or a 2+ day gap — resets to Day 1.
  */
+import { CONFIG } from "./config";
+import { load, update, resetPlayerState, type StreakState } from "./storage";
+import { track } from "./analytics";
+import { addCoins } from "./economy";
 
-/** ── TUNABLES (all daily-bonus knobs live here) ─────────────────────────── */
-export const DAILY_BONUS = {
-  storageKey: "zen-daily-bonus-v1", // bump the suffix to reset everyone's streak
-  claimParticles: 30, // gold particles in the claim flourish
-  claimSpeedMul: 1.6, // how far they fly
-  claimSoundLevel: 20, // passed to playMilestone() → tier of the reward chime
-};
-
-export type BonusState = { lastBonusDate: string; consecutiveDays: number };
-
-/** Local calendar day as YYYY-MM-DD (device timezone). */
+/* ── local-date helpers (device timezone) ─────────────────────────────────── */
 function dateStr(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -34,91 +26,110 @@ function offsetStr(days: number): string {
   d.setDate(d.getDate() + days);
   return dateStr(d);
 }
-
-function read(): BonusState | null {
-  try {
-    const raw = localStorage.getItem(DAILY_BONUS.storageKey);
-    if (!raw) return null;
-    const s = JSON.parse(raw) as Partial<BonusState>;
-    if (typeof s?.lastBonusDate === "string" && typeof s?.consecutiveDays === "number") {
-      return { lastBonusDate: s.lastBonusDate, consecutiveDays: s.consecutiveDays };
-    }
-    return null;
-  } catch {
-    return null;
-  }
+/** Days since epoch for a YYYY-MM-DD local date (offsets cancel in differences). */
+function dayNumber(s: string): number {
+  return Math.floor(new Date(`${s}T00:00:00`).getTime() / 86_400_000);
 }
-function write(s: BonusState): void {
-  try {
-    localStorage.setItem(DAILY_BONUS.storageKey, JSON.stringify(s));
-  } catch {
-    /* storage disabled (private mode) — bonus simply won't persist */
-  }
-}
+const weekIdOf = (s: string): string => String(Math.floor(dayNumber(s) / 7));
 
-/** True on the first open of a new calendar day (or if never seen). */
+export const DAILY_BONUS = {
+  claimParticles: 30, // gold particles in the claim flourish
+  claimSpeedMul: 1.6,
+  claimSoundLevel: 20, // playMilestone tier for the reward chime
+};
+
+/** True on the first open of a new calendar day. */
 export function isBonusAvailable(): boolean {
-  const s = read();
-  return !s || s.lastBonusDate !== todayStr();
+  return load().streak.lastBonusDate !== todayStr();
 }
 
-/** What the day count WOULD become if consumed right now (for the popup label). */
+/** Coins granted for a given streak day (D1..D7, repeating). */
+export function coinsForDay(day: number): number {
+  const table = CONFIG.streak.coinTable;
+  return table[(Math.max(1, day) - 1) % table.length];
+}
+
+/** What the streak day + coins WOULD be if consumed today (for the popup label). */
+function computeNext(streak: StreakState): { day: number; freezeConsumed: boolean } {
+  const today = todayStr();
+  if (!streak.lastBonusDate) return { day: 1, freezeConsumed: false };
+  if (streak.lastBonusDate === today) return { day: streak.consecutiveDays, freezeConsumed: false };
+  const gap = dayNumber(today) - dayNumber(streak.lastBonusDate);
+  if (gap === 1) return { day: streak.consecutiveDays + 1, freezeConsumed: false };
+  if (gap === 2 && CONFIG.streak.freezeEnabled && streak.freezeAvailable) {
+    return { day: streak.consecutiveDays + 1, freezeConsumed: true }; // one-miss forgiveness
+  }
+  return { day: 1, freezeConsumed: false }; // reset
+}
+
 export function getPendingDayCount(): number {
-  const s = read();
-  if (!s) return 1; // first ever
-  if (s.lastBonusDate === todayStr()) return s.consecutiveDays; // already consumed today
-  if (s.lastBonusDate === offsetStr(-1)) return s.consecutiveDays + 1; // yesterday → +1
-  return 1; // gap of 2+ days → reset
+  return computeNext(load().streak).day;
+}
+export function getPendingCoins(): number {
+  return coinsForDay(getPendingDayCount());
+}
+/** Current stored streak (for the home-screen "Day N · 🔥"). */
+export function getStreakDay(): number {
+  return load().streak.consecutiveDays;
 }
 
-/** Persist today's visit (called on Claim AND Dismiss). Returns the new count. */
-export function consumeBonus(): number {
-  const days = getPendingDayCount();
-  write({ lastBonusDate: todayStr(), consecutiveDays: days });
-  return days;
+/**
+ * Consume today's bonus: refresh the weekly freeze, advance/reset the streak,
+ * grant the coins, and log. Called on BOTH claim and dismiss (the gift is always
+ * credited for showing up); Claim just adds the flourish. Returns day + coins.
+ */
+export function claimDailyBonus(): { day: number; coins: number } {
+  const today = todayStr();
+  let out = { day: 1, coins: 0 };
+  update((st) => {
+    const wk = weekIdOf(today);
+    if (CONFIG.streak.freezeEnabled && st.streak.freezeWeek !== wk) {
+      st.streak.freezeAvailable = true; // weekly freeze refresh
+      st.streak.freezeWeek = wk;
+    }
+    const { day, freezeConsumed } = computeNext(st.streak);
+    if (freezeConsumed) st.streak.freezeAvailable = false;
+    st.streak.lastBonusDate = today;
+    st.streak.consecutiveDays = day;
+    out = { day, coins: coinsForDay(day) };
+  });
+  addCoins(out.coins, "daily_bonus"); // fires coins_earned
+  track("streak_day", { day: out.day });
+  track("daily_bonus_claimed", { day: out.day, coins: out.coins });
+  return out;
 }
 
-/** The raw streak record — this is what v1.3 will read to award coins. */
-export function getStreakData(): BonusState | null {
-  return read();
+export function trackBonusShown(day: number): void {
+  track("daily_bonus_shown", { day });
 }
 
-/** ── Analytics hook (no SDK wired yet — clearly-named TODO) ──────────────── */
-export type BonusEvent = "daily_bonus_shown" | "daily_bonus_claimed";
-export function trackDailyBonus(event: BonusEvent, dayCount: number): void {
-  // TODO(analytics): forward to the real analytics SDK when it lands (v1.3+).
-  // Event name + { dayCount } is the exact payload to send.
-  if (import.meta.env.DEV) console.debug(`[analytics] ${event}`, { dayCount });
-}
-
-/** ── Dev-only testing helpers (stripped from release builds) ─────────────── */
+/* ── Dev-only helpers (stripped from release) ─────────────────────────────── */
 export function installBonusDevHelpers(): void {
   if (!import.meta.env.DEV || typeof window === "undefined") return;
   const w = window as unknown as { zenBonus?: Record<string, unknown> };
-  if (w.zenBonus) return; // install once
+  if (w.zenBonus) return;
   w.zenBonus = {
-    peek: () => read(),
+    peek: () => load().streak,
     reset: () => {
-      localStorage.removeItem(DAILY_BONUS.storageKey);
+      resetPlayerState();
       location.reload();
     },
-    // Pretend a day passed: set last claim to "yesterday", keep the streak →
-    // on reload the popup reappears with the count +1.
     simulateNextDay: () => {
-      const s = read();
-      write({ lastBonusDate: offsetStr(-1), consecutiveDays: s?.consecutiveDays ?? 1 });
+      update((st) => {
+        st.streak.lastBonusDate = offsetStr(-1); // claimed "yesterday"
+      });
       location.reload();
     },
-    // Open a 2-day hole → on reload the popup reappears and the count resets to 1.
     simulateGap: () => {
-      const s = read();
-      write({ lastBonusDate: offsetStr(-2), consecutiveDays: s?.consecutiveDays ?? 5 });
+      update((st) => {
+        st.streak.lastBonusDate = offsetStr(-3); // 3-day hole → reset (freeze can't save it)
+      });
       location.reload();
     },
   };
   console.info(
-    "%c[zenBonus] dev helpers ready:",
+    "%c[zenBonus]",
     "color:#82d",
-    "zenBonus.simulateNextDay() · zenBonus.simulateGap() · zenBonus.reset() · zenBonus.peek()",
+    "simulateNextDay() · simulateGap() · reset() · peek()",
   );
 }

@@ -46,7 +46,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
 
     // Daily bonus (P1-T5)
     "bonus.title": "Daily Bonus",
-    "bonus.day": "Day {n}!",
+    "bonus.day": "Day {n} · 🔥",
+    "bonus.reward": "+{coins} coins",
     "bonus.line": "Welcome back — drop in each day to grow your streak.",
     "bonus.claim": "Claim",
     "bonus.close": "Close",
@@ -165,7 +166,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
 
     // Daily bonus (P1-T5)
     "bonus.title": "Bônus diário",
-    "bonus.day": "Dia {n}!",
+    "bonus.day": "Dia {n} · 🔥",
+    "bonus.reward": "+{coins} moedas",
     "bonus.line": "Que bom te ver! Volte todo dia para aumentar sua sequência.",
     "bonus.claim": "Resgatar",
     "bonus.close": "Fechar",

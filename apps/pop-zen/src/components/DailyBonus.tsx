@@ -6,42 +6,42 @@ import { JUICE } from "../lib/juice";
 import {
   isBonusAvailable,
   getPendingDayCount,
-  consumeBonus,
-  trackDailyBonus,
+  getPendingCoins,
+  claimDailyBonus,
+  trackBonusShown,
   installBonusDevHelpers,
   DAILY_BONUS,
 } from "../lib/daily-bonus";
 import { t } from "../lib/i18n";
 
 /**
- * Once-a-day "Daily Bonus" pop-up (P1-T5). Shows on the first open of each
- * calendar day, reuses the combo-milestone gold flourish on Claim, and persists
- * the streak (`daily-bonus.ts`). Feedback-only — no gameplay effects.
- *
- * The open/day-count decision runs on the CLIENT (in an effect), never during
- * SSR — so there's no hydration mismatch from reading localStorage.
+ * Once-a-day "Daily Bonus" pop-up (§4/§5). Shows on the first open of each
+ * calendar day, grants coins scaled by streak day (with one-miss freeze), and
+ * reuses the combo-milestone gold flourish on Claim. The open/day decision runs
+ * on the CLIENT (effect), never during SSR.
  */
 export function DailyBonus() {
   const [open, setOpen] = useState(false);
-  const [dayCount, setDayCount] = useState(1);
+  const [day, setDay] = useState(1);
+  const [coins, setCoins] = useState(0);
   const overlayRef = useRef<HTMLDivElement>(null);
   const claimBtnRef = useRef<HTMLButtonElement>(null);
   const closingRef = useRef(false);
 
   useEffect(() => {
-    installBonusDevHelpers(); // dev-only; no-op in release builds
+    installBonusDevHelpers();
     if (isBonusAvailable()) {
       const n = getPendingDayCount();
-      setDayCount(n);
+      setDay(n);
+      setCoins(getPendingCoins());
       setOpen(true);
-      trackDailyBonus("daily_bonus_shown", n);
+      trackBonusShown(n);
     }
   }, []);
 
   if (!open) return null;
 
   const flourish = () => {
-    // Reuse the combo-milestone reward: calm chime + gold particle burst.
     unlockAudio();
     playMilestone(DAILY_BONUS.claimSoundLevel);
     const btn = claimBtnRef.current;
@@ -63,16 +63,15 @@ export function DailyBonus() {
   const claim = () => {
     if (closingRef.current) return;
     closingRef.current = true;
-    consumeBonus(); // persist today's visit (advances the streak)
-    trackDailyBonus("daily_bonus_claimed", dayCount);
+    claimDailyBonus(); // credits coins + advances streak + logs
     flourish();
-    window.setTimeout(() => setOpen(false), 850); // let the flourish play, then close
+    window.setTimeout(() => setOpen(false), 850);
   };
 
   const dismiss = () => {
     if (closingRef.current) return;
     closingRef.current = true;
-    consumeBonus(); // coming back counts even without claiming
+    claimDailyBonus(); // coming back still credits the day's gift (no flourish)
     setOpen(false);
   };
 
@@ -80,7 +79,7 @@ export function DailyBonus() {
     <div
       ref={overlayRef}
       onClick={(e) => {
-        if (e.target === e.currentTarget) dismiss(); // tap the backdrop to dismiss
+        if (e.target === e.currentTarget) dismiss();
       }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 px-6 backdrop-blur-sm"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
@@ -99,9 +98,8 @@ export function DailyBonus() {
         <div className="mt-2 text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
           {t("bonus.title")}
         </div>
-        <div className="mt-1 text-4xl font-bold text-primary">
-          {t("bonus.day", { n: dayCount })}
-        </div>
+        <div className="mt-1 text-3xl font-bold text-primary">{t("bonus.day", { n: day })}</div>
+        <div className="mt-1 text-lg font-semibold text-accent">{t("bonus.reward", { coins })}</div>
         <p className="mx-auto mt-2 max-w-[15rem] text-sm text-muted-foreground">
           {t("bonus.line")}
         </p>
@@ -114,7 +112,6 @@ export function DailyBonus() {
         </button>
       </div>
 
-      {/* Flourish canvas on top; pointer-events:none so the buttons still work. */}
       <PopParticles fieldRef={overlayRef} />
     </div>
   );
