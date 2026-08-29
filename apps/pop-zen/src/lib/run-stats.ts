@@ -4,6 +4,7 @@
  * into the persistent stats (storage) for achievements.
  */
 import type { SpecialType } from "./specials";
+import { update } from "./storage";
 
 export type RunStats = {
   popped: number;
@@ -50,4 +51,22 @@ export function noteRunPhaseCleared(timeMs: number): void {
 export function noteRunMiss(): void {
   stats.misses += 1;
   stats.noMiss = false;
+}
+
+/**
+ * Fold popped/golden/combo into the cumulative persistent stats (§10). Called at
+ * a Time Attack run end (countRun) and on each Zen field clear.
+ */
+export function commitStats(
+  popped: number,
+  golden: number,
+  maxCombo: number,
+  countRun: boolean,
+): void {
+  update((st) => {
+    st.stats.totalPopped += popped;
+    st.stats.goldenPopped += golden;
+    if (maxCombo > st.stats.bestCombo) st.stats.bestCombo = maxCombo;
+    if (countRun) st.stats.totalRuns += 1;
+  });
 }

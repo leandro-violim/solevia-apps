@@ -76,6 +76,20 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "obj.fast": "Clear a phase < {n}s",
     "obj.complete": "Objective! +{coins} 🪙",
 
+    // Achievements (§10)
+    "ach.title": "Achievements",
+    "ach.unlocked": "Achievement unlocked",
+    "ach.pop": "Pop {n} bubbles",
+    "ach.streak": "{n}-day streak",
+    "ach.combo": "Reach a ×{n} combo",
+    "ach.golden": "Pop {n} golden",
+    "ach.skins": "Own {n} skins",
+    "ach.revive": "Use your first revive",
+    "ach.statPopped": "Popped",
+    "ach.statCombo": "Best combo",
+    "ach.statStreak": "Streak",
+    "home.achievements": "Achievements",
+
     // Gameplay
     "play.exit": "← Exit",
     "play.phaseOf": "Phase {phase} of {total}",
@@ -227,6 +241,20 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "obj.phases": "Complete {n} fases",
     "obj.fast": "Complete uma fase < {n}s",
     "obj.complete": "Objetivo! +{coins} 🪙",
+
+    // Achievements (§10)
+    "ach.title": "Conquistas",
+    "ach.unlocked": "Conquista desbloqueada",
+    "ach.pop": "Estoure {n} bolhas",
+    "ach.streak": "Sequência de {n} dias",
+    "ach.combo": "Alcance um combo ×{n}",
+    "ach.golden": "Estoure {n} douradas",
+    "ach.skins": "Tenha {n} skins",
+    "ach.revive": "Use seu primeiro revive",
+    "ach.statPopped": "Estouradas",
+    "ach.statCombo": "Melhor combo",
+    "ach.statStreak": "Sequência",
+    "home.achievements": "Conquistas",
 
     // Gameplay
     "play.exit": "← Sair",

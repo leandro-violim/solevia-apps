@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { initAds, showBanner } from "../lib/ads";
+import { startAnalyticsSession } from "../lib/analytics";
+import { AchievementToast } from "../components/AchievementToast";
 
 function NotFoundComponent() {
   return (
@@ -132,6 +134,7 @@ function RootComponent() {
   // Initialize AdMob and show the bottom banner once, on native only.
   // Both calls are no-ops on the web/dev build.
   useEffect(() => {
+    startAnalyticsSession(); // §11 — fires session_start once
     let cancelled = false;
     (async () => {
       await initAds();
@@ -146,6 +149,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <AchievementToast />
     </QueryClientProvider>
   );
 }

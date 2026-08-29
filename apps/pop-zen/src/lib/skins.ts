@@ -13,6 +13,7 @@ import { CONFIG } from "./config";
 import { load, update } from "./storage";
 import { track } from "./analytics";
 import { spendCoins } from "./economy";
+import { checkAchievements } from "./achievements";
 
 export type Rarity = "starter" | "common" | "uncommon" | "rare" | "premium";
 export type ItemKind = "skin" | "theme";
@@ -161,6 +162,7 @@ export function grantOwned(id: string, source: string): void {
     st.stats.skinsOwned = st.skins.owned.filter((x) => SKINS.some((s) => s.id === x)).length;
   });
   track("skin_unlocked", { id, source });
+  checkAchievements(); // §10 — "own 3 skins"
 }
 
 /** Equip an owned cosmetic (skin or theme). No-op if not owned. */

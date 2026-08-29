@@ -20,7 +20,15 @@ import { CONFIG } from "../lib/config";
 import { addCoins, coinsForScore, coinsForZenBubbles } from "../lib/economy";
 import { rollMysteryReward, type SpecialType } from "../lib/specials";
 import { rollObjectives, checkObjectives, type Objective } from "../lib/objectives";
-import { resetRunStats, noteRunPop, noteRunCombo, noteRunPhaseCleared } from "../lib/run-stats";
+import {
+  resetRunStats,
+  noteRunPop,
+  noteRunCombo,
+  noteRunPhaseCleared,
+  getRunStats,
+  commitStats,
+} from "../lib/run-stats";
+import { checkAchievements } from "../lib/achievements";
 import { ObjectivesHud } from "../components/ObjectivesHud";
 import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
 import {
@@ -326,6 +334,9 @@ function PlayPage() {
     // §9 Zen: endless — clearing the field grants gentle coins and lays a fresh
     // one; there's no score, phase, or finish. The player leaves via Exit.
     if (isZen) {
+      const golden = bubbles.filter((b) => b.special === "golden").length;
+      commitStats(bubbles.length, golden, getMaxCombo(), false); // §10 cumulative stats
+      checkAchievements();
       addCoins(coinsForZenBubbles(cfg.bubbles), "zen");
       const el = fieldRef.current;
       if (el) {
@@ -393,6 +404,9 @@ function PlayPage() {
   // End of a Time Attack run: total the phases, award coins (§1), fire the
   // run-end interstitial (§2 — a natural break, capped), then celebrate.
   const goFinish = useCallback(async () => {
+    const rs = getRunStats();
+    commitStats(rs.popped, rs.goldenPopped, rs.maxCombo, true); // §10 cumulative stats
+    checkAchievements();
     const total = getRunTotal();
     const { beat, prevBest } = commitRunTotal(total);
     const coins = coinsForScore(total);

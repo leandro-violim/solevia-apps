@@ -13,6 +13,7 @@ import { load, update, resetPlayerState, type StreakState } from "./storage";
 import { track } from "./analytics";
 import { addCoins } from "./economy";
 import { grantOwned } from "./skins";
+import { checkAchievements } from "./achievements";
 
 /* ── local-date helpers (device timezone) ─────────────────────────────────── */
 function dateStr(d: Date): string {
@@ -99,6 +100,7 @@ export function claimDailyBonus(): { day: number; coins: number } {
   if (out.day >= CONFIG.skins.premiumStreakMilestone) grantOwned("gold", "streak_milestone");
   track("streak_day", { day: out.day });
   track("daily_bonus_claimed", { day: out.day, coins: out.coins });
+  checkAchievements(); // §10 — streak milestones
   return out;
 }
 

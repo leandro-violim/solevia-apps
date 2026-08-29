@@ -44,7 +44,14 @@ function Home() {
         className="absolute inset-x-0 top-0 flex items-center justify-between px-5"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
       >
-        <StreakBadge />
+        <Link
+          to="/achievements"
+          aria-label={t("home.achievements")}
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5"
+        >
+          <span aria-hidden>🏆</span>
+          <StreakBadge />
+        </Link>
         <Link
           to="/shop"
           aria-label={t("home.shop")}
