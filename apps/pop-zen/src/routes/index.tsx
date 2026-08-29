@@ -5,6 +5,7 @@ import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
 import { DailyBonus } from "../components/DailyBonus";
 import { CoinBalance } from "../components/CoinBalance";
 import { StreakBadge } from "../components/StreakBadge";
+import { DailyChallengeCard } from "../components/DailyChallengeCard";
 import { t } from "../lib/i18n";
 import { unlockAudio } from "../lib/pop-sound";
 import { trackModeSelected } from "../lib/mode";
@@ -80,7 +81,7 @@ function Home() {
           {/* Zen: calm, endless, no clock. */}
           <Link
             to="/play"
-            search={{ mode: "zen", phase: 1, difficulty: "normal" }}
+            search={{ mode: "zen", phase: 1, difficulty: "normal", daily: 0 }}
             // Warm audio inside this user gesture so iOS unlocks and the pop
             // samples decode before the first tap (no silent first pop).
             onClick={() => {
@@ -95,7 +96,7 @@ function Home() {
           {/* Time Attack: race the clock, phases + difficulty. */}
           <Link
             to="/play"
-            search={{ mode: "time-attack", phase: 1, difficulty }}
+            search={{ mode: "time-attack", phase: 1, difficulty, daily: 0 }}
             onClick={() => {
               unlockAudio();
               trackModeSelected("time-attack");
@@ -120,9 +121,12 @@ function Home() {
             ))}
           </div>
 
+          {/* §12 date-seeded daily challenge */}
+          <DailyChallengeCard />
+
           <Link
             to="/records"
-            className="mt-1 rounded-full border border-border bg-card py-3 text-sm font-medium text-foreground"
+            className="rounded-full border border-border bg-card py-3 text-sm font-medium text-foreground"
           >
             {t("home.viewRecords")}
           </Link>

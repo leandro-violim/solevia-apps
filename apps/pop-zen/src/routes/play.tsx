@@ -29,6 +29,7 @@ import {
   commitStats,
 } from "../lib/run-stats";
 import { checkAchievements } from "../lib/achievements";
+import { seededRand, recordDailyResult } from "../lib/daily-challenge";
 import { ObjectivesHud } from "../components/ObjectivesHud";
 import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
 import {
@@ -56,6 +57,7 @@ const searchSchema = z.object({
   phase: z.number().int().min(1).max(TOTAL_PHASES).optional().default(1),
   mode: z.enum(["zen", "time-attack"]).optional().default("time-attack"),
   difficulty: z.enum(["easy", "normal", "hard"]).optional().default("normal"),
+  daily: z.coerce.number().optional().default(0), // 1 = date-seeded daily challenge (§12)
 });
 
 export const Route = createFileRoute("/play")({
@@ -143,9 +145,10 @@ const ZEN_FIELD: ReturnType<typeof getPhase> = {
 };
 
 function PlayPage() {
-  const { phase, mode, difficulty } = Route.useSearch();
+  const { phase, mode, difficulty, daily } = Route.useSearch();
   const navigate = useNavigate({ from: "/play" });
   const isZen = mode === "zen";
+  const isDaily = daily === 1; // §12 date-seeded Time Attack run
   // Zen makes specials rare; Time Attack full-rate (§7/§9). Primitive → effect-safe.
   const specialsMul = isZen ? CONFIG.specials.zenMultiplier : 1;
   const cfg = isZen ? ZEN_FIELD : difficultyPhase(phase, difficulty);
@@ -197,7 +200,12 @@ function PlayPage() {
     if (!el) return;
     const w = el.clientWidth;
     const h = usableFieldHeight(el);
-    setBubbles(layoutBubbles(cfg.bubbles, cfg.size, w, h, Math.random, { phase, specialsMul }));
+    setBubbles(
+      layoutBubbles(cfg.bubbles, cfg.size, w, h, isDaily ? seededRand(phase) : Math.random, {
+        phase,
+        specialsMul,
+      }),
+    );
     setStartAt(null);
     setState("ready");
     setResult(null);
@@ -221,7 +229,7 @@ function PlayPage() {
     // Ask for a fresh banner creative for the new phase (rate-limited internally
     // to stay within AdMob's refresh policy).
     void refreshBanner();
-  }, [phase, cfg.bubbles, cfg.size, specialsMul, isZen]);
+  }, [phase, cfg.bubbles, cfg.size, specialsMul, isZen, isDaily]);
 
   // Re-lay-out the field when the native ad banner reports its real height,
   // so bubbles clear it exactly. Only while "ready" so an in-progress game
@@ -231,10 +239,17 @@ function PlayPage() {
       const el = fieldRef.current;
       if (!el || state !== "ready") return;
       setBubbles(
-        layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el), Math.random, {
-          phase,
-          specialsMul,
-        }),
+        layoutBubbles(
+          cfg.bubbles,
+          cfg.size,
+          el.clientWidth,
+          usableFieldHeight(el),
+          isDaily ? seededRand(phase) : Math.random,
+          {
+            phase,
+            specialsMul,
+          },
+        ),
       );
     };
     window.addEventListener("ad-banner-resize", onResize);
@@ -243,7 +258,7 @@ function PlayPage() {
       window.removeEventListener("ad-banner-resize", onResize);
       window.visualViewport?.removeEventListener("resize", onResize);
     };
-  }, [state, cfg.bubbles, cfg.size, phase, specialsMul]);
+  }, [state, cfg.bubbles, cfg.size, phase, specialsMul, isDaily]);
 
   // Freeze the animated full-screen aurora while actively playing — a large
   // blurred, continuously-animated layer under the field's backdrop-blur is a
@@ -341,10 +356,17 @@ function PlayPage() {
       const el = fieldRef.current;
       if (el) {
         setBubbles(
-          layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el), Math.random, {
-            phase,
-            specialsMul,
-          }),
+          layoutBubbles(
+            cfg.bubbles,
+            cfg.size,
+            el.clientWidth,
+            usableFieldHeight(el),
+            isDaily ? seededRand(phase) : Math.random,
+            {
+              phase,
+              specialsMul,
+            },
+          ),
         );
       }
       resetCombo();
@@ -378,6 +400,7 @@ function PlayPage() {
     scanObjectives,
     isZen,
     specialsMul,
+    isDaily,
   ]);
 
   const record = records[phase];
@@ -397,9 +420,9 @@ function PlayPage() {
   const nextPhase = useCallback(() => {
     navigate({
       to: "/play",
-      search: { phase: Math.min(phase + 1, TOTAL_PHASES), mode, difficulty },
+      search: { phase: Math.min(phase + 1, TOTAL_PHASES), mode, difficulty, daily },
     });
-  }, [navigate, phase, mode, difficulty]);
+  }, [navigate, phase, mode, difficulty, daily]);
 
   // End of a Time Attack run: total the phases, award coins (§1), fire the
   // run-end interstitial (§2 — a natural break, capped), then celebrate.
@@ -409,21 +432,29 @@ function PlayPage() {
     checkAchievements();
     const total = getRunTotal();
     const { beat, prevBest } = commitRunTotal(total);
+    if (isDaily) recordDailyResult(total); // §12 — daily best + first-play bonus coins
     const coins = coinsForScore(total);
     addCoins(coins, "time_attack_run");
     noteRunCompleted();
     await maybeShowInterstitial("run_end");
     navigate({ to: "/finish", search: { total, prevBest, beat: beat ? 1 : 0, coins } });
-  }, [navigate]);
+  }, [navigate, isDaily]);
 
   const restart = useCallback(() => {
     const el = fieldRef.current;
     if (!el) return;
     setBubbles(
-      layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el), Math.random, {
-        phase,
-        specialsMul,
-      }),
+      layoutBubbles(
+        cfg.bubbles,
+        cfg.size,
+        el.clientWidth,
+        usableFieldHeight(el),
+        isDaily ? seededRand(phase) : Math.random,
+        {
+          phase,
+          specialsMul,
+        },
+      ),
     );
     setStartAt(null);
     setState("ready");
@@ -432,7 +463,7 @@ function PlayPage() {
     startedRef.current = false;
     bonusPointsRef.current = 0;
     resetCombo();
-  }, [cfg.bubbles, cfg.size, phase, specialsMul]);
+  }, [cfg.bubbles, cfg.size, phase, specialsMul, isDaily]);
 
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
 

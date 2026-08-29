@@ -125,7 +125,7 @@ function RecordsPage() {
       <div className="mt-8 flex flex-col gap-3">
         <Link
           to="/play"
-          search={{ phase: 1, mode: "time-attack", difficulty: "normal" }}
+          search={{ phase: 1, mode: "time-attack", difficulty: "normal", daily: 0 }}
           className="rounded-full bg-primary py-3 text-center text-sm font-semibold text-primary-foreground shadow"
         >
           {t("records.playFrom")}
