@@ -2,6 +2,7 @@
  * Bubble field geometry, extracted from the play route so it can be unit-tested.
  * Pure: the only nondeterminism is `rand`, injectable for deterministic tests.
  */
+import { assignSpecial, type SpecialType } from "./specials";
 
 export type BubbleState = {
   id: number;
@@ -11,6 +12,8 @@ export type BubbleState = {
   drift: number;
   /** Which of the 4 real bubble-wrap textures to use (0–3). Stable per bubble. */
   variant: number;
+  /** Special-bubble type (§7). "normal" unless `opts` enables specials. */
+  special: SpecialType;
   popped: boolean;
 };
 
@@ -20,6 +23,8 @@ export function layoutBubbles(
   width: number,
   height: number,
   rand: () => number = Math.random,
+  /** Enable §7 special bubbles for this field (Time Attack passes the phase + mode multiplier). */
+  opts?: { phase: number; specialsMul: number },
 ): BubbleState[] {
   const padding = 6;
   const step = size + padding;
@@ -60,6 +65,7 @@ export function layoutBubbles(
       size,
       drift: rand() * 3,
       variant: Math.floor(rand() * 4),
+      special: opts ? assignSpecial(opts.phase, opts.specialsMul, rand) : "normal",
       popped: false,
     });
   }

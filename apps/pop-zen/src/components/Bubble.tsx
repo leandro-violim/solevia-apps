@@ -1,5 +1,6 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { equippedBubbleFilter } from "../lib/skins";
+import { SPECIAL_LOOK, FROZEN_TAPS, type SpecialType } from "../lib/specials";
 import b1 from "../assets/bubbles/real-bubble-1.png";
 import b2 from "../assets/bubbles/real-bubble-2.png";
 import b3 from "../assets/bubbles/real-bubble-3.png";
@@ -21,12 +22,14 @@ type Props = {
   /** When true, skip the idle float animation to save CPU on dense phases. */
   still?: boolean;
   driftDelay: number;
+  /** §7 special-bubble type — changes look + pop effect. */
+  special: SpecialType;
   /**
-   * Receives the bubble id plus its centre (field-local px) and variant so the
-   * parent can drive the pop particle burst. Passing geometry here keeps the
-   * parent's ONE callback referentially stable (keeps React.memo effective).
+   * Receives the bubble id plus its centre (field-local px), variant, and special
+   * type so the parent can drive the particle burst + the special pop effect.
+   * Passing geometry here keeps the parent's ONE callback referentially stable.
    */
-  onPop: (id: number, cx: number, cy: number, variant: number) => void;
+  onPop: (id: number, cx: number, cy: number, variant: number, special: SpecialType) => void;
 };
 
 const R = (a: number, b: number) => a + Math.random() * (b - a);
@@ -107,6 +110,7 @@ export const Bubble = memo(function Bubble({
   variant,
   still,
   driftDelay,
+  special,
   onPop,
 }: Props) {
   // One-shot guard so a pointerdown plus its trailing synthetic click (or any
@@ -126,15 +130,23 @@ export const Bubble = memo(function Bubble({
     }
   }, [popped]);
 
+  // Frozen bubbles (§7) need FROZEN_TAPS taps; earlier taps just crack the ice.
+  const [frozenTaps, setFrozenTaps] = useState(0);
+
   const activate = () => {
     if (popped || handled.current) return;
+    if (special === "frozen" && frozenTaps < FROZEN_TAPS - 1) {
+      setFrozenTaps((n) => n + 1); // still frozen — needs another tap
+      return;
+    }
     handled.current = true;
-    onPop(id, x + size / 2, y + size / 2, variant);
+    onPop(id, x + size / 2, y + size / 2, variant, special);
   };
 
   // Equipped bubble skin (§6) — a CSS filter on the button; the popped-dim filter
   // on `.zb` composes on top of it. `undefined` for the Classic skin (no tint).
   const skinFilter = equippedBubbleFilter();
+  const look = special !== "normal" ? SPECIAL_LOOK[special] : null;
 
   return (
     <button
@@ -158,6 +170,8 @@ export const Bubble = memo(function Bubble({
           popped || still ? undefined : `bubbleFloat 4s ease-in-out ${driftDelay}s infinite`,
         WebkitTapHighlightColor: "transparent",
         filter: skinFilter,
+        borderRadius: "50%",
+        boxShadow: look && !popped ? `0 0 0 2px ${look.ring}, ${look.glow}` : undefined,
       }}
       aria-label="Pop bubble"
     >
@@ -176,6 +190,18 @@ export const Bubble = memo(function Bubble({
           {...(cracksRef.current ? { dangerouslySetInnerHTML: { __html: cracksRef.current } } : {})}
         />
       </div>
+      {look && !popped && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          style={{
+            fontSize: size * 0.4,
+            opacity: special === "frozen" && frozenTaps > 0 ? 0.5 : 0.92,
+          }}
+        >
+          {look.emoji}
+        </span>
+      )}
     </button>
   );
 });

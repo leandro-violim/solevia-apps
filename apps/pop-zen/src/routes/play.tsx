@@ -10,6 +10,9 @@ import { ComboHud } from "../components/ComboHud";
 import { burstParticles } from "../lib/pop-particles";
 import { registerPop, resetCombo, getMaxCombo } from "../lib/combo";
 import { JUICE } from "../lib/juice";
+import { CONFIG } from "../lib/config";
+import { addCoins } from "../lib/economy";
+import { rollMysteryReward, type SpecialType } from "../lib/specials";
 import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
@@ -128,6 +131,8 @@ function PlayPage() {
   // True once the first bubble of this phase is popped (starts the clock). A ref,
   // not state, so handlePop stays referentially stable and <Bubble>'s memo works.
   const startedRef = useRef(false);
+  // §7 golden/mystery bonus points accumulated this phase, added to the score.
+  const bonusPointsRef = useRef(0);
 
   // Build field for this phase
   useEffect(() => {
@@ -135,12 +140,13 @@ function PlayPage() {
     if (!el) return;
     const w = el.clientWidth;
     const h = usableFieldHeight(el);
-    setBubbles(layoutBubbles(cfg.bubbles, cfg.size, w, h));
+    setBubbles(layoutBubbles(cfg.bubbles, cfg.size, w, h, Math.random, { phase, specialsMul: 1 }));
     setStartAt(null);
     setState("ready");
     setResult(null);
     settledRef.current = false;
     startedRef.current = false;
+    bonusPointsRef.current = 0;
     resetCombo(); // fresh phase → no lingering combo chain
     // Start a brand-new full-run total when entering phase 1 — or when arriving
     // at a later phase that isn't a valid continuation (e.g. an edited ?phase=3
@@ -160,7 +166,12 @@ function PlayPage() {
     const onResize = () => {
       const el = fieldRef.current;
       if (!el || state !== "ready") return;
-      setBubbles(layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el)));
+      setBubbles(
+        layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el), Math.random, {
+          phase,
+          specialsMul: 1,
+        }),
+      );
     };
     window.addEventListener("ad-banner-resize", onResize);
     window.visualViewport?.addEventListener("resize", onResize);
@@ -168,7 +179,7 @@ function PlayPage() {
       window.removeEventListener("ad-banner-resize", onResize);
       window.visualViewport?.removeEventListener("resize", onResize);
     };
-  }, [state, cfg.bubbles, cfg.size]);
+  }, [state, cfg.bubbles, cfg.size, phase]);
 
   // Freeze the animated full-screen aurora while actively playing — a large
   // blurred, continuously-animated layer under the field's backdrop-blur is a
@@ -183,36 +194,68 @@ function PlayPage() {
   // cx/cy = the popped bubble's centre (field-local px), variant = its tint.
   // Passed in by <Bubble> so this callback stays referentially stable (reads no
   // bubble state) and drives the particle burst without a re-render.
-  const handlePop = useCallback((id: number, cx: number, cy: number, variant: number) => {
-    if (!startedRef.current) {
-      startedRef.current = true;
-      unlockAudio();
-      setStartAt(Date.now());
-      setState("playing");
-    }
-    // Combo (feedback-only — does NOT affect score/timer/spawn). Drives the
-    // rising pitch, the milestone flourish, and the HUD (via subscribeCombo).
-    const { combo, milestone } = registerPop();
-    playPop(combo); // pitch rises with the combo, hard-capped in JUICE.combo.pitchCeil
-    popHaptic(); // light Taptic-Engine tap on each pop (native iOS; respects system haptics)
-    burstParticles(cx, cy, variant); // juice: tinted particle burst from the pop point
-    if (milestone !== null) {
-      playMilestone(milestone); // distinct calm chime
-      const tier = (JUICE.combo.milestones as readonly number[]).indexOf(milestone);
-      // Bigger, faster, GOLD-tinted burst so a milestone reads as a reward.
-      burstParticles(
-        cx,
-        cy,
-        variant,
-        JUICE.combo.milestoneParticles + tier * 5,
-        1.5,
-        JUICE.combo.milestoneTint,
-      );
-    }
-    // Pure state update only — no side effects here, so React re-running this
-    // updater (StrictMode/concurrent) can't submit the score twice.
-    setBubbles((prev) => prev.map((b) => (b.id === id ? { ...b, popped: true } : b)));
-  }, []); // stable: reads timing from refs, so <Bubble>'s memo skips un-popped bubbles
+  const handlePop = useCallback(
+    (id: number, cx: number, cy: number, variant: number, special: SpecialType) => {
+      if (!startedRef.current) {
+        startedRef.current = true;
+        unlockAudio();
+        setStartAt(Date.now());
+        setState("playing");
+      }
+      // Combo (feedback-only in Zen; feeds score in Time Attack — see §9). Drives
+      // the rising pitch, the milestone flourish, and the HUD (via subscribeCombo).
+      const { combo, milestone } = registerPop();
+      playPop(combo); // pitch rises with the combo, hard-capped in JUICE.combo.pitchCeil
+      popHaptic(); // light Taptic-Engine tap on each pop (native iOS; respects system haptics)
+      burstParticles(cx, cy, variant); // juice: tinted particle burst from the pop point
+      if (milestone !== null) {
+        playMilestone(milestone); // distinct calm chime
+        const tier = (JUICE.combo.milestones as readonly number[]).indexOf(milestone);
+        // Bigger, faster, GOLD-tinted burst so a milestone reads as a reward.
+        burstParticles(
+          cx,
+          cy,
+          variant,
+          JUICE.combo.milestoneParticles + tier * 5,
+          1.5,
+          JUICE.combo.milestoneTint,
+        );
+      }
+
+      // §7 special-bubble effects (a "time" mystery reward folds into points until
+      // §9 adds the Time Attack countdown).
+      if (special === "golden") {
+        addCoins(CONFIG.specials.goldenBonusCoins, "golden");
+        bonusPointsRef.current += CONFIG.specials.goldenBonusPoints;
+        burstParticles(cx, cy, variant, 18, 1.4, JUICE.combo.milestoneTint);
+      } else if (special === "mystery") {
+        const r = rollMysteryReward(Math.random);
+        if (r.kind === "coins") addCoins(r.amount, "mystery");
+        else bonusPointsRef.current += r.amount;
+        burstParticles(cx, cy, variant, 16, 1.4);
+      } else if (special === "bomb") {
+        burstParticles(cx, cy, variant, 26, 1.7, "#ff9a6a");
+      }
+
+      // Pure state update. A Bomb also pops un-popped neighbours within its blast.
+      setBubbles((prev) => {
+        if (special !== "bomb") {
+          return prev.map((b) => (b.id === id ? { ...b, popped: true } : b));
+        }
+        return prev.map((b) => {
+          if (b.id === id) return { ...b, popped: true };
+          if (b.popped) return b;
+          const dx = b.x + b.size / 2 - cx;
+          const dy = b.y + b.size / 2 - cy;
+          if (Math.hypot(dx, dy) <= b.size * CONFIG.specials.bombRadiusFactor) {
+            return { ...b, popped: true };
+          }
+          return b;
+        });
+      });
+    },
+    [],
+  ); // stable: reads timing from refs, so <Bubble>'s memo skips un-popped bubbles
 
   // Detect phase completion once the field is cleared, and record it exactly
   // once. Kept out of the pop handler's updater so it can't double-submit.
@@ -228,7 +271,7 @@ function PlayPage() {
     const maxCombo = getMaxCombo();
     const comboBonus =
       maxCombo >= JUICE.combo.minShown ? maxCombo * JUICE.combo.scoreBonusPerCombo : 0;
-    const score = base + comboBonus;
+    const score = base + comboBonus + bonusPointsRef.current; // + §7 golden/mystery points
     setResult({ score, timeMs: t, comboBonus, maxCombo });
     submit(phase, score, t);
     // Accumulate this phase's score into the current full-run total.
@@ -272,14 +315,20 @@ function PlayPage() {
   const restart = useCallback(() => {
     const el = fieldRef.current;
     if (!el) return;
-    setBubbles(layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el)));
+    setBubbles(
+      layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el), Math.random, {
+        phase,
+        specialsMul: 1,
+      }),
+    );
     setStartAt(null);
     setState("ready");
     setResult(null);
     settledRef.current = false;
     startedRef.current = false;
+    bonusPointsRef.current = 0;
     resetCombo();
-  }, [cfg.bubbles, cfg.size]);
+  }, [cfg.bubbles, cfg.size, phase]);
 
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
 
@@ -338,6 +387,7 @@ function PlayPage() {
               size={b.size}
               popped={b.popped}
               variant={b.variant}
+              special={b.special}
               driftDelay={b.drift}
               still={stillBubbles}
               onPop={handlePop}
