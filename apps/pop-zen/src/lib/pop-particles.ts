@@ -86,16 +86,26 @@ export function resizeCanvas(widthCss: number, heightCss: number): void {
   cctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS px
 }
 
-/** Emit a burst from (x, y) tinted to bubble `variant`. Field-local CSS px. */
-export function burstParticles(x: number, y: number, variant: number): void {
+/**
+ * Emit a burst from (x, y) tinted to bubble `variant`. Field-local CSS px.
+ * `count`/`speedMul` default to a normal pop; pass larger values for a milestone
+ * flourish (P1-T2 reuses this engine — see combo handling in play.tsx).
+ */
+export function burstParticles(
+  x: number,
+  y: number,
+  variant: number,
+  count = 0,
+  speedMul = 1,
+): void {
   if (prefersReducedMotion || !cctx) return; // respect reduced-motion; no-op until attached
   const tint = TINTS[variant % TINTS.length] ?? TINTS[0];
-  const n = rand(CFG.countMin, CFG.countMax + 1) | 0;
+  const n = count > 0 ? count : rand(CFG.countMin, CFG.countMax + 1) | 0;
   for (let i = 0; i < n; i++) {
     const p = pool[head];
     head = (head + 1) % pool.length; // wrap → overwrite oldest (the cap)
     const ang = rand(0, Math.PI * 2);
-    const sp = rand(CFG.speedMin, CFG.speedMax);
+    const sp = rand(CFG.speedMin, CFG.speedMax) * speedMul;
     const bright = 1 + rand(-CFG.brightnessJitter, CFG.brightnessJitter);
     p.x = x;
     p.y = y;

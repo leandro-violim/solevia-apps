@@ -6,12 +6,15 @@ import { AdBanner } from "../components/AdBanner";
 import { showInterstitial, preloadInterstitial, refreshBanner } from "../lib/ads";
 import { Bubble } from "../components/Bubble";
 import { PopParticles } from "../components/PopParticles";
+import { ComboHud } from "../components/ComboHud";
 import { burstParticles } from "../lib/pop-particles";
+import { registerPop, resetCombo } from "../lib/combo";
+import { JUICE } from "../lib/juice";
 import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
 import { layoutBubbles, type BubbleState } from "../lib/layout";
-import { playPop, unlockAudio, resetAudio } from "../lib/pop-sound";
+import { playPop, playMilestone, unlockAudio, resetAudio } from "../lib/pop-sound";
 import { popHaptic } from "../lib/haptics";
 import {
   usePhaseRecords,
@@ -133,6 +136,7 @@ function PlayPage() {
     setResult(null);
     settledRef.current = false;
     startedRef.current = false;
+    resetCombo(); // fresh phase → no lingering combo chain
     // Start a brand-new full-run total when entering phase 1 — or when arriving
     // at a later phase that isn't a valid continuation (e.g. an edited ?phase=3
     // deep link), so stale scores from a prior run can't inflate the finish total.
@@ -181,9 +185,17 @@ function PlayPage() {
       setStartAt(Date.now());
       setState("playing");
     }
-    playPop();
+    // Combo (feedback-only — does NOT affect score/timer/spawn). Drives the
+    // rising pitch, the milestone flourish, and the HUD (via subscribeCombo).
+    const { combo, milestone } = registerPop();
+    playPop(combo); // pitch rises with the combo, hard-capped in JUICE.combo.pitchCeil
     popHaptic(); // light Taptic-Engine tap on each pop (native iOS; respects system haptics)
     burstParticles(cx, cy, variant); // juice: tinted particle burst from the pop point
+    if (milestone !== null) {
+      playMilestone(milestone); // distinct calm chime
+      const tier = (JUICE.combo.milestones as readonly number[]).indexOf(milestone);
+      burstParticles(cx, cy, variant, JUICE.combo.milestoneParticles + tier * 4, 1.4); // bigger flourish
+    }
     // Pure state update only — no side effects here, so React re-running this
     // updater (StrictMode/concurrent) can't submit the score twice.
     setBubbles((prev) => prev.map((b) => (b.id === id ? { ...b, popped: true } : b)));
@@ -246,6 +258,7 @@ function PlayPage() {
     setResult(null);
     settledRef.current = false;
     startedRef.current = false;
+    resetCombo();
   }, [cfg.bubbles, cfg.size]);
 
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
@@ -313,6 +326,9 @@ function PlayPage() {
 
           {/* Pop particle burst — canvas overlay above the bubbles, below the UI overlays. */}
           <PopParticles fieldRef={fieldRef} />
+
+          {/* Combo readout + milestone flourish (feedback-only). */}
+          <ComboHud />
 
           {state === "ready" && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
