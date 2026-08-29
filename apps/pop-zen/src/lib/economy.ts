@@ -6,6 +6,18 @@ import { CONFIG } from "./config";
 import { load, update } from "./storage";
 import { track } from "./analytics";
 
+const listeners = new Set<() => void>();
+/** Subscribe to balance changes (for live coin displays). Returns an unsubscribe. */
+export function subscribeCoins(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => {
+    listeners.delete(fn);
+  };
+}
+function notifyCoins(): void {
+  for (const fn of listeners) fn();
+}
+
 export function getCoins(): number {
   return load().coins;
 }
@@ -18,6 +30,7 @@ export function addCoins(n: number, source: string): number {
     st.coins += amount;
   });
   track("coins_earned", { amount, source });
+  notifyCoins();
   return s.coins;
 }
 
@@ -30,6 +43,7 @@ export function spendCoins(n: number, sink: string): boolean {
     st.coins -= amount;
   });
   track("coins_spent", { amount, sink });
+  notifyCoins();
   return true;
 }
 

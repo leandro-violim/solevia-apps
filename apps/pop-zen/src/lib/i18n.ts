@@ -52,6 +52,16 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "bonus.claim": "Claim",
     "bonus.close": "Close",
 
+    // Shop (§6)
+    "shop.title": "Shop",
+    "shop.skins": "Bubble skins",
+    "shop.themes": "Themes",
+    "shop.equip": "Equip",
+    "shop.equipped": "Equipped ✓",
+    "shop.watchDiscount": "🎬 −{pct}%",
+    "home.shop": "Shop",
+    "home.streak": "Day {n} · 🔥",
+
     // Gameplay
     "play.exit": "← Exit",
     "play.phaseOf": "Phase {phase} of {total}",
@@ -171,6 +181,16 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "bonus.line": "Que bom te ver! Volte todo dia para aumentar sua sequência.",
     "bonus.claim": "Resgatar",
     "bonus.close": "Fechar",
+
+    // Shop (§6)
+    "shop.title": "Loja",
+    "shop.skins": "Skins de bolha",
+    "shop.themes": "Temas",
+    "shop.equip": "Equipar",
+    "shop.equipped": "Equipado ✓",
+    "shop.watchDiscount": "🎬 −{pct}%",
+    "home.shop": "Loja",
+    "home.streak": "Dia {n} · 🔥",
 
     // Gameplay
     "play.exit": "← Sair",

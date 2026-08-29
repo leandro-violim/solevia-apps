@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import bubbleImg from "../assets/bubble.png";
 import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
 import { DailyBonus } from "../components/DailyBonus";
+import { CoinBalance } from "../components/CoinBalance";
+import { StreakBadge } from "../components/StreakBadge";
 import { t } from "../lib/i18n";
 import { unlockAudio } from "../lib/pop-sound";
 
@@ -32,6 +34,21 @@ function Home() {
     >
       {/* Once-a-day pre-game daily bonus pop-up (self-manages whether to show). */}
       <DailyBonus />
+
+      {/* Top bar: streak (left) + coins→shop pill (right). */}
+      <div
+        className="absolute inset-x-0 top-0 flex items-center justify-between px-5"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+      >
+        <StreakBadge />
+        <Link
+          to="/shop"
+          aria-label={t("home.shop")}
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground"
+        >
+          <CoinBalance />
+        </Link>
+      </div>
 
       <div className="flex flex-1 flex-col items-center justify-center">
         <div className="relative">

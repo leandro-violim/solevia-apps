@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef } from "react";
+import { equippedBubbleFilter } from "../lib/skins";
 import b1 from "../assets/bubbles/real-bubble-1.png";
 import b2 from "../assets/bubbles/real-bubble-2.png";
 import b3 from "../assets/bubbles/real-bubble-3.png";
@@ -131,6 +132,10 @@ export const Bubble = memo(function Bubble({
     onPop(id, x + size / 2, y + size / 2, variant);
   };
 
+  // Equipped bubble skin (§6) — a CSS filter on the button; the popped-dim filter
+  // on `.zb` composes on top of it. `undefined` for the Classic skin (no tint).
+  const skinFilter = equippedBubbleFilter();
+
   return (
     <button
       type="button"
@@ -152,6 +157,7 @@ export const Bubble = memo(function Bubble({
         animation:
           popped || still ? undefined : `bubbleFloat 4s ease-in-out ${driftDelay}s infinite`,
         WebkitTapHighlightColor: "transparent",
+        filter: skinFilter,
       }}
       aria-label="Pop bubble"
     >
