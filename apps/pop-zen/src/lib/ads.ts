@@ -25,9 +25,12 @@ import {
   BannerAdPosition,
   BannerAdSize,
   InterstitialAdPluginEvents,
+  RewardAdPluginEvents,
   type BannerAdOptions,
 } from "@capacitor-community/admob";
 import { runConsentAndTracking } from "@solevia/consent";
+import { CONFIG } from "./config";
+import { track } from "./analytics";
 
 const IS_NATIVE = Capacitor.isNativePlatform();
 const PLATFORM = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
@@ -44,10 +47,12 @@ const TEST_IDS = {
   ios: {
     banner: "ca-app-pub-3940256099942544/2934735716",
     interstitial: "ca-app-pub-3940256099942544/4411468910",
+    rewarded: "ca-app-pub-3940256099942544/1712485313",
   },
   android: {
     banner: "ca-app-pub-3940256099942544/6300978111",
     interstitial: "ca-app-pub-3940256099942544/1033173712",
+    rewarded: "ca-app-pub-3940256099942544/5224354917",
   },
 };
 
@@ -59,12 +64,19 @@ const LIVE_IDS = {
     // ca-app-pub-9628521678374705~5486523715
     banner: "ca-app-pub-9628521678374705/2860360372",
     interstitial: "ca-app-pub-9628521678374705/7191467566",
+    // TODO(admob): real rewarded unit (iOS) — placeholder = Google test id so it
+    // never soft-locks before the real unit exists.
+    rewarded: "ca-app-pub-3940256099942544/1712485313",
   },
   android: {
     // Sole Via — Bubble Pop Calm (Android). AdMob App ID:
     // ca-app-pub-9628521678374705~9477972092
     banner: "ca-app-pub-9628521678374705/3973580155",
     interstitial: "ca-app-pub-9628521678374705/1211685446",
+    // TODO(admob): real rewarded units (iOS+Android) — create in AdMob console,
+    // paste here. Until then production rewarded falls back to the test id below
+    // so it never soft-locks (test id kept as a safe placeholder value).
+    rewarded: "ca-app-pub-3940256099942544/5224354917",
   },
 };
 
@@ -92,9 +104,11 @@ export async function initAds(): Promise<void> {
       log: (m, e) => console.warn(m, e),
     });
 
-    // Warm up the first interstitial so it's ready between phases.
+    // Warm up the first interstitial + rewarded so they're ready at a break.
     setupInterstitialListeners();
     void preloadInterstitial();
+    setupRewardedListeners();
+    void preloadRewarded();
 
     // Recover ads automatically when connectivity returns (e.g. the player
     // was offline, then reconnects mid-session).
@@ -238,40 +252,163 @@ export async function preloadInterstitial(): Promise<void> {
  * resolve immediately so gameplay is never blocked, and kick off a preload for
  * next time. Awaited by the play screen between phases.
  */
-export async function showInterstitial(): Promise<void> {
-  if (!IS_NATIVE) return;
+export async function showInterstitial(): Promise<boolean> {
+  if (!IS_NATIVE) return false;
 
   if (!interstitialReady) {
     // Nothing ready to show — never block the game. Try to have one next time.
     void preloadInterstitial();
-    return;
+    return false;
   }
 
-  await new Promise<void>((resolve) => {
+  return await new Promise<boolean>((resolve) => {
     const handles: PluginListenerHandle[] = [];
     let settled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let shown = false; // true only if an ad was actually displayed (Dismissed)
     const finish = () => {
       if (settled) return;
       settled = true;
-      if (timer) clearTimeout(timer);
+      clearTimeout(timer);
       interstitialReady = false;
       handles.forEach((h) => h.remove());
-      resolve();
+      resolve(shown);
       // Warm up the next one for the following ad break.
       void preloadInterstitial();
     };
     // Safety net: if the SDK never fires Dismissed/FailedToShow (rare, but it
-    // would leave the "Next phase" button hung), resolve anyway after 15s.
-    timer = setTimeout(finish, 15000);
+    // would leave the caller hung), resolve anyway after 15s.
+    const timer = setTimeout(finish, 15000);
     Promise.all([
-      AdMob.addListener(InterstitialAdPluginEvents.Dismissed, finish),
+      AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => {
+        shown = true;
+        finish();
+      }),
       AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, finish),
     ])
       .then((hs) => {
         handles.push(...hs);
         if (settled) hs.forEach((h) => h.remove());
         return AdMob.showInterstitial();
+      })
+      .catch(finish);
+  });
+}
+
+// ── §2 Interstitial cadence gate (Better Ads Experiences) ─────────────────
+// Interstitials only at natural breaks, and rate-limited: ≤1 per N completed
+// runs AND a cooldown, with the first run of a session always free. All numbers
+// live in CONFIG.ads.interstitial. Session-scoped counters (reset each launch).
+let runsThisSession = 0;
+let runsSinceInterstitial = 0;
+let lastInterstitialAt = 0;
+
+/** Call once when a run (a full play session) completes. */
+export function noteRunCompleted(): void {
+  runsThisSession += 1;
+  runsSinceInterstitial += 1;
+}
+
+/**
+ * Show an interstitial at a natural break IF the cadence allows it. Returns
+ * whether one was shown. Never called mid-play / at app-open / at run-start.
+ */
+export async function maybeShowInterstitial(placement: string): Promise<boolean> {
+  if (!IS_NATIVE) return false;
+  const cfg = CONFIG.ads.interstitial;
+  if (cfg.skipFirstRunOfSession && runsThisSession <= 1) return false; // first run free
+  if (Date.now() - lastInterstitialAt < cfg.cooldownMs) return false; // cooldown
+  if (runsSinceInterstitial < cfg.minRunsBetween) return false; // frequency cap
+  const shown = await showInterstitial();
+  if (shown) {
+    lastInterstitialAt = Date.now();
+    runsSinceInterstitial = 0;
+    track("interstitial_shown", { placement });
+  }
+  return shown;
+}
+
+// ── §3 Rewarded ads (opt-in) ──────────────────────────────────────────────
+// Placements: revive (+time), double coins, shop unlock/discount. On the web/dev
+// build (no native AdMob) a watch is SIMULATED as success so the reward flow is
+// testable in the browser; the device build exercises the real ad. Skip / close
+// / no-fill / load-fail all resolve `false` so a caller never soft-locks.
+let rewardedReady = false;
+let rewardedLoading = false;
+let rewardedListenersAdded = false;
+
+function setupRewardedListeners() {
+  if (rewardedListenersAdded) return;
+  rewardedListenersAdded = true;
+  AdMob.addListener(RewardAdPluginEvents.Loaded, () => {
+    rewardedReady = true;
+    rewardedLoading = false;
+  }).catch(() => {});
+  AdMob.addListener(RewardAdPluginEvents.FailedToLoad, () => {
+    rewardedReady = false;
+    rewardedLoading = false;
+  }).catch(() => {});
+}
+
+/** Warm up a rewarded ad. No-ops if ready/loading, offline, or on web. */
+export async function preloadRewarded(): Promise<void> {
+  if (!IS_NATIVE || rewardedReady || rewardedLoading || !isOnline()) return;
+  setupRewardedListeners();
+  rewardedLoading = true;
+  try {
+    await AdMob.prepareRewardVideoAd({ adId: unitIds().rewarded, isTesting: USE_TEST_ADS });
+  } catch (e) {
+    rewardedLoading = false;
+    console.warn("[ads] rewarded preload failed (offline?):", e);
+  }
+}
+
+/**
+ * Offer a rewarded ad for `placement`. Resolves TRUE only if the user earned the
+ * reward (watched to completion). Any skip / close / no-fill / error → FALSE,
+ * and the caller proceeds normally.
+ */
+export async function showRewarded(placement: string): Promise<boolean> {
+  track("rewarded_offered", { placement });
+
+  // Web/dev: no native AdMob — simulate a successful watch so the flow previews.
+  if (!IS_NATIVE) {
+    await new Promise((r) => setTimeout(r, 400));
+    track("rewarded_watched", { placement, simulated: true });
+    return true;
+  }
+
+  if (!rewardedReady) {
+    void preloadRewarded(); // not ready → graceful decline, warm up for next time
+    track("rewarded_skipped", { placement, reason: "not_ready" });
+    return false;
+  }
+
+  return await new Promise<boolean>((resolve) => {
+    const handles: PluginListenerHandle[] = [];
+    let settled = false;
+    let earned = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      rewardedReady = false;
+      handles.forEach((h) => h.remove());
+      track(earned ? "rewarded_watched" : "rewarded_skipped", { placement });
+      resolve(earned);
+      void preloadRewarded(); // warm up the next one
+    };
+    const timer = setTimeout(finish, 40000); // safety net for a stuck SDK
+    Promise.all([
+      AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
+        earned = true;
+      }),
+      AdMob.addListener(RewardAdPluginEvents.Dismissed, finish),
+      AdMob.addListener(RewardAdPluginEvents.FailedToShow, finish),
+    ])
+      .then((hs) => {
+        handles.push(...hs);
+        if (settled) hs.forEach((h) => h.remove());
+        return AdMob.showRewardVideoAd();
       })
       .catch(finish);
   });

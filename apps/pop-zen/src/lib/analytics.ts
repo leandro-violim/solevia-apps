@@ -2,14 +2,17 @@
  * ─────────────────────────────────────────────────────────────────────────
  * Analytics (§11) — real event API, pluggable backend.
  * ─────────────────────────────────────────────────────────────────────────
- * CHOICE: GameAnalytics-style event model (event name + flat params), which
- * maps cleanly onto GameAnalytics' progression/resource/design events. Firebase
- * is the alternative. The SDK is NOT bundled yet — until the owner creates the
- * app and provides keys, `track()` runs in no-op/sandbox mode (console in dev).
+ * CHOICE (owner, 2026-08-29): FIREBASE Analytics — it's Google, so it links to
+ * the app's AdMob for ad-revenue-per-player, and has a first-class Capacitor
+ * plugin. The event model here is name + flat params, which maps straight onto
+ * Firebase `logEvent(name, params)`. The SDK is NOT bundled yet — until the
+ * owner creates the Firebase app and provides keys (iOS + Android), `track()`
+ * runs in no-op/sandbox mode (console in dev).
  *
  * IMPORTANT: feature code calls `track(...)` for real — these are NOT TODO stubs.
- * When keys arrive, call `setAnalyticsBackend()` once with the GameAnalytics (or
- * Firebase) adapter and every event starts flowing. No feature code changes.
+ * At the release step, wire the Firebase adapter once via `setAnalyticsBackend()`
+ * (e.g. @capacitor-firebase/analytics `logEvent`) and every event starts flowing.
+ * No feature code changes.
  */
 
 export type AnalyticsEvent =
