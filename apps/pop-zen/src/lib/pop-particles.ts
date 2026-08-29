@@ -27,11 +27,13 @@ type P = {
 
 const CFG = JUICE.particles;
 
-// Pre-parsed tint channels (one per bubble variant).
-const TINTS = CFG.tints.map((hex) => {
+function parseHex(hex: string): { r: number; g: number; b: number } {
   const n = parseInt(hex.slice(1), 16);
   return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-});
+}
+
+// Pre-parsed tint channels (one per bubble variant).
+const TINTS = CFG.tints.map(parseHex);
 
 // Fixed pool — allocated once, reused forever.
 const pool: P[] = Array.from({ length: CFG.maxAlive }, () => ({
@@ -97,9 +99,10 @@ export function burstParticles(
   variant: number,
   count = 0,
   speedMul = 1,
+  tintHex?: string,
 ): void {
   if (prefersReducedMotion || !cctx) return; // respect reduced-motion; no-op until attached
-  const tint = TINTS[variant % TINTS.length] ?? TINTS[0];
+  const tint = tintHex ? parseHex(tintHex) : (TINTS[variant % TINTS.length] ?? TINTS[0]);
   const n = count > 0 ? count : rand(CFG.countMin, CFG.countMax + 1) | 0;
   for (let i = 0; i < n; i++) {
     const p = pool[head];

@@ -52,6 +52,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "play.phaseComplete": "Phase {phase} complete",
     "play.time": "Time {time}",
     "combo.milestone": "Combo ×{n}!",
+    "play.comboBonus": "Best combo ×{n} · +{pts} pts",
     "play.newBestScore": "New best score! ",
     "play.newBestTime": "New best time! ",
     "play.bestLine": "Best {score} · {time}",
@@ -163,6 +164,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "play.phaseComplete": "Fase {phase} concluída",
     "play.time": "Tempo {time}", // NOT in spec table — review
     "combo.milestone": "Combo ×{n}!",
+    "play.comboBonus": "Melhor combo ×{n} · +{pts} pts",
     "play.newBestScore": "Novo recorde de pontos! ",
     "play.newBestTime": "Novo recorde de tempo! ",
     "play.bestLine": "Recorde {score} · {time}",

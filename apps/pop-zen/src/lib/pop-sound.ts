@@ -129,24 +129,33 @@ export function playPop(combo = 0): void {
 }
 
 /** One soft sine "bell" partial through the shared bus — the calm chime voice. */
-function bell(ac: AudioContext, out: AudioNode, freq: number, at: number, gain: number): void {
+function bell(
+  ac: AudioContext,
+  out: AudioNode,
+  freq: number,
+  at: number,
+  gain: number,
+  dur = 0.5,
+): void {
   const o = ac.createOscillator();
   o.type = "sine";
   o.frequency.setValueAtTime(freq, at);
   const g = ac.createGain();
   g.gain.setValueAtTime(0.0001, at);
   g.gain.exponentialRampToValueAtTime(gain, at + 0.02); // soft attack
-  g.gain.exponentialRampToValueAtTime(0.0001, at + 0.5); // gentle decay
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur); // gentle decay
   o.connect(g);
   g.connect(out);
   o.start(at);
-  o.stop(at + 0.55);
+  o.stop(at + dur + 0.05);
 }
 
 /**
- * Milestone flourish sound — a soft, calm pentatonic chime, distinct from the
- * pop. Higher tiers rise a step and add a harmony partial (a bit more flourish),
- * but it stays gentle and "zen" — never an alarm.
+ * Milestone flourish — a soft ASCENDING pentatonic arpeggio (a little "reward
+ * jingle"), not a single beep: each note gets an octave-up shimmer, and a warm
+ * low root underneath gives it body. Higher milestones play more notes so a x50
+ * feels bigger than a x5 — but it stays gentle sine tones through the limiter,
+ * so it's rewarding and celebratory without ever getting shrill or alarm-like.
  */
 export function playMilestone(level: number): void {
   if (!isSoundEnabled()) return;
@@ -155,9 +164,16 @@ export function playMilestone(level: number): void {
   const out = getBus(ac);
   const now = ac.currentTime;
   const tier = Math.max(0, (JUICE.combo.milestones as readonly number[]).indexOf(level)); // 0..4
-  const semis = [0, 3, 5, 7, 10]; // gentle pentatonic steps per tier (capped)
   const root = 523.25; // C5
-  const f = root * Math.pow(2, semis[Math.min(tier, semis.length - 1)] / 12);
-  bell(ac, out, f, now, 0.85);
-  if (tier >= 2) bell(ac, out, f * 1.5, now + 0.03, 0.45); // harmony for higher milestones
+  const scale = [0, 2, 4, 7, 9, 12]; // major pentatonic (C D E G A C) — bright, calm
+  const notes = Math.min(3 + tier, scale.length); // 3 notes at x5 … up to 6 at x50
+  // Short + light so it's a quick sparkle that punctuates the pop, not a tail
+  // that sits on top of it. Faint low root for a touch of body, then a fast run.
+  bell(ac, out, root / 2, now, 0.2, 0.3);
+  for (let i = 0; i < notes; i++) {
+    const t = now + i * 0.05; // tighter, quicker run
+    const f = root * Math.pow(2, scale[i] / 12);
+    bell(ac, out, f, t, 0.4, 0.2); // shorter decay → doesn't linger over the pops
+    bell(ac, out, f * 2, t + 0.006, 0.09, 0.16); // faint, fast shimmer
+  }
 }

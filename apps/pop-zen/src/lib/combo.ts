@@ -30,6 +30,7 @@ type Listener = (e: ComboEvent) => void;
 const listeners = new Set<Listener>();
 
 let combo = 0;
+let maxCombo = 0; // highest combo reached THIS phase (survives chain breaks; the "record")
 let lastAt = 0;
 let resetTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -50,6 +51,7 @@ export function registerPop(): ComboEvent {
   if (lastAt !== 0 && now - lastAt <= CFG.windowMs) combo += 1;
   else combo = 1; // start a fresh chain (not shown until it reaches minShown)
   lastAt = now;
+  if (combo > maxCombo) maxCombo = combo; // track the phase record
 
   if (resetTimer) clearTimeout(resetTimer);
   resetTimer = setTimeout(expire, CFG.windowMs);
@@ -67,11 +69,17 @@ function expire(): void {
   emit({ combo: 0, milestone: null, reset: true });
 }
 
-/** Reset the chain immediately (new phase / restart). */
+/** Reset the chain AND the phase record (new phase / restart). */
 export function resetCombo(): void {
   if (resetTimer) clearTimeout(resetTimer);
   resetTimer = undefined;
   combo = 0;
+  maxCombo = 0;
   lastAt = 0;
   emit({ combo: 0, milestone: null, reset: true });
+}
+
+/** Highest combo reached since the last resetCombo() — the phase "record". */
+export function getMaxCombo(): number {
+  return maxCombo;
 }
