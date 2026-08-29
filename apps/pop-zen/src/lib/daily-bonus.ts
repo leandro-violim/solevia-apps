@@ -12,7 +12,7 @@ import { CONFIG } from "./config";
 import { load, update, resetPlayerState, type StreakState } from "./storage";
 import { track } from "./analytics";
 import { addCoins } from "./economy";
-import { grantOwned } from "./skins";
+import { grantOwned, ALL_COSMETICS } from "./skins";
 import { checkAchievements } from "./achievements";
 
 /* ── local-date helpers (device timezone) ─────────────────────────────────── */
@@ -131,10 +131,19 @@ export function installBonusDevHelpers(): void {
       });
       location.reload();
     },
+    // §13 test helpers: grant coins / unlock every cosmetic.
+    grantCoins: (n = 1000) => {
+      addCoins(n, "dev");
+      location.reload();
+    },
+    unlockAll: () => {
+      for (const c of ALL_COSMETICS) grantOwned(c.id, "dev");
+      location.reload();
+    },
   };
   console.info(
     "%c[zenBonus]",
     "color:#82d",
-    "simulateNextDay() · simulateGap() · reset() · peek()",
+    "simulateNextDay() · simulateGap() · reset() · peek() · grantCoins(n) · unlockAll()",
   );
 }
