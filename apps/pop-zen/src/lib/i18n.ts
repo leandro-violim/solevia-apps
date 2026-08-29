@@ -62,6 +62,14 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "home.shop": "Shop",
     "home.streak": "Day {n} · 🔥",
 
+    // Objectives (§8)
+    "obj.pop": "Pop {n} bubbles",
+    "obj.combo": "Hit a ×{n} combo",
+    "obj.golden": "Pop {n} golden",
+    "obj.phases": "Clear {n} phases",
+    "obj.fast": "Clear a phase < {n}s",
+    "obj.complete": "Objective! +{coins} 🪙",
+
     // Gameplay
     "play.exit": "← Exit",
     "play.phaseOf": "Phase {phase} of {total}",
@@ -191,6 +199,14 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "shop.watchDiscount": "🎬 −{pct}%",
     "home.shop": "Loja",
     "home.streak": "Dia {n} · 🔥",
+
+    // Objectives (§8)
+    "obj.pop": "Estoure {n} bolhas",
+    "obj.combo": "Faça um combo ×{n}",
+    "obj.golden": "Estoure {n} douradas",
+    "obj.phases": "Complete {n} fases",
+    "obj.fast": "Complete uma fase < {n}s",
+    "obj.complete": "Objetivo! +{coins} 🪙",
 
     // Gameplay
     "play.exit": "← Sair",

@@ -13,6 +13,9 @@ import { JUICE } from "../lib/juice";
 import { CONFIG } from "../lib/config";
 import { addCoins } from "../lib/economy";
 import { rollMysteryReward, type SpecialType } from "../lib/specials";
+import { rollObjectives, checkObjectives, type Objective } from "../lib/objectives";
+import { resetRunStats, noteRunPop, noteRunCombo, noteRunPhaseCleared } from "../lib/run-stats";
+import { ObjectivesHud } from "../components/ObjectivesHud";
 import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
@@ -133,6 +136,27 @@ function PlayPage() {
   const startedRef = useRef(false);
   // §7 golden/mystery bonus points accumulated this phase, added to the score.
   const bonusPointsRef = useRef(0);
+  // §8 objectives — rolled once per RUN; completion tracked in a ref Set.
+  const objectivesRef = useRef<Objective[]>([]);
+  const completedRef = useRef<Set<string>>(new Set());
+  const [objVersion, setObjVersion] = useState(0); // bump to re-render the HUD
+  const [objToast, setObjToast] = useState<Objective | null>(null);
+
+  // Re-check objectives against live run-stats; toast + re-render on completion.
+  const scanObjectives = useCallback(() => {
+    const newly = checkObjectives(objectivesRef.current, completedRef.current);
+    if (newly.length > 0) {
+      setObjToast(newly[newly.length - 1]);
+      setObjVersion((v) => v + 1);
+    }
+  }, []);
+
+  // Auto-dismiss the objective toast.
+  useEffect(() => {
+    if (!objToast) return;
+    const id = window.setTimeout(() => setObjToast(null), 2200);
+    return () => window.clearTimeout(id);
+  }, [objToast]);
 
   // Build field for this phase
   useEffect(() => {
@@ -151,7 +175,14 @@ function PlayPage() {
     // Start a brand-new full-run total when entering phase 1 — or when arriving
     // at a later phase that isn't a valid continuation (e.g. an edited ?phase=3
     // deep link), so stale scores from a prior run can't inflate the finish total.
-    if (phase === 1 || !runHasPhase(phase - 1)) resetRun();
+    if (phase === 1 || !runHasPhase(phase - 1)) {
+      resetRun();
+      // Fresh run → reset run-stats and draw new objectives (§8).
+      resetRunStats();
+      objectivesRef.current = rollObjectives();
+      completedRef.current = new Set();
+      setObjVersion((v) => v + 1);
+    }
     // Warm up the interstitial now so it's ready (if online) by phase end.
     void preloadInterstitial();
     // Ask for a fresh banner creative for the new phase (rate-limited internally
@@ -205,6 +236,8 @@ function PlayPage() {
       // Combo (feedback-only in Zen; feeds score in Time Attack — see §9). Drives
       // the rising pitch, the milestone flourish, and the HUD (via subscribeCombo).
       const { combo, milestone } = registerPop();
+      noteRunCombo(combo); // §8/§10 run stats
+      noteRunPop(special);
       playPop(combo); // pitch rises with the combo, hard-capped in JUICE.combo.pitchCeil
       popHaptic(); // light Taptic-Engine tap on each pop (native iOS; respects system haptics)
       burstParticles(cx, cy, variant); // juice: tinted particle burst from the pop point
@@ -253,9 +286,11 @@ function PlayPage() {
           return b;
         });
       });
+
+      scanObjectives(); // §8 — coins + toast if a goal just completed
     },
-    [],
-  ); // stable: reads timing from refs, so <Bubble>'s memo skips un-popped bubbles
+    [scanObjectives],
+  ); // stable: scanObjectives is itself stable, so <Bubble>'s memo still holds
 
   // Detect phase completion once the field is cleared, and record it exactly
   // once. Kept out of the pop handler's updater so it can't double-submit.
@@ -264,6 +299,8 @@ function PlayPage() {
     if (bubbles.length === 0 || bubbles.some((b) => !b.popped)) return;
     settledRef.current = true;
     const t = startAt !== null ? Date.now() - startAt : 0;
+    noteRunPhaseCleared(t); // §8/§10
+    scanObjectives();
     const base = computeScore(cfg.bubbles, t);
     // Record-combo reward: the highest combo reached this phase adds points.
     // (Combo scoring lives ONLY on this branch for now — see the v1.4 mode-split
@@ -277,7 +314,7 @@ function PlayPage() {
     // Accumulate this phase's score into the current full-run total.
     recordRunPhase(phase, score);
     setState("done");
-  }, [bubbles, state, startAt, cfg.bubbles, phase, submit]);
+  }, [bubbles, state, startAt, cfg.bubbles, phase, submit, scanObjectives]);
 
   const record = records[phase];
   const isLast = phase >= TOTAL_PHASES;
@@ -399,6 +436,18 @@ function PlayPage() {
 
           {/* Combo readout + milestone flourish (feedback-only). */}
           <ComboHud />
+
+          {/* §8 per-run objectives (top-left) + a completion toast. */}
+          <ObjectivesHud
+            key={objVersion}
+            objectives={objectivesRef.current}
+            completed={completedRef.current}
+          />
+          {objToast && (
+            <div className="pointer-events-none absolute inset-x-0 top-16 z-10 flex justify-center">
+              <div className="zc-milestone">{t("obj.complete", { coins: objToast.reward })}</div>
+            </div>
+          )}
 
           {state === "ready" && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
