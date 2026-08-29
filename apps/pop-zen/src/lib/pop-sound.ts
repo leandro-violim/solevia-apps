@@ -99,7 +99,11 @@ if (typeof document !== "undefined") {
   });
 }
 
-export function playPop(): void {
+/**
+ * Play a pop. `combo` (P1-T2) nudges the pitch UP per combo step, hard-capped by
+ * JUICE.combo.pitchCeil so a long chain rises musically but never goes shrill.
+ */
+export function playPop(combo = 0): void {
   if (!isSoundEnabled()) return;
   const ac = getCtx();
   if (!ac) return;
@@ -114,10 +118,62 @@ export function playPop(): void {
   const src = ac.createBufferSource();
   src.buffer = buf;
   const { pitchJitter, volumeJitter } = JUICE.sound;
-  src.playbackRate.value = 1 + (Math.random() * 2 - 1) * pitchJitter; // ±8% → repeats differ
+  // Rising pitch: +pitchStep per combo step, clamped to pitchCeil (calm ceiling).
+  const rise = Math.min(Math.max(combo - 1, 0) * JUICE.combo.pitchStep, JUICE.combo.pitchCeil);
+  src.playbackRate.value = 1 + rise + (Math.random() * 2 - 1) * pitchJitter;
   const g = ac.createGain();
   g.gain.value = 1 + (Math.random() * 2 - 1) * volumeJitter; // ±10%
   src.connect(g);
   g.connect(out);
   src.start();
+}
+
+/** One soft sine "bell" partial through the shared bus — the calm chime voice. */
+function bell(
+  ac: AudioContext,
+  out: AudioNode,
+  freq: number,
+  at: number,
+  gain: number,
+  dur = 0.5,
+): void {
+  const o = ac.createOscillator();
+  o.type = "sine";
+  o.frequency.setValueAtTime(freq, at);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.exponentialRampToValueAtTime(gain, at + 0.02); // soft attack
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur); // gentle decay
+  o.connect(g);
+  g.connect(out);
+  o.start(at);
+  o.stop(at + dur + 0.05);
+}
+
+/**
+ * Milestone flourish — a soft ASCENDING pentatonic arpeggio (a little "reward
+ * jingle"), not a single beep: each note gets an octave-up shimmer, and a warm
+ * low root underneath gives it body. Higher milestones play more notes so a x50
+ * feels bigger than a x5 — but it stays gentle sine tones through the limiter,
+ * so it's rewarding and celebratory without ever getting shrill or alarm-like.
+ */
+export function playMilestone(level: number): void {
+  if (!isSoundEnabled()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  const out = getBus(ac);
+  const now = ac.currentTime;
+  const tier = Math.max(0, (JUICE.combo.milestones as readonly number[]).indexOf(level)); // 0..4
+  const root = 523.25; // C5
+  const scale = [0, 2, 4, 7, 9, 12]; // major pentatonic (C D E G A C) — bright, calm
+  const notes = Math.min(3 + tier, scale.length); // 3 notes at x5 … up to 6 at x50
+  // Short + light so it's a quick sparkle that punctuates the pop, not a tail
+  // that sits on top of it. Faint low root for a touch of body, then a fast run.
+  bell(ac, out, root / 2, now, 0.2, 0.3);
+  for (let i = 0; i < notes; i++) {
+    const t = now + i * 0.05; // tighter, quicker run
+    const f = root * Math.pow(2, scale[i] / 12);
+    bell(ac, out, f, t, 0.4, 0.2); // shorter decay → doesn't linger over the pops
+    bell(ac, out, f * 2, t + 0.006, 0.09, 0.16); // faint, fast shimmer
+  }
 }

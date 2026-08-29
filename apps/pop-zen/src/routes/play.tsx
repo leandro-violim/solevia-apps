@@ -6,12 +6,15 @@ import { AdBanner } from "../components/AdBanner";
 import { showInterstitial, preloadInterstitial, refreshBanner } from "../lib/ads";
 import { Bubble } from "../components/Bubble";
 import { PopParticles } from "../components/PopParticles";
+import { ComboHud } from "../components/ComboHud";
 import { burstParticles } from "../lib/pop-particles";
+import { registerPop, resetCombo, getMaxCombo } from "../lib/combo";
+import { JUICE } from "../lib/juice";
 import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
 import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
 import { layoutBubbles, type BubbleState } from "../lib/layout";
-import { playPop, unlockAudio, resetAudio } from "../lib/pop-sound";
+import { playPop, playMilestone, unlockAudio, resetAudio } from "../lib/pop-sound";
 import { popHaptic } from "../lib/haptics";
 import {
   usePhaseRecords,
@@ -113,7 +116,12 @@ function PlayPage() {
   const [bubbles, setBubbles] = useState<BubbleState[]>([]);
   const [startAt, setStartAt] = useState<number | null>(null);
   const [state, setState] = useState<"ready" | "playing" | "done" | "ad">("ready");
-  const [result, setResult] = useState<{ score: number; timeMs: number } | null>(null);
+  const [result, setResult] = useState<{
+    score: number;
+    timeMs: number;
+    comboBonus: number;
+    maxCombo: number;
+  } | null>(null);
   // Guards the phase-complete handler so the score is submitted exactly once,
   // even though React re-runs state updaters/effects in dev (StrictMode).
   const settledRef = useRef(false);
@@ -133,6 +141,7 @@ function PlayPage() {
     setResult(null);
     settledRef.current = false;
     startedRef.current = false;
+    resetCombo(); // fresh phase → no lingering combo chain
     // Start a brand-new full-run total when entering phase 1 — or when arriving
     // at a later phase that isn't a valid continuation (e.g. an edited ?phase=3
     // deep link), so stale scores from a prior run can't inflate the finish total.
@@ -181,9 +190,25 @@ function PlayPage() {
       setStartAt(Date.now());
       setState("playing");
     }
-    playPop();
+    // Combo (feedback-only — does NOT affect score/timer/spawn). Drives the
+    // rising pitch, the milestone flourish, and the HUD (via subscribeCombo).
+    const { combo, milestone } = registerPop();
+    playPop(combo); // pitch rises with the combo, hard-capped in JUICE.combo.pitchCeil
     popHaptic(); // light Taptic-Engine tap on each pop (native iOS; respects system haptics)
     burstParticles(cx, cy, variant); // juice: tinted particle burst from the pop point
+    if (milestone !== null) {
+      playMilestone(milestone); // distinct calm chime
+      const tier = (JUICE.combo.milestones as readonly number[]).indexOf(milestone);
+      // Bigger, faster, GOLD-tinted burst so a milestone reads as a reward.
+      burstParticles(
+        cx,
+        cy,
+        variant,
+        JUICE.combo.milestoneParticles + tier * 5,
+        1.5,
+        JUICE.combo.milestoneTint,
+      );
+    }
     // Pure state update only — no side effects here, so React re-running this
     // updater (StrictMode/concurrent) can't submit the score twice.
     setBubbles((prev) => prev.map((b) => (b.id === id ? { ...b, popped: true } : b)));
@@ -196,8 +221,15 @@ function PlayPage() {
     if (bubbles.length === 0 || bubbles.some((b) => !b.popped)) return;
     settledRef.current = true;
     const t = startAt !== null ? Date.now() - startAt : 0;
-    const score = computeScore(cfg.bubbles, t);
-    setResult({ score, timeMs: t });
+    const base = computeScore(cfg.bubbles, t);
+    // Record-combo reward: the highest combo reached this phase adds points.
+    // (Combo scoring lives ONLY on this branch for now — see the v1.4 mode-split
+    // note; it is not part of the shipping v1.2 build.)
+    const maxCombo = getMaxCombo();
+    const comboBonus =
+      maxCombo >= JUICE.combo.minShown ? maxCombo * JUICE.combo.scoreBonusPerCombo : 0;
+    const score = base + comboBonus;
+    setResult({ score, timeMs: t, comboBonus, maxCombo });
     submit(phase, score, t);
     // Accumulate this phase's score into the current full-run total.
     recordRunPhase(phase, score);
@@ -246,6 +278,7 @@ function PlayPage() {
     setResult(null);
     settledRef.current = false;
     startedRef.current = false;
+    resetCombo();
   }, [cfg.bubbles, cfg.size]);
 
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
@@ -314,6 +347,9 @@ function PlayPage() {
           {/* Pop particle burst — canvas overlay above the bubbles, below the UI overlays. */}
           <PopParticles fieldRef={fieldRef} />
 
+          {/* Combo readout + milestone flourish (feedback-only). */}
+          <ComboHud />
+
           {state === "ready" && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <div className="rounded-full bg-foreground/70 px-5 py-2 text-sm font-medium text-primary-foreground">
@@ -332,6 +368,11 @@ function PlayPage() {
                 <div className="mt-1 text-sm text-muted-foreground">
                   {t("play.time", { time: formatTime(result.timeMs) })}
                 </div>
+                {result.comboBonus > 0 && (
+                  <div className="mt-1 text-sm font-semibold text-accent">
+                    {t("play.comboBonus", { n: result.maxCombo, pts: result.comboBonus })}
+                  </div>
+                )}
                 <div className="mt-3 rounded-lg bg-muted p-2 text-xs text-muted-foreground">
                   {isNewBestScore ? t("play.newBestScore") : ""}
                   {isNewBestTime ? t("play.newBestTime") : ""}
