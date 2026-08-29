@@ -17,6 +17,7 @@ import { getCoins, spendCoins } from "../lib/economy";
 import { showRewarded } from "../lib/ads";
 import { CONFIG } from "../lib/config";
 import { t } from "../lib/i18n";
+import { CoinIcon, CheckIcon, PlayIcon } from "../components/icons";
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
@@ -61,7 +62,7 @@ function ShopPage() {
 
   return (
     <div
-      className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10"
+      className="screen-fade mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}
     >
       <header className="flex items-center justify-between py-3">
@@ -143,13 +144,14 @@ function Section({
               </div>
 
               {equipped ? (
-                <div className="mt-2 rounded-full bg-primary/15 py-2 text-center text-xs font-semibold text-primary">
+                <div className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-full bg-primary/15 py-2 text-xs font-semibold text-primary">
+                  <CheckIcon size={13} />
                   {t("shop.equipped")}
                 </div>
               ) : owned ? (
                 <button
                   onClick={() => onEquip(item)}
-                  className="mt-2 w-full rounded-full border border-primary/40 py-2 text-xs font-semibold text-primary"
+                  className="btn btn-ghost mt-2 w-full py-2 text-xs"
                 >
                   {t("shop.equip")}
                 </button>
@@ -158,15 +160,17 @@ function Section({
                   <button
                     onClick={() => onBuy(item)}
                     disabled={!affordable}
-                    className="w-full rounded-full bg-primary py-2 text-xs font-semibold text-primary-foreground disabled:opacity-40"
+                    className="btn btn-primary w-full py-2 text-xs"
                   >
-                    🪙 {price}
+                    <CoinIcon size={14} className="text-primary-foreground" />
+                    {price}
                   </button>
                   <button
                     onClick={() => onWatch(item)}
                     disabled={busy}
-                    className="w-full rounded-full border border-accent/40 py-1.5 text-[11px] font-medium text-accent disabled:opacity-40"
+                    className="btn btn-ghost w-full gap-1 py-1.5 text-[11px] text-accent"
                   >
+                    <PlayIcon size={12} />
                     {t("shop.watchDiscount", {
                       pct: Math.round(CONFIG.ads.rewarded.shopDiscountPct * 100),
                     })}

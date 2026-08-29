@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { playedToday, dailyBestToday } from "../lib/daily-challenge";
 import { unlockAudio } from "../lib/pop-sound";
 import { t } from "../lib/i18n";
+import { CalendarIcon } from "./icons";
 
 /**
  * Home "Daily Challenge" entry (§12). Shows today's status (best or not-yet-played)
@@ -19,9 +20,12 @@ export function DailyChallengeCard() {
       to="/play"
       search={{ mode: "time-attack", phase: 1, difficulty: "normal", daily: 1 }}
       onClick={() => unlockAudio()}
-      className="flex items-center justify-between rounded-full border border-border bg-card px-4 py-3"
+      className="glass-chip w-full justify-between px-4 py-3"
     >
-      <span className="text-sm font-medium text-foreground">📅 {t("home.daily")}</span>
+      <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+        <CalendarIcon size={16} className="text-aqua" />
+        {t("home.daily")}
+      </span>
       <span className="text-xs text-muted-foreground">
         {status?.played ? t("home.dailyBest", { score: status.best }) : t("home.dailyPlay")}
       </span>

@@ -33,6 +33,7 @@ import { seededRand, recordDailyResult } from "../lib/daily-challenge";
 import { track } from "../lib/analytics";
 import { equippedThemeImage, unlockZenSkins } from "../lib/skins";
 import { ObjectivesHud } from "../components/ObjectivesHud";
+import { CoinIcon } from "../components/icons";
 import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
 import {
   computeScore,
@@ -499,8 +500,13 @@ function PlayPage() {
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
 
   return (
-    <div className="flex min-h-dvh flex-col" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-      {/* P1-T7: equipped theme backdrop — full-screen, cover-fit, behind content. */}
+    <div
+      className="screen-fade flex min-h-dvh flex-col"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      {/* P1-T7/T8: equipped theme backdrop — full-screen, cover-fit, behind
+          content — with a calm scrim (--play-scrim) so the HUD stays legible over
+          any theme photo. */}
       {themeImage && (
         <div
           aria-hidden
@@ -508,6 +514,11 @@ function PlayPage() {
           style={{ zIndex: -1, backgroundImage: `url(${themeImage})` }}
         />
       )}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0"
+        style={{ zIndex: -1, background: "var(--play-scrim)" }}
+      />
       <header className="flex items-center justify-between px-4 py-3">
         <Link
           to="/"
@@ -527,19 +538,19 @@ function PlayPage() {
               });
             }
           }}
-          className="text-sm font-medium text-muted-foreground"
+          className="glass-chip px-3 py-1.5 text-sm font-semibold text-muted-foreground"
         >
           {t("play.exit")}
         </Link>
-        <div className="text-center">
+        <div className="glass-chip flex-col gap-0 px-4 py-1">
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
             {isZen ? t("home.zen") : t("play.phaseOf", { phase, total: TOTAL_PHASES })}
           </div>
           {!isZen && <div className="text-sm font-semibold text-foreground">{t(cfg.key)}</div>}
         </div>
-        <div className="w-10 text-right font-mono text-sm tabular-nums text-foreground">
+        <div className="glass-chip min-w-[3.25rem] justify-center px-3 py-1.5 font-mono text-sm tabular-nums">
           {isZen ? (
-            <span aria-hidden>🫧</span>
+            <span aria-hidden>∞</span>
           ) : state === "playing" && startAt !== null ? (
             <Timer startAt={startAt} />
           ) : (
@@ -603,25 +614,28 @@ function PlayPage() {
           />
           {objToast && (
             <div className="pointer-events-none absolute inset-x-0 top-16 z-10 flex justify-center">
-              <div className="zc-milestone">{t("obj.complete", { coins: objToast.reward })}</div>
+              <div className="zc-milestone inline-flex items-center gap-1">
+                {t("obj.complete", { coins: objToast.reward })}
+                <CoinIcon size={14} className="text-gold" />
+              </div>
             </div>
           )}
 
           {state === "ready" && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="rounded-full bg-foreground/70 px-5 py-2 text-sm font-medium text-primary-foreground">
+              <div className="glass-chip px-5 py-2 text-sm font-semibold">
                 {t("play.tapToStart")}
               </div>
             </div>
           )}
 
           {state === "done" && result && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
-              <div className="mx-4 w-full max-w-xs rounded-2xl bg-card p-6 text-center shadow-xl">
+            <div className="absolute inset-0 flex items-center justify-center bg-background/70 px-4 backdrop-blur-sm">
+              <div className="zb-dialog">
                 <div className="text-xs uppercase tracking-widest text-muted-foreground">
                   {t("play.phaseComplete", { phase })}
                 </div>
-                <div className="mt-2 text-4xl font-bold text-primary">{result.score}</div>
+                <div className="mt-2 text-4xl font-extrabold text-primary">{result.score}</div>
                 <div className="mt-1 text-sm text-muted-foreground">
                   {t("play.time", { time: formatTime(result.timeMs) })}
                 </div>
@@ -649,14 +663,11 @@ function PlayPage() {
                   {/* §2: no between-phase interstitials — ads fire only at run end. */}
                   <button
                     onClick={() => (isLast ? goFinish() : nextPhase())}
-                    className="rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow"
+                    className="btn btn-primary w-full"
                   >
                     {isLast ? t("play.finish") : t("play.nextPhase")}
                   </button>
-                  <button
-                    onClick={restart}
-                    className="rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground"
-                  >
+                  <button onClick={restart} className="btn btn-ghost w-full text-sm">
                     {t("play.replayPhase")}
                   </button>
                 </div>

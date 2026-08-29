@@ -42,7 +42,7 @@ function SettingsPage() {
 
   return (
     <main
-      className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10"
+      className="screen-fade mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
     >
       <header className="mb-6 flex items-center justify-between">
@@ -143,7 +143,7 @@ function SettingsPage() {
               alert(t("settings.resetDone"));
             }
           }}
-          className="mt-3 w-full rounded-full border border-rose-300 bg-background py-3 text-sm font-medium text-rose-600"
+          className="btn btn-ghost mt-3 w-full text-sm text-destructive"
         >
           {t("settings.resetBtn")}
         </button>

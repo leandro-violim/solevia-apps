@@ -55,7 +55,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
 
     // Daily bonus (P1-T5)
     "bonus.title": "Daily Bonus",
-    "bonus.day": "Day {n} · 🔥",
+    "bonus.day": "Day {n}",
     "bonus.reward": "+{coins} coins",
     "bonus.line": "Welcome back — drop in each day to grow your streak.",
     "bonus.claim": "Claim",
@@ -67,10 +67,10 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "shop.zenSkins": "Zen skins",
     "shop.themes": "Themes",
     "shop.equip": "Equip",
-    "shop.equipped": "Equipped ✓",
-    "shop.watchDiscount": "🎬 −{pct}%",
+    "shop.equipped": "Equipped",
+    "shop.watchDiscount": "−{pct}%",
     "home.shop": "Shop",
-    "home.streak": "Day {n} · 🔥",
+    "home.streak": "Day {n}",
 
     // Objectives (§8)
     "obj.pop": "Pop {n} bubbles",
@@ -78,7 +78,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "obj.golden": "Pop {n} golden",
     "obj.phases": "Clear {n} phases",
     "obj.fast": "Clear a phase < {n}s",
-    "obj.complete": "Objective! +{coins} 🪙",
+    "obj.complete": "Objective! +{coins}",
 
     // Achievements (§10)
     "ach.title": "Achievements",
@@ -147,8 +147,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "finish.tryAgain": "Try again from the start",
     "finish.viewRecords": "View records",
     "finish.backHome": "Back home",
-    "finish.coinsEarned": "+{coins} 🪙 earned",
-    "finish.doubleCoins": "🎬 Double coins",
+    "finish.coinsEarned": "+{coins} earned",
+    "finish.doubleCoins": "Double coins",
 
     // Records
     "common.home": "← Home",
@@ -228,7 +228,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
 
     // Daily bonus (P1-T5)
     "bonus.title": "Bônus diário",
-    "bonus.day": "Dia {n} · 🔥",
+    "bonus.day": "Dia {n}",
     "bonus.reward": "+{coins} moedas",
     "bonus.line": "Que bom te ver! Volte todo dia para aumentar sua sequência.",
     "bonus.claim": "Resgatar",
@@ -240,10 +240,10 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "shop.zenSkins": "Skins Zen",
     "shop.themes": "Temas",
     "shop.equip": "Equipar",
-    "shop.equipped": "Equipado ✓",
-    "shop.watchDiscount": "🎬 −{pct}%",
+    "shop.equipped": "Equipado",
+    "shop.watchDiscount": "−{pct}%",
     "home.shop": "Loja",
-    "home.streak": "Dia {n} · 🔥",
+    "home.streak": "Dia {n}",
 
     // Objectives (§8)
     "obj.pop": "Estoure {n} bolhas",
@@ -251,7 +251,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "obj.golden": "Estoure {n} douradas",
     "obj.phases": "Complete {n} fases",
     "obj.fast": "Complete uma fase < {n}s",
-    "obj.complete": "Objetivo! +{coins} 🪙",
+    "obj.complete": "Objetivo! +{coins}",
 
     // Achievements (§10)
     "ach.title": "Conquistas",
@@ -320,8 +320,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "finish.tryAgain": "Tentar de novo do início",
     "finish.viewRecords": "Ver recordes",
     "finish.backHome": "Voltar ao início",
-    "finish.coinsEarned": "+{coins} 🪙 ganhas",
-    "finish.doubleCoins": "🎬 Dobrar moedas",
+    "finish.coinsEarned": "+{coins} ganhas",
+    "finish.doubleCoins": "Dobrar moedas",
 
     // Records
     "common.home": "← Início",

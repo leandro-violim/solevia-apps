@@ -13,6 +13,8 @@ import {
   DAILY_BONUS,
 } from "../lib/daily-bonus";
 import { t } from "../lib/i18n";
+import { Modal } from "./Modal";
+import { GiftIcon } from "./icons";
 
 /**
  * Once-a-day "Daily Bonus" pop-up (§4/§5). Shows on the first open of each
@@ -76,43 +78,24 @@ export function DailyBonus() {
   };
 
   return (
-    <div
-      ref={overlayRef}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) dismiss();
-      }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 px-6 backdrop-blur-sm"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    <Modal
+      overlayRef={overlayRef}
+      onClose={dismiss}
+      closeLabel={t("bonus.close")}
+      afterCard={<PopParticles fieldRef={overlayRef} />}
     >
-      <div className="zbonus-card relative w-full max-w-xs rounded-2xl bg-card p-6 text-center shadow-xl">
-        <button
-          onClick={dismiss}
-          aria-label={t("bonus.close")}
-          className="absolute right-3 top-3 text-lg leading-none text-muted-foreground"
-        >
-          ✕
-        </button>
-        <div className="text-4xl" aria-hidden>
-          🎁
-        </div>
-        <div className="mt-2 text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
-          {t("bonus.title")}
-        </div>
-        <div className="mt-1 text-3xl font-bold text-primary">{t("bonus.day", { n: day })}</div>
-        <div className="mt-1 text-lg font-semibold text-accent">{t("bonus.reward", { coins })}</div>
-        <p className="mx-auto mt-2 max-w-[15rem] text-sm text-muted-foreground">
-          {t("bonus.line")}
-        </p>
-        <button
-          ref={claimBtnRef}
-          onClick={claim}
-          className="mt-5 w-full rounded-full bg-primary py-3 text-sm font-semibold text-primary-foreground shadow active:scale-[0.98]"
-        >
-          {t("bonus.claim")}
-        </button>
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gold/15 text-gold">
+        <GiftIcon size={30} />
       </div>
-
-      <PopParticles fieldRef={overlayRef} />
-    </div>
+      <div className="mt-3 text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+        {t("bonus.title")}
+      </div>
+      <div className="mt-1 text-3xl font-extrabold text-primary">{t("bonus.day", { n: day })}</div>
+      <div className="mt-1 text-lg font-semibold text-accent">{t("bonus.reward", { coins })}</div>
+      <p className="mx-auto mt-2 max-w-[15rem] text-sm text-muted-foreground">{t("bonus.line")}</p>
+      <button ref={claimBtnRef} onClick={claim} className="btn btn-primary mt-5 w-full">
+        {t("bonus.claim")}
+      </button>
+    </Modal>
   );
 }

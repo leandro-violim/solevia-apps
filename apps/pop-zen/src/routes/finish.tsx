@@ -8,6 +8,7 @@ import { addCoins } from "../lib/economy";
 import { getAllTimeBestTotal } from "../lib/records";
 import { pickQuote } from "../lib/quotes";
 import { t } from "../lib/i18n";
+import { CoinIcon, PlayIcon } from "../components/icons";
 
 // beat is passed as 1/0 to survive URL (de)serialization cleanly.
 const searchSchema = z.object({
@@ -76,7 +77,7 @@ function FinishPage() {
 
   return (
     <div
-      className="relative flex min-h-dvh flex-col items-center justify-center px-6 text-center"
+      className="screen-fade relative flex min-h-dvh flex-col items-center justify-center px-6 text-center"
       style={{
         paddingTop: "calc(env(safe-area-inset-top) + 24px)",
         paddingBottom: "calc(env(safe-area-inset-bottom) + 24px)",
@@ -184,15 +185,17 @@ function FinishPage() {
       {/* §1/§3.2 run coins + rewarded double */}
       {coins > 0 && (
         <div className="mt-6 flex flex-col items-center gap-2">
-          <div className="text-sm font-semibold text-accent">
+          <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
+            <CoinIcon size={16} className="text-gold" />
             {t("finish.coinsEarned", { coins: coins + bonusCoins })}
           </div>
           {bonusCoins === 0 && (
             <button
               onClick={doubleCoins}
               disabled={adBusy}
-              className="rounded-full border border-accent/40 px-4 py-2 text-xs font-semibold text-accent disabled:opacity-40"
+              className="btn btn-ghost gap-1.5 px-4 py-2 text-xs text-accent"
             >
+              <PlayIcon size={13} />
               {t("finish.doubleCoins")}
             </button>
           )}
@@ -211,7 +214,7 @@ function FinishPage() {
               search: { phase: 1, mode: "time-attack", difficulty: "normal", daily: 0 },
             })
           }
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
+          className="btn btn-primary w-full py-4 text-base"
         >
           {beatRecord ? (
             <>
@@ -223,10 +226,7 @@ function FinishPage() {
             </>
           )}
         </button>
-        <Link
-          to="/records"
-          className="rounded-full bg-card py-3 text-sm font-medium text-foreground"
-        >
+        <Link to="/records" className="btn btn-ghost w-full text-sm">
           {t("finish.viewRecords")}
         </Link>
         <Link to="/" className="py-1 text-xs text-muted-foreground hover:underline">

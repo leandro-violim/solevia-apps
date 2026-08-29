@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCoins, subscribeCoins } from "../lib/economy";
+import { CoinIcon } from "./icons";
 
 /**
  * Live coin balance. Reads on the client (SSR-safe: starts at 0) and re-renders
@@ -14,7 +15,7 @@ export function CoinBalance({ className = "" }: { className?: string }) {
   }, []);
   return (
     <span className={`inline-flex items-center gap-1 tabular-nums ${className}`}>
-      <span aria-hidden>🪙</span>
+      <CoinIcon size={16} className="text-gold" />
       <span>{coins}</span>
     </span>
   );

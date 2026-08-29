@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { CoinBalance } from "../components/CoinBalance";
 import { ACHIEVEMENTS, achStats, isUnlocked, progressOf, type AchStats } from "../lib/achievements";
 import { t } from "../lib/i18n";
+import { TrophyIcon, LockIcon, CoinIcon } from "../components/icons";
 
 export const Route = createFileRoute("/achievements")({
   head: () => ({
@@ -33,7 +34,7 @@ function AchievementsPage() {
 
   return (
     <div
-      className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10"
+      className="screen-fade mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}
     >
       <header className="flex items-center justify-between py-3">
@@ -62,11 +63,21 @@ function AchievementsPage() {
                 done ? "border-accent/40 bg-accent/10" : "border-border bg-card"
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className={`text-sm font-medium ${done ? "text-accent" : "text-foreground"}`}>
-                  {done ? "🏆" : "🔒"} {t(a.labelKey, { n: a.goal })}
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 text-sm font-medium ${done ? "text-accent" : "text-foreground"}`}
+                >
+                  {done ? (
+                    <TrophyIcon size={15} className="shrink-0 text-gold" />
+                  ) : (
+                    <LockIcon size={15} className="shrink-0 text-muted-foreground" />
+                  )}
+                  {t(a.labelKey, { n: a.goal })}
                 </span>
-                <span className="text-xs font-semibold text-muted-foreground">+{a.reward} 🪙</span>
+                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-muted-foreground">
+                  +{a.reward}
+                  <CoinIcon size={13} className="text-gold" />
+                </span>
               </div>
               {!done && (
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">

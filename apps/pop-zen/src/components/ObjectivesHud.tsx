@@ -1,5 +1,6 @@
 import type { Objective } from "../lib/objectives";
 import { t } from "../lib/i18n";
+import { CheckIcon } from "./icons";
 
 /**
  * Compact per-run objectives list (§8) — top-left of the field, non-nagging.
@@ -21,13 +22,17 @@ export function ObjectivesHud({
         return (
           <div
             key={o.id}
-            className={`rounded-full px-2.5 py-1 text-[10px] font-medium backdrop-blur-sm ${
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold backdrop-blur-sm ${
               done
                 ? "bg-primary/20 text-primary line-through"
                 : "bg-background/40 text-muted-foreground"
             }`}
           >
-            {done ? "✓ " : "○ "}
+            {done ? (
+              <CheckIcon size={11} className="shrink-0" />
+            ) : (
+              <span className="inline-block h-[9px] w-[9px] shrink-0 rounded-full border border-current" />
+            )}
             {t(o.labelKey, { n: o.n })}
           </div>
         );

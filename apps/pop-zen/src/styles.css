@@ -4,6 +4,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* P1-T8 — one self-hosted, subsetted family (Nunito, latin variable woff2).
+   font-display:swap → text paints immediately in the fallback, never blocking
+   first paint, then swaps when the 40 KB face arrives. */
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 200 1000; /* variable axis — covers Regular / Semibold / ExtraBold */
+  font-display: swap;
+  src: url("./assets/fonts/nunito-latin-var.woff2") format("woff2");
+}
+
 /*
  * ─────────────────────────────────────────────────────────────────────────
  * DESIGN SYSTEM — "Aurora Glass"
@@ -62,92 +73,121 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* P1-T8 brand accents → Tailwind utilities (text-aqua / bg-coral / text-gold …). */
+  --color-aqua: var(--aqua);
+  --color-coral: var(--coral);
+  --color-gold: var(--gold);
+
+  /* One family, everywhere. */
+  --font-sans:
+    "Nunito", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 }
 
 :root {
   --radius: 0.9rem;
 
-  /* Aurora Glass — deep indigo night sky with luminous glass surfaces. */
-  --background: oklch(0.17 0.045 275);
-  --foreground: oklch(0.97 0.015 265);
+  /* ─────────────────────────────────────────────────────────────────────
+   * P1-T8 "Zen Bubbles" brand tokens — one calm, premium dark shell.
+   * Navy ground, aqua / coral / gold accents. NO purple. Every screen is
+   * painted through the semantic tokens below, which now resolve to these.
+   * ───────────────────────────────────────────────────────────────────── */
+  --bg-0: #0b1020;
+  --bg-grad: radial-gradient(120% 120% at 30% 20%, #14243f 0%, #0b1020 60%);
+  --surface: rgba(255, 255, 255, 0.06);
+  --surface-2: #141b2e;
+  --ink: #eef3fb;
+  --ink-soft: #a7b2c6;
+  --line: rgba(255, 255, 255, 0.1);
+  --aqua: #33e0c6; /* primary · Zen · confirm */
+  --coral: #ff6fa5; /* Time Attack · combos */
+  --gold: #f5c451; /* coins · specials · premium */
+  --play-scrim: rgba(10, 16, 32, 0.28);
 
-  /* Frosted glass: translucent white, frosted globally in @layer base. */
-  --card: oklch(0.99 0.02 265 / 0.07);
-  --card-foreground: oklch(0.98 0.012 265);
-  --popover: oklch(0.22 0.05 275 / 0.92);
-  --popover-foreground: oklch(0.98 0.012 265);
+  /* Semantic tokens (shadcn names used app-wide) → brand palette. */
+  --background: var(--bg-0);
+  --foreground: var(--ink);
 
-  /* Aurora teal/cyan — the primary glow. */
-  --primary: oklch(0.82 0.13 195);
-  --primary-foreground: oklch(0.2 0.05 260);
+  /* Frosted glass surface, frosted globally in @layer base. */
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: rgba(20, 27, 46, 0.96); /* --surface-2, solid enough for dialogs */
+  --popover-foreground: var(--ink);
 
-  --secondary: oklch(0.99 0.02 265 / 0.09);
-  --secondary-foreground: oklch(0.97 0.015 265);
-  --muted: oklch(0.99 0.02 265 / 0.06);
-  --muted-foreground: oklch(0.8 0.03 268);
+  /* Aqua — the primary action colour. */
+  --primary: var(--aqua);
+  --primary-foreground: #06231f; /* dark ink for contrast on aqua */
 
-  /* Aurora magenta — celebratory accent. */
-  --accent: oklch(0.74 0.15 325);
-  --accent-foreground: oklch(0.99 0.01 265);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: var(--ink-soft);
 
-  --destructive: oklch(0.7 0.19 20);
-  --destructive-foreground: oklch(0.99 0.01 265);
+  /* Coral — Time Attack / combos / celebratory accent. */
+  --accent: var(--coral);
+  --accent-foreground: #2a0e1a; /* dark ink for contrast on coral */
 
-  --border: oklch(1 0 0 / 0.14);
-  --input: oklch(1 0 0 / 0.16);
-  --ring: oklch(0.82 0.13 195 / 0.55);
+  --destructive: #ff6b6b;
+  --destructive-foreground: #2a0e1a;
 
-  --chart-1: oklch(0.82 0.13 195);
-  --chart-2: oklch(0.74 0.15 325);
-  --chart-3: oklch(0.7 0.15 240);
-  --chart-4: oklch(0.83 0.16 90);
-  --chart-5: oklch(0.72 0.17 300);
+  --border: var(--line);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: rgba(51, 224, 198, 0.55);
 
-  --sidebar: oklch(0.2 0.045 275 / 0.9);
-  --sidebar-foreground: oklch(0.97 0.015 265);
-  --sidebar-primary: oklch(0.82 0.13 195);
-  --sidebar-primary-foreground: oklch(0.2 0.05 260);
-  --sidebar-accent: oklch(0.99 0.02 265 / 0.09);
-  --sidebar-accent-foreground: oklch(0.97 0.015 265);
-  --sidebar-border: oklch(1 0 0 / 0.12);
-  --sidebar-ring: oklch(0.82 0.13 195 / 0.55);
+  --chart-1: var(--aqua);
+  --chart-2: var(--coral);
+  --chart-3: var(--gold);
+  --chart-4: #6fb7ff;
+  --chart-5: #33e0c6;
+
+  --sidebar: var(--surface-2);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--aqua);
+  --sidebar-primary-foreground: #06231f;
+  --sidebar-accent: var(--surface);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: rgba(51, 224, 198, 0.55);
 }
 
 /* The app renders Aurora Glass by default; .dark mirrors it so any dark: *
  * variants stay consistent. */
 .dark {
-  --background: oklch(0.15 0.04 275);
-  --foreground: oklch(0.97 0.015 265);
-  --card: oklch(0.99 0.02 265 / 0.08);
-  --card-foreground: oklch(0.98 0.012 265);
-  --popover: oklch(0.2 0.05 275 / 0.92);
-  --popover-foreground: oklch(0.98 0.012 265);
-  --primary: oklch(0.82 0.13 195);
-  --primary-foreground: oklch(0.2 0.05 260);
-  --secondary: oklch(0.99 0.02 265 / 0.09);
-  --secondary-foreground: oklch(0.97 0.015 265);
-  --muted: oklch(0.99 0.02 265 / 0.06);
-  --muted-foreground: oklch(0.8 0.03 268);
-  --accent: oklch(0.74 0.15 325);
-  --accent-foreground: oklch(0.99 0.01 265);
-  --destructive: oklch(0.7 0.19 20);
-  --destructive-foreground: oklch(0.99 0.01 265);
-  --border: oklch(1 0 0 / 0.14);
-  --input: oklch(1 0 0 / 0.16);
-  --ring: oklch(0.82 0.13 195 / 0.55);
-  --chart-1: oklch(0.82 0.13 195);
-  --chart-2: oklch(0.74 0.15 325);
-  --chart-3: oklch(0.7 0.15 240);
-  --chart-4: oklch(0.83 0.16 90);
-  --chart-5: oklch(0.72 0.17 300);
-  --sidebar: oklch(0.2 0.045 275 / 0.9);
-  --sidebar-foreground: oklch(0.97 0.015 265);
-  --sidebar-primary: oklch(0.82 0.13 195);
-  --sidebar-primary-foreground: oklch(0.2 0.05 260);
-  --sidebar-accent: oklch(0.99 0.02 265 / 0.09);
-  --sidebar-accent-foreground: oklch(0.97 0.015 265);
-  --sidebar-border: oklch(1 0 0 / 0.12);
-  --sidebar-ring: oklch(0.82 0.13 195 / 0.55);
+  /* Mirrors :root — the app is dark-first; kept in sync so any dark: variant
+     stays on-brand (no purple). */
+  --background: var(--bg-0);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: rgba(20, 27, 46, 0.96);
+  --popover-foreground: var(--ink);
+  --primary: var(--aqua);
+  --primary-foreground: #06231f;
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: var(--ink-soft);
+  --accent: var(--coral);
+  --accent-foreground: #2a0e1a;
+  --destructive: #ff6b6b;
+  --destructive-foreground: #2a0e1a;
+  --border: var(--line);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: rgba(51, 224, 198, 0.55);
+  --chart-1: var(--aqua);
+  --chart-2: var(--coral);
+  --chart-3: var(--gold);
+  --chart-4: #6fb7ff;
+  --chart-5: #33e0c6;
+  --sidebar: var(--surface-2);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--aqua);
+  --sidebar-primary-foreground: #06231f;
+  --sidebar-accent: var(--surface);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: rgba(51, 224, 198, 0.55);
 }
 
 @layer base {
@@ -156,12 +196,15 @@
   }
 
   html {
-    background-color: var(--background);
+    background-color: var(--bg-0);
+    background-image: var(--bg-grad);
+    background-attachment: fixed;
   }
 
   body {
     color: var(--color-foreground);
     background: transparent;
+    font-family: var(--font-sans);
     /* 100dvh = the *visible* (dynamic) viewport, so a screen that fits is exactly
        the screen height and never overflows into a stray scroll. (100vh is the
        LARGE viewport — taller than what's actually visible on device — which is
@@ -172,19 +215,19 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Drifting aurora light — sits behind all content. */
+  /* Calm aqua glow — sits behind all content. Aqua only, no purple; low
+     opacity so the navy shell stays the star. */
   body::before {
     content: "";
     position: fixed;
     inset: -25%;
     z-index: -2;
     background-image:
-      radial-gradient(38% 38% at 20% 22%, oklch(0.78 0.15 195 / 0.45), transparent 70%),
-      radial-gradient(42% 42% at 82% 16%, oklch(0.66 0.2 300 / 0.42), transparent 70%),
-      radial-gradient(48% 48% at 72% 82%, oklch(0.7 0.16 330 / 0.36), transparent 70%),
-      radial-gradient(44% 44% at 24% 84%, oklch(0.72 0.15 240 / 0.4), transparent 70%);
-    filter: blur(48px) saturate(135%);
-    animation: aurora 22s ease-in-out infinite alternate;
+      radial-gradient(40% 40% at 22% 16%, rgba(51, 224, 198, 0.16), transparent 70%),
+      radial-gradient(36% 36% at 84% 12%, rgba(51, 224, 198, 0.1), transparent 70%),
+      radial-gradient(46% 46% at 72% 86%, rgba(51, 224, 198, 0.08), transparent 72%);
+    filter: blur(52px) saturate(120%);
+    animation: aurora 24s ease-in-out infinite alternate;
     will-change: transform;
   }
 
@@ -204,11 +247,7 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background: radial-gradient(
-      130% 130% at 50% 0%,
-      transparent 42%,
-      oklch(0.1 0.03 275 / 0.55) 100%
-    );
+    background: radial-gradient(130% 130% at 50% 0%, transparent 42%, rgba(4, 7, 16, 0.6) 100%);
   }
 
   /* Frost every card-token surface into glass. */
@@ -459,6 +498,160 @@
   100% {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * P1-T8 — shared button system (CSS only, no images). One press/focus model
+ * across every CTA. 44px min tap target, focus-visible ring, pressed = scale
+ * .97 + brighten.
+ *
+ * In @layer components so Tailwind utilities (py-4, w-full, text-base …) layered
+ * after still override — e.g. a taller hero CTA.
+ * ───────────────────────────────────────────────────────────────────────── */
+@layer components {
+  .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.25rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+.btn:active {
+  transform: scale(0.97);
+  filter: brightness(1.08);
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Filled aqua, dark ink, glossy top highlight + soft glow. */
+.btn-primary {
+  background: var(--aqua);
+  color: var(--primary-foreground);
+  box-shadow:
+    0 8px 22px rgba(51, 224, 198, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+/* Coral — Time Attack / secondary confirm. */
+.btn-secondary {
+  background: var(--coral);
+  color: var(--accent-foreground);
+  box-shadow:
+    0 8px 22px rgba(255, 111, 165, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+/* Glass pill — quiet actions. */
+.btn-ghost {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+/* Shared dialog chrome — promoted from the Daily Bonus modal so score / revive /
+   bonus all share one look. */
+.zb-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(6, 10, 20, 0.62);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.zb-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 20rem;
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  text-align: center;
+  color: var(--popover-foreground);
+  background: var(--popover);
+  border: 1px solid var(--line);
+  box-shadow:
+    0 24px 60px rgba(4, 7, 16, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+  animation: zbonus-in 0.32s cubic-bezier(0.34, 1.56, 0.5, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .zb-dialog {
+    animation: none;
+  }
+}
+
+/* HUD / pill chip — frosted glass over the playfield or shell. */
+.glass-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+/* Wordmark — the title set in the display font (localizable text, never an image). */
+.wordmark {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #ffffff 0%, #bdeee6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 2px 16px rgba(51, 224, 198, 0.25));
+}
+} /* @layer components */
+
+/* ~200ms fade as a screen mounts — the home↔play cross-fade. */
+@keyframes screenFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.screen-fade {
+  animation: screenFade 0.2s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen-fade {
+    animation: none;
   }
 }
 

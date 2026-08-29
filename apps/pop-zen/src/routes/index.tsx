@@ -10,6 +10,7 @@ import { t } from "../lib/i18n";
 import { unlockAudio } from "../lib/pop-sound";
 import { trackModeSelected } from "../lib/mode";
 import type { Difficulty } from "../lib/config";
+import { TrophyIcon } from "../components/icons";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -34,7 +35,7 @@ function Home() {
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   return (
     <div
-      className="relative flex min-h-dvh flex-col items-center justify-between px-6 pt-14 text-center"
+      className="screen-fade relative flex min-h-dvh flex-col items-center justify-between px-6 pt-14 text-center"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 40px)" }}
     >
       {/* Once-a-day pre-game daily bonus pop-up (self-manages whether to show). */}
@@ -48,15 +49,15 @@ function Home() {
         <Link
           to="/achievements"
           aria-label={t("home.achievements")}
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5"
+          className="glass-chip px-3 py-1.5"
         >
-          <span aria-hidden>🏆</span>
+          <TrophyIcon size={15} className="text-gold" />
           <StreakBadge />
         </Link>
         <Link
           to="/shop"
           aria-label={t("home.shop")}
-          className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground"
+          className="glass-chip px-3 py-1.5 text-sm font-semibold"
         >
           <CoinBalance />
         </Link>
@@ -72,9 +73,7 @@ function Home() {
             className="h-48 w-48 animate-[bubbleFloat_5s_ease-in-out_infinite] drop-shadow-xl"
           />
         </div>
-        <h1 className="mt-6 text-4xl font-bold tracking-tight text-foreground">
-          {t("home.title")}
-        </h1>
+        <h1 className="wordmark mt-6 text-[2.6rem] leading-tight">{t("home.title")}</h1>
         <p className="mt-3 max-w-xs text-sm text-muted-foreground">{t("home.tagline")}</p>
 
         <div className="mt-10 flex w-full max-w-xs flex-col gap-3">
@@ -88,7 +87,7 @@ function Home() {
               unlockAudio();
               trackModeSelected("zen");
             }}
-            className="rounded-full bg-primary py-4 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
+            className="btn btn-primary w-full py-4 text-base"
           >
             {t("home.zen")}
           </Link>
@@ -101,7 +100,7 @@ function Home() {
               unlockAudio();
               trackModeSelected("time-attack");
             }}
-            className="rounded-full border border-accent/40 bg-accent/10 py-4 text-base font-semibold text-accent active:scale-[0.98]"
+            className="btn btn-secondary w-full py-4 text-base"
           >
             {t("home.timeAttack")}
           </Link>
@@ -124,10 +123,7 @@ function Home() {
           {/* §12 date-seeded daily challenge */}
           <DailyChallengeCard />
 
-          <Link
-            to="/records"
-            className="rounded-full border border-border bg-card py-3 text-sm font-medium text-foreground"
-          >
+          <Link to="/records" className="btn btn-ghost w-full text-sm">
             {t("home.viewRecords")}
           </Link>
         </div>

@@ -24,7 +24,7 @@ function RecordsPage() {
 
   return (
     <div
-      className="flex min-h-dvh flex-col px-5 pb-6"
+      className="screen-fade flex min-h-dvh flex-col px-5 pb-6"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
     >
       <header className="mb-6 flex items-center justify-between">
@@ -126,7 +126,7 @@ function RecordsPage() {
         <Link
           to="/play"
           search={{ phase: 1, mode: "time-attack", difficulty: "normal", daily: 0 }}
-          className="rounded-full bg-primary py-3 text-center text-sm font-semibold text-primary-foreground shadow"
+          className="btn btn-primary w-full text-sm"
         >
           {t("records.playFrom")}
         </Link>
@@ -134,7 +134,7 @@ function RecordsPage() {
           onClick={() => {
             if (confirm(t("records.resetConfirmShort"))) reset();
           }}
-          className="rounded-full border border-border bg-background py-3 text-center text-sm text-muted-foreground"
+          className="btn btn-ghost w-full text-sm text-muted-foreground"
         >
           {t("settings.resetBtn")}
         </button>
