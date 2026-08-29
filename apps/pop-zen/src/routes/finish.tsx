@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Trophy, Sparkles, RotateCcw, ArrowRight } from "lucide-react";
 import { launchConfetti } from "../lib/confetti";
+import { showRewarded } from "../lib/ads";
+import { addCoins } from "../lib/economy";
 import { getAllTimeBestTotal } from "../lib/records";
 import { pickQuote } from "../lib/quotes";
 import { t } from "../lib/i18n";
@@ -12,6 +14,7 @@ const searchSchema = z.object({
   total: z.coerce.number().nonnegative().default(0),
   prevBest: z.coerce.number().nonnegative().default(0),
   beat: z.coerce.number().default(0),
+  coins: z.coerce.number().nonnegative().default(0),
 });
 
 export const Route = createFileRoute("/finish")({
@@ -29,9 +32,23 @@ export const Route = createFileRoute("/finish")({
 });
 
 function FinishPage() {
-  const { total, prevBest, beat } = Route.useSearch();
+  const { total, prevBest, beat, coins } = Route.useSearch();
   const navigate = useNavigate();
   const beatRecord = beat === 1;
+
+  // §3.2 rewarded double-coins for this run.
+  const [bonusCoins, setBonusCoins] = useState(0);
+  const [adBusy, setAdBusy] = useState(false);
+  const doubleCoins = async () => {
+    if (adBusy || bonusCoins > 0 || coins <= 0) return;
+    setAdBusy(true);
+    const watched = await showRewarded("double_coins");
+    if (watched) {
+      addCoins(coins, "double_coins");
+      setBonusCoins(coins);
+    }
+    setAdBusy(false);
+  };
 
   // All-time best AFTER this run has been committed (records.commitRunTotal ran
   // on the play screen before navigating here).
@@ -164,13 +181,36 @@ function FinishPage() {
         {beatRecord ? t("finish.momentum") : `“${quote}”`}
       </p>
 
+      {/* §1/§3.2 run coins + rewarded double */}
+      {coins > 0 && (
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <div className="text-sm font-semibold text-accent">
+            {t("finish.coinsEarned", { coins: coins + bonusCoins })}
+          </div>
+          {bonusCoins === 0 && (
+            <button
+              onClick={doubleCoins}
+              disabled={adBusy}
+              className="rounded-full border border-accent/40 px-4 py-2 text-xs font-semibold text-accent disabled:opacity-40"
+            >
+              {t("finish.doubleCoins")}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Actions */}
       <div
-        className="mt-8 flex w-full max-w-xs flex-col gap-3"
+        className="mt-6 flex w-full max-w-xs flex-col gap-3"
         style={{ animation: "floatUp 600ms ease-out 320ms both" }}
       >
         <button
-          onClick={() => navigate({ to: "/play", search: { phase: 1 } })}
+          onClick={() =>
+            navigate({
+              to: "/play",
+              search: { phase: 1, mode: "time-attack", difficulty: "normal" },
+            })
+          }
           className="inline-flex items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
         >
           {beatRecord ? (

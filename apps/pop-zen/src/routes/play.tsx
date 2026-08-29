@@ -3,7 +3,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { z } from "zod";
 import { AdBanner } from "../components/AdBanner";
-import { showInterstitial, preloadInterstitial, refreshBanner } from "../lib/ads";
+import {
+  maybeShowInterstitial,
+  noteRunCompleted,
+  preloadInterstitial,
+  refreshBanner,
+  showRewarded,
+} from "../lib/ads";
 import { Bubble } from "../components/Bubble";
 import { PopParticles } from "../components/PopParticles";
 import { ComboHud } from "../components/ComboHud";
@@ -11,16 +17,21 @@ import { burstParticles } from "../lib/pop-particles";
 import { registerPop, resetCombo, getMaxCombo } from "../lib/combo";
 import { JUICE } from "../lib/juice";
 import { CONFIG } from "../lib/config";
-import { addCoins } from "../lib/economy";
+import { addCoins, coinsForScore, coinsForZenBubbles } from "../lib/economy";
 import { rollMysteryReward, type SpecialType } from "../lib/specials";
 import { rollObjectives, checkObjectives, type Objective } from "../lib/objectives";
 import { resetRunStats, noteRunPop, noteRunCombo, noteRunPhaseCleared } from "../lib/run-stats";
 import { ObjectivesHud } from "../components/ObjectivesHud";
-import { VideoAdPlaceholder } from "../components/VideoAdPlaceholder";
 import sheetBg from "../assets/bubbles/bubble-sheet.jpg";
-import { computeScore, formatTime, getPhase, TOTAL_PHASES } from "../lib/game-config";
+import {
+  computeScore,
+  difficultyPhase,
+  formatTime,
+  getPhase,
+  TOTAL_PHASES,
+} from "../lib/game-config";
 import { layoutBubbles, type BubbleState } from "../lib/layout";
-import { playPop, playMilestone, unlockAudio, resetAudio } from "../lib/pop-sound";
+import { playPop, playMilestone, unlockAudio } from "../lib/pop-sound";
 import { popHaptic } from "../lib/haptics";
 import {
   usePhaseRecords,
@@ -35,6 +46,8 @@ import { t } from "../lib/i18n";
 
 const searchSchema = z.object({
   phase: z.number().int().min(1).max(TOTAL_PHASES).optional().default(1),
+  mode: z.enum(["zen", "time-attack"]).optional().default("time-attack"),
+  difficulty: z.enum(["easy", "normal", "hard"]).optional().default("normal"),
 });
 
 export const Route = createFileRoute("/play")({
@@ -112,16 +125,28 @@ function Timer({ startAt }: { startAt: number }) {
   return <>{formatTime(ms)}</>;
 }
 
+/** Zen's field: a calm, moderate spread that regenerates endlessly. */
+const ZEN_FIELD: ReturnType<typeof getPhase> = {
+  phase: 1,
+  bubbles: 30,
+  size: 54,
+  timeLimitMs: 0,
+  key: "phase3",
+};
+
 function PlayPage() {
-  const { phase } = Route.useSearch();
+  const { phase, mode, difficulty } = Route.useSearch();
   const navigate = useNavigate({ from: "/play" });
-  const cfg = getPhase(phase);
+  const isZen = mode === "zen";
+  // Zen makes specials rare; Time Attack full-rate (§7/§9). Primitive → effect-safe.
+  const specialsMul = isZen ? CONFIG.specials.zenMultiplier : 1;
+  const cfg = isZen ? ZEN_FIELD : difficultyPhase(phase, difficulty);
   const { submit, records } = usePhaseRecords();
 
   const fieldRef = useRef<HTMLDivElement>(null);
   const [bubbles, setBubbles] = useState<BubbleState[]>([]);
   const [startAt, setStartAt] = useState<number | null>(null);
-  const [state, setState] = useState<"ready" | "playing" | "done" | "ad">("ready");
+  const [state, setState] = useState<"ready" | "playing" | "done">("ready");
   const [result, setResult] = useState<{
     score: number;
     timeMs: number;
@@ -164,7 +189,7 @@ function PlayPage() {
     if (!el) return;
     const w = el.clientWidth;
     const h = usableFieldHeight(el);
-    setBubbles(layoutBubbles(cfg.bubbles, cfg.size, w, h, Math.random, { phase, specialsMul: 1 }));
+    setBubbles(layoutBubbles(cfg.bubbles, cfg.size, w, h, Math.random, { phase, specialsMul }));
     setStartAt(null);
     setState("ready");
     setResult(null);
@@ -177,9 +202,9 @@ function PlayPage() {
     // deep link), so stale scores from a prior run can't inflate the finish total.
     if (phase === 1 || !runHasPhase(phase - 1)) {
       resetRun();
-      // Fresh run → reset run-stats and draw new objectives (§8).
+      // Fresh run → reset run-stats and draw new objectives (§8, Time Attack only).
       resetRunStats();
-      objectivesRef.current = rollObjectives();
+      objectivesRef.current = isZen ? [] : rollObjectives();
       completedRef.current = new Set();
       setObjVersion((v) => v + 1);
     }
@@ -188,7 +213,7 @@ function PlayPage() {
     // Ask for a fresh banner creative for the new phase (rate-limited internally
     // to stay within AdMob's refresh policy).
     void refreshBanner();
-  }, [phase, cfg.bubbles, cfg.size]);
+  }, [phase, cfg.bubbles, cfg.size, specialsMul, isZen]);
 
   // Re-lay-out the field when the native ad banner reports its real height,
   // so bubbles clear it exactly. Only while "ready" so an in-progress game
@@ -200,7 +225,7 @@ function PlayPage() {
       setBubbles(
         layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el), Math.random, {
           phase,
-          specialsMul: 1,
+          specialsMul,
         }),
       );
     };
@@ -210,7 +235,7 @@ function PlayPage() {
       window.removeEventListener("ad-banner-resize", onResize);
       window.visualViewport?.removeEventListener("resize", onResize);
     };
-  }, [state, cfg.bubbles, cfg.size, phase]);
+  }, [state, cfg.bubbles, cfg.size, phase, specialsMul]);
 
   // Freeze the animated full-screen aurora while actively playing — a large
   // blurred, continuously-animated layer under the field's backdrop-blur is a
@@ -295,33 +320,57 @@ function PlayPage() {
   // Detect phase completion once the field is cleared, and record it exactly
   // once. Kept out of the pop handler's updater so it can't double-submit.
   useEffect(() => {
-    if (state !== "playing" || settledRef.current) return;
+    if (state !== "playing") return;
     if (bubbles.length === 0 || bubbles.some((b) => !b.popped)) return;
+
+    // §9 Zen: endless — clearing the field grants gentle coins and lays a fresh
+    // one; there's no score, phase, or finish. The player leaves via Exit.
+    if (isZen) {
+      addCoins(coinsForZenBubbles(cfg.bubbles), "zen");
+      const el = fieldRef.current;
+      if (el) {
+        setBubbles(
+          layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el), Math.random, {
+            phase,
+            specialsMul,
+          }),
+        );
+      }
+      resetCombo();
+      return;
+    }
+
+    // Time Attack: settle the phase exactly once.
+    if (settledRef.current) return;
     settledRef.current = true;
     const t = startAt !== null ? Date.now() - startAt : 0;
     noteRunPhaseCleared(t); // §8/§10
     scanObjectives();
     const base = computeScore(cfg.bubbles, t);
-    // Record-combo reward: the highest combo reached this phase adds points.
-    // (Combo scoring lives ONLY on this branch for now — see the v1.4 mode-split
-    // note; it is not part of the shipping v1.2 build.)
+    // Best-combo × 15 feeds the Time Attack score (§9, mode-resolved).
     const maxCombo = getMaxCombo();
     const comboBonus =
       maxCombo >= JUICE.combo.minShown ? maxCombo * JUICE.combo.scoreBonusPerCombo : 0;
     const score = base + comboBonus + bonusPointsRef.current; // + §7 golden/mystery points
     setResult({ score, timeMs: t, comboBonus, maxCombo });
     submit(phase, score, t);
-    // Accumulate this phase's score into the current full-run total.
     recordRunPhase(phase, score);
     setState("done");
-  }, [bubbles, state, startAt, cfg.bubbles, phase, submit, scanObjectives]);
+  }, [
+    bubbles,
+    state,
+    startAt,
+    cfg.bubbles,
+    cfg.size,
+    phase,
+    submit,
+    scanObjectives,
+    isZen,
+    specialsMul,
+  ]);
 
   const record = records[phase];
   const isLast = phase >= TOTAL_PHASES;
-  // Ad gating: show the video ad only after phases 2, 4, and the finale.
-  // Full-screen ads on every phase get flagged by app store reviewers as
-  // disruptive; every-other-phase pacing is the common accepted pattern.
-  const showAdOnFinish = isLast || phase % 2 === 0;
   const isNewBestScore = !!result && result.score > (record?.prevBestScore ?? 0);
   const isNewBestTime =
     !!result &&
@@ -335,18 +384,22 @@ function PlayPage() {
   const stillBubbles = cfg.bubbles >= 60;
 
   const nextPhase = useCallback(() => {
-    navigate({ to: "/play", search: { phase: Math.min(phase + 1, TOTAL_PHASES) } });
-  }, [navigate, phase]);
+    navigate({
+      to: "/play",
+      search: { phase: Math.min(phase + 1, TOTAL_PHASES), mode, difficulty },
+    });
+  }, [navigate, phase, mode, difficulty]);
 
-  // End of the 5-phase run: total up every phase, compare to the all-time best,
-  // and send the player to the celebration / encouragement screen.
-  const goFinish = useCallback(() => {
+  // End of a Time Attack run: total the phases, award coins (§1), fire the
+  // run-end interstitial (§2 — a natural break, capped), then celebrate.
+  const goFinish = useCallback(async () => {
     const total = getRunTotal();
     const { beat, prevBest } = commitRunTotal(total);
-    navigate({
-      to: "/finish",
-      search: { total, prevBest, beat: beat ? 1 : 0 },
-    });
+    const coins = coinsForScore(total);
+    addCoins(coins, "time_attack_run");
+    noteRunCompleted();
+    await maybeShowInterstitial("run_end");
+    navigate({ to: "/finish", search: { total, prevBest, beat: beat ? 1 : 0, coins } });
   }, [navigate]);
 
   const restart = useCallback(() => {
@@ -355,7 +408,7 @@ function PlayPage() {
     setBubbles(
       layoutBubbles(cfg.bubbles, cfg.size, el.clientWidth, usableFieldHeight(el), Math.random, {
         phase,
-        specialsMul: 1,
+        specialsMul,
       }),
     );
     setStartAt(null);
@@ -365,7 +418,7 @@ function PlayPage() {
     startedRef.current = false;
     bonusPointsRef.current = 0;
     resetCombo();
-  }, [cfg.bubbles, cfg.size, phase]);
+  }, [cfg.bubbles, cfg.size, phase, specialsMul]);
 
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
 
@@ -377,12 +430,14 @@ function PlayPage() {
         </Link>
         <div className="text-center">
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-            {t("play.phaseOf", { phase, total: TOTAL_PHASES })}
+            {isZen ? t("home.zen") : t("play.phaseOf", { phase, total: TOTAL_PHASES })}
           </div>
-          <div className="text-sm font-semibold text-foreground">{t(cfg.key)}</div>
+          {!isZen && <div className="text-sm font-semibold text-foreground">{t(cfg.key)}</div>}
         </div>
         <div className="w-10 text-right font-mono text-sm tabular-nums text-foreground">
-          {state === "playing" && startAt !== null ? (
+          {isZen ? (
+            <span aria-hidden>🫧</span>
+          ) : state === "playing" && startAt !== null ? (
             <Timer startAt={startAt} />
           ) : (
             formatTime(state === "done" && result ? result.timeMs : 0)
@@ -488,32 +543,12 @@ function PlayPage() {
                   </div>
                 )}
                 <div className="mt-4 flex flex-col gap-2">
+                  {/* §2: no between-phase interstitials — ads fire only at run end. */}
                   <button
-                    onClick={async () => {
-                      const proceed = () => (isLast ? goFinish() : nextPhase());
-                      if (!showAdOnFinish) {
-                        proceed();
-                      } else if (Capacitor.isNativePlatform()) {
-                        // Real AdMob interstitial on device, then continue.
-                        await showInterstitial();
-                        // The interstitial takes over the audio session; rebuild
-                        // it so bubble pops are audible again on the next phase.
-                        resetAudio();
-                        proceed();
-                      } else {
-                        // Web/dev: show the in-app placeholder overlay instead.
-                        setState("ad");
-                      }
-                    }}
+                    onClick={() => (isLast ? goFinish() : nextPhase())}
                     className="rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow"
                   >
-                    {showAdOnFinish
-                      ? isLast
-                        ? t("play.watchFinish")
-                        : t("play.watchNext")
-                      : isLast
-                        ? t("play.finish")
-                        : t("play.nextPhase")}
+                    {isLast ? t("play.finish") : t("play.nextPhase")}
                   </button>
                   <button
                     onClick={restart}
@@ -531,19 +566,6 @@ function PlayPage() {
       {/* Web/dev only: on native the AdMob banner overlays the bottom of the
           screen and the play field is sized to clear it (see usableFieldHeight). */}
       {!Capacitor.isNativePlatform() && <AdBanner inline />}
-
-      {state === "ad" && (
-        <VideoAdPlaceholder
-          onComplete={() => {
-            unlockAudio(); // reactivate audio after the placeholder ad
-            if (isLast) {
-              goFinish();
-            } else {
-              nextPhase();
-            }
-          }}
-        />
-      )}
     </div>
   );
 }

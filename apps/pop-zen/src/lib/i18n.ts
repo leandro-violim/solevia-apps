@@ -38,6 +38,12 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "home.tagline":
       "Five soothing phases. Bubbles get smaller as you go. Pop them all as fast as you can to beat your record.",
     "home.play": "Play",
+    "home.zen": "Zen Mode",
+    "home.timeAttack": "Time Attack",
+    "home.difficulty": "Difficulty",
+    "home.diffEasy": "Easy",
+    "home.diffNormal": "Normal",
+    "home.diffHard": "Hard",
     "home.viewRecords": "View records",
     "nav.settings": "Settings",
     "nav.about": "About",
@@ -94,12 +100,18 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     phase3: "Medium bubbles",
     phase4: "Small bubbles",
     phase5: "Tiny bubbles",
+    phase6: "Micro bubbles",
+    phase7: "Nano bubbles",
+    phase8: "Speck bubbles",
     // Phase names — short label (records list, composed as "{label} · N bubbles")
     phaseShort1: "Extra Large",
     phaseShort2: "Large",
     phaseShort3: "Medium",
     phaseShort4: "Small",
     phaseShort5: "Tiny",
+    phaseShort6: "Micro",
+    phaseShort7: "Nano",
+    phaseShort8: "Speck",
 
     // Finish
     "finish.newAllTime": "New all-time record",
@@ -117,6 +129,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "finish.tryAgain": "Try again from the start",
     "finish.viewRecords": "View records",
     "finish.backHome": "Back home",
+    "finish.coinsEarned": "+{coins} 🪙 earned",
+    "finish.doubleCoins": "🎬 Double coins",
 
     // Records
     "common.home": "← Home",
@@ -176,6 +190,12 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "home.tagline":
       "Cinco fases relaxantes. As bolhas ficam menores a cada fase. Estoure todas o mais rápido que puder para superar o seu recorde.",
     "home.play": "Jogar",
+    "home.zen": "Modo Zen",
+    "home.timeAttack": "Contra o Tempo",
+    "home.difficulty": "Dificuldade",
+    "home.diffEasy": "Fácil",
+    "home.diffNormal": "Normal",
+    "home.diffHard": "Difícil",
     "home.viewRecords": "Ver recordes",
     "nav.settings": "Ajustes",
     "nav.about": "Sobre",
@@ -232,12 +252,18 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     phase3: "Bolhas médias",
     phase4: "Bolhas pequenas",
     phase5: "Bolhas minúsculas",
+    phase6: "Bolhas micro",
+    phase7: "Bolhas nano",
+    phase8: "Bolhas ínfimas",
     // Phase names — records label (pt uses the full phrase, per spec #3)
     phaseShort1: "Bolhas extragrandes",
     phaseShort2: "Bolhas grandes",
     phaseShort3: "Bolhas médias",
     phaseShort4: "Bolhas pequenas",
     phaseShort5: "Bolhas minúsculas",
+    phaseShort6: "Bolhas micro",
+    phaseShort7: "Bolhas nano",
+    phaseShort8: "Bolhas ínfimas",
 
     // Finish
     "finish.newAllTime": "Novo recorde geral",
@@ -255,6 +281,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "finish.tryAgain": "Tentar de novo do início",
     "finish.viewRecords": "Ver recordes",
     "finish.backHome": "Voltar ao início",
+    "finish.coinsEarned": "+{coins} 🪙 ganhas",
+    "finish.doubleCoins": "🎬 Dobrar moedas",
 
     // Records
     "common.home": "← Início",
