@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import bubbleImg from "../assets/bubble.png";
 import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
 import { t } from "../lib/i18n";
+import { unlockAudio } from "../lib/pop-sound";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,13 +39,18 @@ function Home() {
             className="h-48 w-48 animate-[bubbleFloat_5s_ease-in-out_infinite] drop-shadow-xl"
           />
         </div>
-        <h1 className="mt-6 text-4xl font-bold tracking-tight text-foreground">Zen Bubbles</h1>
+        <h1 className="mt-6 text-4xl font-bold tracking-tight text-foreground">
+          {t("home.title")}
+        </h1>
         <p className="mt-3 max-w-xs text-sm text-muted-foreground">{t("home.tagline")}</p>
 
         <div className="mt-10 flex w-full max-w-xs flex-col gap-3">
           <Link
             to="/play"
             search={{ phase: 1 }}
+            // Warm audio inside this user gesture so iOS unlocks and the pop
+            // samples are decoded before the first bubble tap (no silent first pop).
+            onClick={() => unlockAudio()}
             className="rounded-full bg-primary py-4 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
           >
             {t("home.play")}
