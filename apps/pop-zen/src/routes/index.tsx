@@ -112,10 +112,10 @@ function Home() {
               <button
                 key={d}
                 onClick={() => setDifficulty(d)}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                className={`rounded-full px-3 py-1 text-xs ${
                   difficulty === d
-                    ? "bg-accent/20 text-accent"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-primary/15 font-semibold text-primary"
+                    : "font-medium text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {t(`home.diff${d[0].toUpperCase()}${d.slice(1)}`)}
