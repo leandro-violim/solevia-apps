@@ -2,8 +2,9 @@
  * Skins & themes (§6 + P1-T7) — cosmetics coins buy and rewarded ads unlock, now
  * wired to Cowork's real art.
  *
- * ART (P1-T7): 2K originals live in `assets-src/`; optimized runtime versions are
- * imported below (skins → 320px PNG thumbnails, backgrounds → 1280px JPEG). The
+ * ART (P1-T7; WebP per the v1.2 master brief): 2K originals live in `assets-src/`;
+ * optimized runtime versions are imported below (skins → 420px WebP thumbnails,
+ * backgrounds → 1400px-tall WebP). The
  * skin art drives the shop THUMBNAIL + the per-skin bubble TINT (`bubbleFilter`) —
  * the bubbles stay programmatic (we don't paste a static grid over gameplay). The
  * background art renders full-screen behind the play field (`image`, cover-fit).
@@ -16,21 +17,21 @@ import { spendCoins } from "./economy";
 import { checkAchievements } from "./achievements";
 
 // Realistic bubble skins.
-import skinClassic from "../assets/skins/skin-classic.png";
-import skinNeon from "../assets/skins/skin-neon.png";
-import skinOcean from "../assets/skins/skin-ocean.png";
-import skinSunset from "../assets/skins/skin-sunset.png";
-import skinNight from "../assets/skins/skin-night.png";
-import skinGold from "../assets/skins/skin-gold.png";
+import skinClassic from "../assets/skins/skin-classic.webp";
+import skinNeon from "../assets/skins/skin-neon.webp";
+import skinOcean from "../assets/skins/skin-ocean.webp";
+import skinSunset from "../assets/skins/skin-sunset.webp";
+import skinNight from "../assets/skins/skin-night.webp";
+import skinGold from "../assets/skins/skin-gold.webp";
 // Zen Mode soft/pastel skins.
-import zenPastel from "../assets/skins/zen-pastel.png";
-import zenMint from "../assets/skins/zen-mint.png";
-import zenLavender from "../assets/skins/zen-lavender.png";
+import zenPastel from "../assets/skins/zen-pastel.webp";
+import zenMint from "../assets/skins/zen-mint.webp";
+import zenLavender from "../assets/skins/zen-lavender.webp";
 // Background themes (full-screen).
-import bgSoftLight from "../assets/backgrounds/bg-soft-light.jpg";
-import bgSunset from "../assets/backgrounds/bg-sunset.jpg";
-import bgDeepSea from "../assets/backgrounds/bg-deep-sea.jpg";
-import bgStarfield from "../assets/backgrounds/bg-starfield.jpg";
+import bgSoftLight from "../assets/backgrounds/bg-soft-light.webp";
+import bgSunset from "../assets/backgrounds/bg-sunset.webp";
+import bgDeepSea from "../assets/backgrounds/bg-deep-sea.webp";
+import bgStarfield from "../assets/backgrounds/bg-starfield.webp";
 
 export type Rarity = "starter" | "common" | "uncommon" | "rare" | "premium";
 export type ItemKind = "skin" | "theme";

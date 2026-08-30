@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import bubbleImg from "../assets/bubble.png";
+import bubbleImg from "../assets/bubble.webp";
 
 type Props = {
   onComplete: () => void;

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import bubbleImg from "../assets/bubble.png";
+import bubbleImg from "../assets/bubble.webp";
 import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
 import { DailyBonus } from "../components/DailyBonus";
 import { CoinBalance } from "../components/CoinBalance";
