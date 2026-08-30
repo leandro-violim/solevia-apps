@@ -14,6 +14,7 @@ export type RunStats = {
   fastestPhaseMs: number; // best single-phase clear time this run
   misses: number; // reserved (no miss signal yet); kept for "no-miss" objectives
   noMiss: boolean;
+  revives: number; // P1-T4 — revives used this run (cap = CONFIG.ads.rewarded.maxRevivesPerRun)
 };
 
 function fresh(): RunStats {
@@ -25,6 +26,7 @@ function fresh(): RunStats {
     fastestPhaseMs: Number.POSITIVE_INFINITY,
     misses: 0,
     noMiss: true,
+    revives: 0,
   };
 }
 
@@ -51,6 +53,18 @@ export function noteRunPhaseCleared(timeMs: number): void {
 export function noteRunMiss(): void {
   stats.misses += 1;
   stats.noMiss = false;
+}
+
+/** P1-T4 — count a Time Attack revive: run-scoped (for the per-run cap) AND the
+ *  lifetime stat (for the "first revive" achievement). */
+export function registerRevive(): void {
+  stats.revives += 1;
+  update((st) => {
+    st.stats.revivesUsed += 1;
+  });
+}
+export function getRunRevives(): number {
+  return stats.revives;
 }
 
 /**

@@ -27,17 +27,20 @@ import {
   noteRunPhaseCleared,
   getRunStats,
   commitStats,
+  registerRevive,
+  getRunRevives,
 } from "../lib/run-stats";
 import { checkAchievements } from "../lib/achievements";
 import { seededRand, recordDailyResult } from "../lib/daily-challenge";
 import { track } from "../lib/analytics";
 import { equippedThemeImage, unlockZenSkins } from "../lib/skins";
 import { ObjectivesHud } from "../components/ObjectivesHud";
-import { CoinIcon } from "../components/icons";
+import { CoinIcon, PlayIcon } from "../components/icons";
 import level1Bg from "../assets/scene/level1-bg.webp";
 import {
-  computeScore,
+  computeTimeAttackScore,
   difficultyPhase,
+  formatCountdown,
   formatTime,
   getPhase,
   TOTAL_PHASES,
@@ -124,18 +127,36 @@ function usableFieldHeight(el: HTMLElement): number {
 }
 
 /**
- * Isolated clock. Owns the 100ms interval + elapsed state so a timer tick
- * re-renders only this node — not the (up to 60) bubbles in the field.
+ * P1-T4 — isolated Time Attack countdown. Owns the 100ms interval so a tick
+ * re-renders only this node (not the up-to-86 bubbles), and fires `onExpire`
+ * once when the deadline is reached. Turns coral in the final seconds.
  */
-function Timer({ startAt }: { startAt: number }) {
-  const [ms, setMs] = useState(() => Math.max(0, Date.now() - startAt));
+function Countdown({
+  deadline,
+  onExpire,
+  lowMs = 5000,
+}: {
+  deadline: number;
+  onExpire: () => void;
+  lowMs?: number;
+}) {
+  const [left, setLeft] = useState(() => Math.max(0, deadline - Date.now()));
+  const firedRef = useRef(false);
   useEffect(() => {
-    const tick = () => setMs(Math.max(0, Date.now() - startAt));
+    firedRef.current = false;
+    const tick = () => {
+      const l = Math.max(0, deadline - Date.now());
+      setLeft(l);
+      if (l <= 0 && !firedRef.current) {
+        firedRef.current = true;
+        onExpire();
+      }
+    };
     tick();
     const id = window.setInterval(tick, 100);
     return () => window.clearInterval(id);
-  }, [startAt]);
-  return <>{formatTime(ms)}</>;
+  }, [deadline, onExpire]);
+  return <span className={left <= lowMs ? "text-coral" : undefined}>{formatCountdown(left)}</span>;
 }
 
 /** Zen's field: a calm, moderate spread that regenerates endlessly. */
@@ -160,10 +181,15 @@ function PlayPage() {
   const fieldRef = useRef<HTMLDivElement>(null);
   const [bubbles, setBubbles] = useState<BubbleState[]>([]);
   const [startAt, setStartAt] = useState<number | null>(null);
-  const [state, setState] = useState<"ready" | "playing" | "done">("ready");
+  // P1-T4: Time Attack countdown — wall-clock ms when the phase's time runs out.
+  // null in Zen and before the first pop. Extended by a revive.
+  const [deadline, setDeadline] = useState<number | null>(null);
+  const [reviveBusy, setReviveBusy] = useState(false); // rewarded-ad in flight
+  const [state, setState] = useState<"ready" | "playing" | "timeup" | "done">("ready");
   const [result, setResult] = useState<{
     score: number;
     timeMs: number;
+    timeLeftMs: number; // countdown remaining at the moment of clearing
     comboBonus: number;
     maxCombo: number;
   } | null>(null);
@@ -218,6 +244,8 @@ function PlayPage() {
       }),
     );
     setStartAt(null);
+    setDeadline(null);
+    setReviveBusy(false);
     setState("ready");
     setResult(null);
     settledRef.current = false;
@@ -293,6 +321,8 @@ function PlayPage() {
         unlockAudio();
         setStartAt(Date.now());
         setState("playing");
+        // P1-T4: start the Time Attack countdown from the first pop (Zen is timeless).
+        if (!isZen && cfg.timeLimitMs > 0) setDeadline(Date.now() + cfg.timeLimitMs);
       }
       // Combo (feedback-only in Zen; feeds score in Time Attack — see §9). Drives
       // the rising pitch, the milestone flourish, and the HUD (via subscribeCombo).
@@ -352,8 +382,8 @@ function PlayPage() {
 
       scanObjectives(); // §8 — coins + toast if a goal just completed
     },
-    [scanObjectives, mode],
-  ); // stable across a session (mode/scanObjectives don't change), so memo holds
+    [scanObjectives, mode, isZen, cfg.timeLimitMs],
+  ); // constant within a phase (isZen/timeLimit don't change), so <Bubble> memo holds
 
   // Detect phase completion once the field is cleared, and record it exactly
   // once. Kept out of the pop handler's updater so it can't double-submit.
@@ -392,20 +422,18 @@ function PlayPage() {
     if (settledRef.current) return;
     settledRef.current = true;
     const t = startAt !== null ? Date.now() - startAt : 0;
+    const timeLeftMs = deadline !== null ? Math.max(0, deadline - Date.now()) : 0;
     noteRunPhaseCleared(t); // §8/§10
     scanObjectives();
-    track("phase_cleared", {
-      mode,
-      phase,
-      time_left_s: Math.max(0, Math.round((cfg.timeLimitMs - t) / 1000)),
-    }); // P1-T6
-    const base = computeScore(cfg.bubbles, t);
-    // Best-combo × 15 feeds the Time Attack score (§9, mode-resolved).
+    track("phase_cleared", { mode, phase, time_left_s: Math.round(timeLeftMs / 1000) }); // P1-T6
+    // §9: the Time Attack score rewards the countdown time LEFT (clear faster →
+    // keep more time → higher), plus the best-combo bonus + §7 special points.
+    const base = computeTimeAttackScore(cfg.bubbles, timeLeftMs, cfg.timeLimitMs);
     const maxCombo = getMaxCombo();
     const comboBonus =
       maxCombo >= JUICE.combo.minShown ? maxCombo * JUICE.combo.scoreBonusPerCombo : 0;
-    const score = base + comboBonus + bonusPointsRef.current; // + §7 golden/mystery points
-    setResult({ score, timeMs: t, comboBonus, maxCombo });
+    const score = base + comboBonus + bonusPointsRef.current;
+    setResult({ score, timeMs: t, timeLeftMs, comboBonus, maxCombo });
     submit(phase, score, t);
     recordRunPhase(phase, score);
     setState("done");
@@ -413,6 +441,7 @@ function PlayPage() {
     bubbles,
     state,
     startAt,
+    deadline,
     cfg.bubbles,
     cfg.size,
     phase,
@@ -448,29 +477,56 @@ function PlayPage() {
 
   // End of a Time Attack run: total the phases, award coins (§1), fire the
   // run-end interstitial (§2 — a natural break, capped), then celebrate.
-  const goFinish = useCallback(async () => {
-    const rs = getRunStats();
-    commitStats(rs.popped, rs.goldenPopped, rs.maxCombo, true); // §10 cumulative stats
-    checkAchievements();
-    const total = getRunTotal();
-    const { beat, prevBest } = commitRunTotal(total);
-    if (isDaily) recordDailyResult(total); // §12 — daily best + first-play bonus coins
-    const coins = coinsForScore(total);
-    addCoins(coins, "time_attack_run");
-    track("run_end", {
-      mode,
-      difficulty,
-      score: total,
-      phase_reached: phase,
-      bubbles_popped: rs.popped,
-      max_combo: rs.maxCombo,
-      duration_s: Math.round((Date.now() - runStartAtRef.current) / 1000),
-      ended_by: "completed",
-    }); // P1-T6
-    noteRunCompleted();
-    await maybeShowInterstitial("run_end");
-    navigate({ to: "/finish", search: { total, prevBest, beat: beat ? 1 : 0, coins } });
-  }, [navigate, isDaily, mode, difficulty, phase]);
+  const goFinish = useCallback(
+    async (endedBy: "completed" | "timeout" = "completed") => {
+      const rs = getRunStats();
+      commitStats(rs.popped, rs.goldenPopped, rs.maxCombo, true); // §10 cumulative stats
+      checkAchievements();
+      const total = getRunTotal();
+      const { beat, prevBest } = commitRunTotal(total);
+      if (isDaily) recordDailyResult(total); // §12 — daily best + first-play bonus coins
+      const coins = coinsForScore(total);
+      addCoins(coins, "time_attack_run");
+      track("run_end", {
+        mode,
+        difficulty,
+        score: total,
+        phase_reached: phase,
+        bubbles_popped: rs.popped,
+        max_combo: rs.maxCombo,
+        duration_s: Math.round((Date.now() - runStartAtRef.current) / 1000),
+        ended_by: endedBy,
+      }); // P1-T6
+      noteRunCompleted();
+      await maybeShowInterstitial("run_end");
+      navigate({ to: "/finish", search: { total, prevBest, beat: beat ? 1 : 0, coins } });
+    },
+    [navigate, isDaily, mode, difficulty, phase],
+  );
+
+  // P1-T4: the countdown hit 0 with bubbles still up → offer a revive / end run.
+  const handleTimeUp = useCallback(() => {
+    setState((s) => (s === "playing" ? "timeup" : s));
+    track("time_up", { mode, phase });
+  }, [mode, phase]);
+
+  // Revives left this run? (Time Attack only; capped by CONFIG.ads.rewarded.)
+  const canRevive = !isZen && getRunRevives() < CONFIG.ads.rewarded.maxRevivesPerRun;
+
+  // Watch a rewarded ad to add +reviveSeconds and resume the phase.
+  const onRevive = useCallback(async () => {
+    if (reviveBusy) return;
+    setReviveBusy(true);
+    const watched = await showRewarded("revive"); // web/dev simulates success
+    if (watched) {
+      registerRevive(); // run-scoped cap + lifetime stat
+      checkAchievements(); // "use your first revive"
+      track("revive_used", { mode, phase });
+      setDeadline(Date.now() + CONFIG.ads.rewarded.reviveSeconds * 1000);
+      setState("playing");
+    }
+    setReviveBusy(false);
+  }, [reviveBusy, mode, phase]);
 
   const restart = useCallback(() => {
     const el = fieldRef.current;
@@ -489,6 +545,8 @@ function PlayPage() {
       ),
     );
     setStartAt(null);
+    setDeadline(null);
+    setReviveBusy(false);
     setState("ready");
     setResult(null);
     settledRef.current = false;
@@ -551,10 +609,14 @@ function PlayPage() {
         <div className="hud-chip min-w-[3.25rem] justify-center px-3 py-1.5 font-mono text-sm tabular-nums">
           {isZen ? (
             <span aria-hidden>∞</span>
-          ) : state === "playing" && startAt !== null ? (
-            <Timer startAt={startAt} />
+          ) : state === "playing" && deadline !== null ? (
+            <Countdown deadline={deadline} onExpire={handleTimeUp} />
+          ) : state === "timeup" ? (
+            <span className="text-coral">{formatCountdown(0)}</span>
+          ) : state === "done" && result ? (
+            formatCountdown(result.timeLeftMs)
           ) : (
-            formatTime(state === "done" && result ? result.timeMs : 0)
+            formatCountdown(cfg.timeLimitMs)
           )}
         </div>
       </header>
@@ -623,6 +685,38 @@ function PlayPage() {
           {state === "ready" && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <div className="hud-chip px-5 py-2 text-sm font-semibold">{t("play.tapToStart")}</div>
+            </div>
+          )}
+
+          {state === "timeup" && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/70 px-4 backdrop-blur-sm">
+              <div className="zb-dialog">
+                <div className="text-3xl font-extrabold text-accent">{t("play.timeUp")}</div>
+                {canRevive && (
+                  <p className="mx-auto mt-2 max-w-[15rem] text-sm text-muted-foreground">
+                    {t("play.timeUpLine")}
+                  </p>
+                )}
+                <div className="mt-5 flex flex-col gap-2">
+                  {canRevive && (
+                    <button
+                      onClick={onRevive}
+                      disabled={reviveBusy}
+                      className="btn btn-primary w-full gap-1.5"
+                    >
+                      <PlayIcon size={16} />
+                      {t("play.revive", { s: CONFIG.ads.rewarded.reviveSeconds })}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => goFinish("timeout")}
+                    disabled={reviveBusy}
+                    className="btn btn-ghost w-full text-sm"
+                  >
+                    {t("play.endRun")}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

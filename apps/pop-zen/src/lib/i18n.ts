@@ -119,6 +119,11 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "play.nextPhase": "Next phase",
     "play.finish": "Finish",
     "play.replayPhase": "Replay this phase",
+    // P1-T4 — Time Attack countdown / rewarded revive
+    "play.timeUp": "Time's up!",
+    "play.timeUpLine": "Watch a short ad to keep going.",
+    "play.revive": "Revive +{s}s",
+    "play.endRun": "End run",
 
     // Phase names — full phrase (play header)
     phase1: "Extra Large bubbles",
@@ -300,6 +305,11 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "play.nextPhase": "Próxima fase",
     "play.finish": "Concluir",
     "play.replayPhase": "Repetir esta fase", // NOT in spec table — review
+    // P1-T4 — Time Attack countdown / rewarded revive
+    "play.timeUp": "Tempo esgotado!",
+    "play.timeUpLine": "Assista a um anúncio curto para continuar.",
+    "play.revive": "Reviver +{s}s",
+    "play.endRun": "Encerrar",
 
     // Phase names — full phrase (play header)
     phase1: "Bolhas extragrandes",
