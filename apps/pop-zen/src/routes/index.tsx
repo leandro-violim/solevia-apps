@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
 import bubbleImg from "../assets/bubbles/real-bubble-full.webp";
 import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
 import { DailyBonus } from "../components/DailyBonus";
@@ -9,7 +8,6 @@ import { DailyChallengeCard } from "../components/DailyChallengeCard";
 import { t } from "../lib/i18n";
 import { unlockAudio } from "../lib/pop-sound";
 import { trackModeSelected } from "../lib/mode";
-import type { Difficulty } from "../lib/config";
 import { TrophyIcon } from "../components/icons";
 
 export const Route = createFileRoute("/")({
@@ -32,7 +30,6 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   return (
     <div
       className="screen-fade relative flex min-h-dvh flex-col items-center justify-between px-6 pt-14 text-center"
@@ -107,35 +104,7 @@ function Home() {
             {t("home.zen")}
           </Link>
 
-          {/* Time Attack: race the clock, phases + difficulty. */}
-          <Link
-            to="/play"
-            search={{ mode: "time-attack", phase: 1, difficulty, daily: 0 }}
-            onClick={() => {
-              unlockAudio();
-              trackModeSelected("time-attack");
-            }}
-            className="btn btn-secondary w-full py-3.5 text-base"
-          >
-            {t("home.timeAttack")}
-          </Link>
-          <div className="flex items-center justify-center gap-2">
-            {(["easy", "normal", "hard"] as Difficulty[]).map((d) => (
-              <button
-                key={d}
-                onClick={() => setDifficulty(d)}
-                className={`rounded-full px-3 py-1 text-xs transition-colors ${
-                  difficulty === d
-                    ? "bg-primary font-semibold text-primary-foreground shadow-sm"
-                    : "font-medium text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t(`home.diff${d[0].toUpperCase()}${d.slice(1)}`)}
-              </button>
-            ))}
-          </div>
-
-          {/* §12 date-seeded daily challenge */}
+          {/* The daily challenge — the timed mode (date-seeded, one loop/day). */}
           <DailyChallengeCard />
 
           <Link to="/records" className="btn btn-ghost w-full text-sm">

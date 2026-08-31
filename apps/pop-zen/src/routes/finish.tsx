@@ -211,7 +211,7 @@ function FinishPage() {
           onClick={() =>
             navigate({
               to: "/play",
-              search: { phase: 1, mode: "time-attack", difficulty: "normal", daily: 0 },
+              search: { phase: 1, mode: "time-attack", difficulty: "normal", daily: 1 },
             })
           }
           className="btn btn-primary w-full py-4 text-base"
