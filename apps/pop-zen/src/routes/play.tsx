@@ -36,7 +36,7 @@ import { track } from "../lib/analytics";
 import { equippedThemeImage, unlockZenSkins } from "../lib/skins";
 import { ObjectivesHud } from "../components/ObjectivesHud";
 import { CoinIcon, PlayIcon } from "../components/icons";
-import fieldWrap from "../assets/scene/field-bubblewrap.webp";
+import fieldSheet from "../assets/scene/field-sheet.webp";
 import {
   computeTimeAttackScore,
   difficultyPhase,
@@ -629,19 +629,27 @@ function PlayPage() {
         <div
           ref={fieldRef}
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10"
-          style={{ backgroundColor: "var(--bg-0)" }}
+          style={{
+            isolation: "isolate",
+            // Brand navy with an aqua glow — the colour the real bubble-wrap photo
+            // above gets tinted by (the approved zen-final-look recipe).
+            background:
+              "radial-gradient(130% 110% at 50% 22%, rgba(51,224,198,0.32), transparent 62%), linear-gradient(180deg, #16283f 0%, #0b1020 100%)",
+          }}
         >
-          {/* A real bubble-wrap sheet on the back, recoloured to the app's navy →
-              aqua brand palette and rendered FULLY OPAQUE (not gray, not
-              see-through) so the field matches the rest of the app. The live
-              bubbles stay foreground via their gloss + drop shadow. Lazy WebP. */}
+          {/* Realism: the REAL crinkly bubble-wrap photo, blended (overlay) onto
+              the navy+aqua glow so the clear plastic reads teal — fully opaque,
+              clearly visible, matching the app. Live bubbles stay foreground via
+              their gloss + drop shadow. Lazy WebP. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{
-              backgroundImage: `url(${fieldWrap})`,
+              backgroundImage: `url(${fieldSheet})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
+              opacity: 0.9,
+              mixBlendMode: "overlay",
             }}
           />
           {bubbles.map((b) => (
