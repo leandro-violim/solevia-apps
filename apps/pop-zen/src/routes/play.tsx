@@ -641,8 +641,8 @@ function PlayPage() {
               backgroundImage: `url(${level1Bg})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
-              opacity: 0.4,
-              filter: "brightness(0.9) blur(1px)",
+              opacity: 0.8, // only ~20% transparent — the wrap reads clearly
+              filter: "brightness(0.82) blur(1px)",
             }}
           />
           {bubbles.map((b) => (
