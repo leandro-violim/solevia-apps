@@ -64,6 +64,20 @@ const STRINGS: Record<Lang, Record<string, string>> = {
 
     // Onboarding + loading (P1-T10)
     "onboarding.title": "How to Play",
+    "onboarding.intro": "Two ways to play:",
+    "onboarding.challengeTitle": "Pop Challenge",
+    "onboarding.challengeTag": "Timed",
+    "onboarding.challengeRule1": "Clear every bubble in a stage before the timer runs out.",
+    "onboarding.challengeRule2":
+      "Pop in quick succession to chain combos — bigger chains score more.",
+    "onboarding.challengeRule3":
+      "Every 8 stages you enter a new world with a twist: off-grid, then drifting, then shielded bubbles.",
+    "onboarding.challengeRule4":
+      "Earn coins to buy Bombs & Time Freeze, and watch a video to revive when time runs out.",
+    "onboarding.funTitle": "Pop for Fun",
+    "onboarding.funTag": "Relaxed · endless",
+    "onboarding.funDesc":
+      "No timer, no score — just pop to unwind. A fresh sheet appears each time you clear one.",
     "onboarding.step1": "Tap the bubbles to pop them — feel each one.",
     "onboarding.step2": "Clear every bubble to finish a phase. They shrink as you go.",
     "onboarding.step3": "Pop fast for combos and beat your best score.",
@@ -274,6 +288,20 @@ const STRINGS: Record<Lang, Record<string, string>> = {
 
     // Onboarding + loading (P1-T10)
     "onboarding.title": "Como Jogar",
+    "onboarding.intro": "Duas formas de jogar:",
+    "onboarding.challengeTitle": "Desafio Pop",
+    "onboarding.challengeTag": "Contra o tempo",
+    "onboarding.challengeRule1": "Estoure todas as bolhas de uma fase antes do tempo acabar.",
+    "onboarding.challengeRule2":
+      "Estoure em sequência para emendar combos — sequências maiores pontuam mais.",
+    "onboarding.challengeRule3":
+      "A cada 8 fases você entra em um novo mundo com uma novidade: fora da linha, depois flutuantes e com escudos.",
+    "onboarding.challengeRule4":
+      "Ganhe moedas para comprar Bombas e Congelar Tempo, e assista a um vídeo para reviver quando o tempo acabar.",
+    "onboarding.funTitle": "Pop por Diversão",
+    "onboarding.funTag": "Relaxante · infinito",
+    "onboarding.funDesc":
+      "Sem tempo, sem pontuação — só estoure para relaxar. Uma nova cartela aparece a cada vez que você limpa a tela.",
     "onboarding.step1": "Toque nas bolhas para estourá-las — sinta cada uma.",
     "onboarding.step2": "Estoure todas para concluir uma fase. Elas diminuem conforme você avança.",
     "onboarding.step3": "Estoure rápido para combos e supere seu recorde.",

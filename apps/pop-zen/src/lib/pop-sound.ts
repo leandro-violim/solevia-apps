@@ -74,8 +74,15 @@ async function loadBuffers(ac: AudioContext): Promise<void> {
   }
 }
 
-/** Call from the first user gesture to unlock iOS audio AND warm the samples. */
+/**
+ * Call from the first user gesture to unlock iOS audio AND warm the samples.
+ * If the context was left "interrupted"/"closed" by backgrounding, rebuild it
+ * here — inside the gesture — so the very first pop of a phase always sounds,
+ * even after the app was minimized and reopened.
+ */
 export function unlockAudio(): void {
+  const st = ctx?.state as string | undefined;
+  if (ctx && (st === "interrupted" || st === "closed")) resetAudio();
   const ac = getCtx();
   if (ac) {
     getBus(ac);
@@ -114,30 +121,24 @@ export function resumeAudio(): void {
   if (buffers.length !== SOURCES.length) void loadBuffers(ac); // re-decode if dropped
 }
 
-/** Suspend the audio context so any in-flight pop tail is silenced at once. */
-export function suspendAudio(): void {
-  if (ctx && ctx.state === "running") void ctx.suspend().catch(() => {});
-}
-
+// Pops are momentary one-shots (~0.3s), so there's nothing to hard-stop on
+// minimize — the looping piano is what needs silencing (handled in music.ts).
+// We only need to RECOVER the pop bus when the app returns to the foreground:
+// iOS leaves the WebAudio context "interrupted" after backgrounding, and the
+// WKWebView doesn't reliably fire `visibilitychange`, so listen to both.
 if (typeof document !== "undefined") {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") resumeAudio();
-    else suspendAudio(); // minimize → silence immediately
   });
 }
 
-// Native app background → foreground: the WKWebView doesn't always fire
-// `visibilitychange`, and iOS leaves the audio session interrupted, so recover
-// the pop bus on every resume. Dynamically imported so it's client/native-only.
 if (typeof window !== "undefined") {
   void import("@capacitor/app")
     .then(({ App }) => {
       void App.addListener("appStateChange", ({ isActive }) => {
         if (isActive) resumeAudio();
-        else suspendAudio(); // background → silence immediately
       }).catch(() => {});
       void App.addListener("resume", () => resumeAudio()).catch(() => {});
-      void App.addListener("pause", () => suspendAudio()).catch(() => {});
     })
     .catch(() => {});
 }
