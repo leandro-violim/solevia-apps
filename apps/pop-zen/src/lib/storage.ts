@@ -22,9 +22,8 @@ export type StreakState = {
 };
 
 export type SkinsState = {
-  owned: string[]; // skin + theme ids the player owns
+  owned: string[]; // owned bubble-skin ids
   equippedSkin: string;
-  equippedTheme: string;
 };
 
 export type AchievementsState = {
@@ -68,9 +67,8 @@ function defaults(): PlayerState {
       freezeWeek: null,
     },
     skins: {
-      owned: ["skin-classic", "bg-soft-light"],
+      owned: ["skin-classic"],
       equippedSkin: "skin-classic",
-      equippedTheme: "bg-soft-light",
     },
     achievements: { unlocked: [], progress: {} },
     stats: {

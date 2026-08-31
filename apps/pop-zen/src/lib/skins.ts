@@ -27,14 +27,9 @@ import skinGold from "../assets/skins/skin-gold.webp";
 import zenPastel from "../assets/skins/zen-pastel.webp";
 import zenMint from "../assets/skins/zen-mint.webp";
 import zenLavender from "../assets/skins/zen-lavender.webp";
-// Background themes (full-screen).
-import bgSoftLight from "../assets/backgrounds/bg-soft-light.webp";
-import bgSunset from "../assets/backgrounds/bg-sunset.webp";
-import bgDeepSea from "../assets/backgrounds/bg-deep-sea.webp";
-import bgStarfield from "../assets/backgrounds/bg-starfield.webp";
 
 export type Rarity = "starter" | "common" | "uncommon" | "rare" | "premium";
-export type ItemKind = "skin" | "theme";
+export type ItemKind = "skin";
 
 export type CosmeticDef = {
   id: string;
@@ -43,7 +38,6 @@ export type CosmeticDef = {
   rarity: Rarity;
   thumb: string; // shop preview image (real art)
   bubbleFilter?: string; // skins: CSS tint applied to bubble art in-game
-  image?: string; // themes: full-screen backdrop behind the play field
   premiumGated?: boolean; // premium: also unlockable via streak / rewarded
   zen?: boolean; // Zen Mode set (auto-unlocked when Zen is played)
 };
@@ -124,52 +118,16 @@ export const ZEN_SKINS: CosmeticDef[] = [
   },
 ];
 
-export const THEMES: CosmeticDef[] = [
-  {
-    id: "bg-soft-light",
-    name: "Soft Light",
-    kind: "theme",
-    rarity: "starter",
-    thumb: bgSoftLight,
-    image: bgSoftLight,
-  },
-  {
-    id: "bg-sunset",
-    name: "Sunset",
-    kind: "theme",
-    rarity: "common",
-    thumb: bgSunset,
-    image: bgSunset,
-  },
-  {
-    id: "bg-deep-sea",
-    name: "Deep Sea",
-    kind: "theme",
-    rarity: "common",
-    thumb: bgDeepSea,
-    image: bgDeepSea,
-  },
-  {
-    id: "bg-starfield",
-    name: "Starfield",
-    kind: "theme",
-    rarity: "common",
-    thumb: bgStarfield,
-    image: bgStarfield,
-  },
-];
-
-export const ALL_COSMETICS: CosmeticDef[] = [...SKINS, ...ZEN_SKINS, ...THEMES];
+export const ALL_COSMETICS: CosmeticDef[] = [...SKINS, ...ZEN_SKINS];
 const ALL_SKINS = [...SKINS, ...ZEN_SKINS];
 
 export function getCosmetic(id: string): CosmeticDef | undefined {
   return ALL_COSMETICS.find((c) => c.id === id);
 }
 
-/** Price by rarity; starter = free, themes use the flat background price. */
+/** Price by rarity; starter = free. */
 export function priceOf(item: CosmeticDef): number {
   if (item.rarity === "starter") return 0;
-  if (item.kind === "theme") return CONFIG.skins.prices.background;
   return CONFIG.skins.prices[item.rarity];
 }
 
@@ -177,8 +135,7 @@ export function isOwned(id: string): boolean {
   return load().skins.owned.includes(id);
 }
 export function isEquipped(id: string): boolean {
-  const s = load().skins;
-  return s.equippedSkin === id || s.equippedTheme === id;
+  return load().skins.equippedSkin === id;
 }
 export function ownedSkinCount(): number {
   return load().skins.owned.filter((id) => ALL_SKINS.some((s) => s.id === id)).length;
@@ -212,11 +169,9 @@ export function unlockZenSkins(): void {
 }
 
 export function equip(id: string): void {
-  const item = getCosmetic(id);
-  if (!item || !isOwned(id)) return;
+  if (!getCosmetic(id) || !isOwned(id)) return;
   update((st) => {
-    if (item.kind === "skin") st.skins.equippedSkin = id;
-    else st.skins.equippedTheme = id;
+    st.skins.equippedSkin = id;
   });
   track("skin_equipped", { item_id: id });
 }
@@ -224,15 +179,8 @@ export function equip(id: string): void {
 export function equippedSkin(): CosmeticDef {
   return getCosmetic(load().skins.equippedSkin) ?? SKINS[0];
 }
-export function equippedTheme(): CosmeticDef {
-  return getCosmetic(load().skins.equippedTheme) ?? THEMES[0];
-}
 
 /** CSS filter for the equipped bubble skin (undefined for Classic). */
 export function equippedBubbleFilter(): string | undefined {
   return equippedSkin().bubbleFilter;
-}
-/** Full-screen backdrop image for the equipped theme (or undefined). */
-export function equippedThemeImage(): string | undefined {
-  return equippedTheme().image;
 }

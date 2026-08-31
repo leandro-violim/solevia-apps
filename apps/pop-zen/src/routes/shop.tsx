@@ -4,7 +4,6 @@ import { CoinBalance } from "../components/CoinBalance";
 import {
   SKINS,
   ZEN_SKINS,
-  THEMES,
   type CosmeticDef,
   priceOf,
   isOwned,
@@ -84,14 +83,6 @@ function ShopPage() {
       <Section
         title={t("shop.zenSkins")}
         items={ZEN_SKINS}
-        onBuy={onBuy}
-        onEquip={onEquip}
-        onWatch={onWatchDiscount}
-        busy={busy}
-      />
-      <Section
-        title={t("shop.themes")}
-        items={THEMES}
         onBuy={onBuy}
         onEquip={onEquip}
         onWatch={onWatchDiscount}
