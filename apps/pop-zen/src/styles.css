@@ -378,7 +378,13 @@
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.45);
+  /* Leandro's "shadow" pick — a soft grounded drop shadow that lifts the bubble
+     off the wrap. Done with box-shadow (GPU-composited, cheap even while the
+     bubbles float) rather than a drop-shadow filter, which repaints every frame
+     under the float animation and made dense phases lag. */
+  box-shadow:
+    0 6px 15px rgba(0, 0, 0, 0.45),
+    0 3px 6px rgba(0, 0, 0, 0.5);
   transition:
     transform 0.28s cubic-bezier(0.34, 1.4, 0.5, 1),
     opacity 0.3s,

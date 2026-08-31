@@ -152,9 +152,8 @@ export const Bubble = memo(function Bubble({
           inset: 0,
           backgroundImage: `url(${popped ? poppedSrc : fullSrc})`,
           ["--rot" as string]: rotRef.current,
-          // Locked "shadow" readability style: a soft drop shadow lifts the
-          // poppable bubble off the background wrap (Leandro's pick).
-          filter: !popped ? "drop-shadow(0 5px 6px rgba(0,0,0,0.5))" : undefined,
+          // The "shadow" readability look now comes from .zb's box-shadow (cheap),
+          // not a per-bubble drop-shadow filter that repainted every float frame.
         }}
       />
       {look && !popped && (
