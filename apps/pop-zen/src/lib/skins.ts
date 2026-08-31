@@ -28,6 +28,38 @@ import zenPastel from "../assets/skins/zen-pastel.webp";
 import zenMint from "../assets/skins/zen-mint.webp";
 import zenLavender from "../assets/skins/zen-lavender.webp";
 
+// Per-skin in-game bubble sprites — bespoke single-bubble art (Cowork/Higgsfield),
+// one glossy bubble per skin in its own colour/material, so an equipped bubble
+// looks like exactly what was bought. Classic keeps the default real bubble.
+import neonFull from "../assets/bubbles/skins/skin-neon-full.webp";
+import neonPop from "../assets/bubbles/skins/skin-neon-popped.webp";
+import oceanFull from "../assets/bubbles/skins/skin-ocean-full.webp";
+import oceanPop from "../assets/bubbles/skins/skin-ocean-popped.webp";
+import sunsetFull from "../assets/bubbles/skins/skin-sunset-full.webp";
+import sunsetPop from "../assets/bubbles/skins/skin-sunset-popped.webp";
+import nightFull from "../assets/bubbles/skins/skin-night-full.webp";
+import nightPop from "../assets/bubbles/skins/skin-night-popped.webp";
+import goldFull from "../assets/bubbles/skins/skin-gold-full.webp";
+import goldPop from "../assets/bubbles/skins/skin-gold-popped.webp";
+import zpFull from "../assets/bubbles/skins/zen-pastel-full.webp";
+import zpPop from "../assets/bubbles/skins/zen-pastel-popped.webp";
+import zmFull from "../assets/bubbles/skins/zen-mint-full.webp";
+import zmPop from "../assets/bubbles/skins/zen-mint-popped.webp";
+import zlFull from "../assets/bubbles/skins/zen-lavender-full.webp";
+import zlPop from "../assets/bubbles/skins/zen-lavender-popped.webp";
+
+export type BubbleSprite = { full: string; popped: string };
+const BUBBLE_SPRITES: Record<string, BubbleSprite> = {
+  "skin-neon": { full: neonFull, popped: neonPop },
+  "skin-ocean": { full: oceanFull, popped: oceanPop },
+  "skin-sunset": { full: sunsetFull, popped: sunsetPop },
+  "skin-night": { full: nightFull, popped: nightPop },
+  "skin-gold": { full: goldFull, popped: goldPop },
+  "zen-pastel": { full: zpFull, popped: zpPop },
+  "zen-mint": { full: zmFull, popped: zmPop },
+  "zen-lavender": { full: zlFull, popped: zlPop },
+};
+
 export type Rarity = "starter" | "common" | "uncommon" | "rare" | "premium";
 export type ItemKind = "skin";
 
@@ -206,11 +238,9 @@ export function equippedBubbleTint(): string | undefined {
 }
 
 /**
- * The equipped skin's art, used as a MATERIAL overlay on the in-game bubble so
- * it reads like the bubble wrap you actually bought (its finish/texture), not
- * just a recolour. Undefined for Classic (the plain real bubble).
+ * The equipped skin's real in-game bubble sprite pair (full + popped). Undefined
+ * for Classic → the default bubble is used.
  */
-export function equippedSkinImage(): string | undefined {
-  const s = equippedSkin();
-  return s.id === "skin-classic" ? undefined : s.thumb;
+export function equippedBubbleSprite(): BubbleSprite | undefined {
+  return BUBBLE_SPRITES[load().skins.equippedSkin];
 }
