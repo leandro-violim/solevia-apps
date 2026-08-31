@@ -31,6 +31,7 @@ import {
 import { runConsentAndTracking } from "@solevia/consent";
 import { CONFIG } from "./config";
 import { track } from "./analytics";
+import { resumeAudio } from "./pop-sound";
 
 const IS_NATIVE = Capacitor.isNativePlatform();
 const PLATFORM = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
@@ -271,6 +272,9 @@ export async function showInterstitial(): Promise<boolean> {
       clearTimeout(timer);
       interstitialReady = false;
       handles.forEach((h) => h.remove());
+      // F5: the interstitial took the native audio focus — resume + re-prime the
+      // WebAudio pop bus so pops aren't silent afterward.
+      resumeAudio();
       resolve(shown);
       // Warm up the next one for the following ad break.
       void preloadInterstitial();
@@ -393,6 +397,7 @@ export async function showRewarded(placement: string): Promise<boolean> {
       clearTimeout(timer);
       rewardedReady = false;
       handles.forEach((h) => h.remove());
+      resumeAudio(); // F5: same audio-focus recovery after a rewarded ad (P1-T4 revive)
       track(earned ? "rewarded_watched" : "rewarded_skipped", { placement });
       resolve(earned);
       void preloadRewarded(); // warm up the next one

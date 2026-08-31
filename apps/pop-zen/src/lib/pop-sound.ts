@@ -91,11 +91,23 @@ export function resetAudio(): void {
   buffers = [];
 }
 
+/**
+ * F5: resume the audio context + re-prime the sample pool. A full-screen ad
+ * (interstitial/rewarded) takes the native audio focus and leaves the WebAudio
+ * context suspended; the native ad overlay doesn't fire `visibilitychange`, so
+ * the ad's own dismiss callback (ads.ts) must call this or pops go silent. Also
+ * used by the visibilitychange guard for web backgrounding. Cheap + idempotent.
+ */
+export function resumeAudio(): void {
+  const ac = getCtx(); // getCtx() resumes a non-running context
+  if (!ac) return;
+  getBus(ac);
+  if (buffers.length !== SOURCES.length) void loadBuffers(ac); // re-decode if dropped
+}
+
 if (typeof document !== "undefined") {
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && ctx && ctx.state !== "running") {
-      void ctx.resume();
-    }
+    if (document.visibilityState === "visible") resumeAudio();
   });
 }
 
