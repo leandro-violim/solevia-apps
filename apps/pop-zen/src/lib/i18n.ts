@@ -87,6 +87,10 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "obj.phases": "Clear {n} phases",
     "obj.fast": "Clear a phase < {n}s",
     "obj.complete": "Objective! +{coins}",
+    "challenge.goalsTitle": "Today's goals",
+    "challenge.goalsHint": "Tap any bubble to start",
+    "challenge.progressTitle": "Challenge progress",
+    "challenge.allDone": "All goals complete!",
 
     // Achievements (§10)
     "ach.title": "Achievements",
@@ -274,6 +278,10 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "obj.phases": "Complete {n} fases",
     "obj.fast": "Complete uma fase < {n}s",
     "obj.complete": "Objetivo! +{coins}",
+    "challenge.goalsTitle": "Metas de hoje",
+    "challenge.goalsHint": "Toque em qualquer bolha para começar",
+    "challenge.progressTitle": "Progresso do desafio",
+    "challenge.allDone": "Todas as metas concluídas!",
 
     // Achievements (§10)
     "ach.title": "Conquistas",

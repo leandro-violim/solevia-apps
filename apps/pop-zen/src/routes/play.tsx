@@ -19,7 +19,7 @@ import { JUICE } from "../lib/juice";
 import { CONFIG } from "../lib/config";
 import { addCoins, coinsForScore, coinsForZenBubbles } from "../lib/economy";
 import { rollMysteryReward, type SpecialType } from "../lib/specials";
-import { rollObjectives, checkObjectives, type Objective } from "../lib/objectives";
+import { rollObjectives, checkObjectives, nextObjective, type Objective } from "../lib/objectives";
 import {
   resetRunStats,
   noteRunPop,
@@ -34,7 +34,7 @@ import { checkAchievements } from "../lib/achievements";
 import { seededRand, recordDailyResult } from "../lib/daily-challenge";
 import { track } from "../lib/analytics";
 import { unlockZenSkins } from "../lib/skins";
-import { ObjectivesHud } from "../components/ObjectivesHud";
+import { ChallengeGoals } from "../components/ChallengeGoals";
 import { CoinIcon, PlayIcon } from "../components/icons";
 import fieldSheet from "../assets/scene/field-sheet.webp";
 import {
@@ -240,6 +240,13 @@ function PlayPage() {
   const scanObjectives = useCallback(() => {
     const newly = checkObjectives(objectivesRef.current, completedRef.current);
     if (newly.length > 0) {
+      // Replace each completed goal with a fresh, harder one so goals never run out.
+      let list = objectivesRef.current;
+      for (const done of newly) {
+        list = list.filter((o) => o.id !== done.id);
+        list = [...list, nextObjective(list)];
+      }
+      objectivesRef.current = list;
       setObjToast(newly[newly.length - 1]);
       setObjVersion((v) => v + 1);
     }
@@ -718,12 +725,8 @@ function PlayPage() {
           {/* Combo readout + milestone flourish (feedback-only). */}
           <ComboHud />
 
-          {/* §8 per-run objectives (top-left) + a completion toast. */}
-          <ObjectivesHud
-            key={objVersion}
-            objectives={objectivesRef.current}
-            completed={completedRef.current}
-          />
+          {/* §8 objective-complete toast — brief, centered (no longer a top-left
+              overlay covering a bubble). */}
           {objToast && (
             <div className="pointer-events-none absolute inset-x-0 top-16 z-10 flex justify-center">
               <div className="zc-milestone inline-flex items-center gap-1">
@@ -734,8 +737,28 @@ function PlayPage() {
           )}
 
           {state === "ready" && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="hud-chip px-5 py-2 text-sm font-semibold">{t("play.tapToStart")}</div>
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4">
+              {!isZen && phase === 1 && objectivesRef.current.length > 0 ? (
+                // Pop Challenge intro: show today's goals before the run starts.
+                <div className="zbonus-card w-full max-w-xs rounded-2xl border border-white/10 bg-popover p-5 text-center shadow-xl">
+                  <div className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+                    {t("challenge.goalsTitle")}
+                  </div>
+                  <div className="mt-3">
+                    <ChallengeGoals
+                      objectives={objectivesRef.current}
+                      completed={completedRef.current}
+                    />
+                  </div>
+                  <div className="mt-4 text-sm font-semibold text-primary">
+                    {t("challenge.goalsHint")}
+                  </div>
+                </div>
+              ) : (
+                <div className="hud-chip px-5 py-2 text-sm font-semibold">
+                  {t("play.tapToStart")}
+                </div>
+              )}
             </div>
           )}
 
@@ -796,6 +819,20 @@ function PlayPage() {
                       })
                     : null}
                 </div>
+                {!isZen && objectivesRef.current.length > 0 && (
+                  // How close you are to the challenge goals, after each phase.
+                  <div className="mt-3 rounded-lg bg-white/5 p-3">
+                    <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">
+                      {t("challenge.progressTitle")}
+                    </div>
+                    <ChallengeGoals
+                      key={objVersion}
+                      objectives={objectivesRef.current}
+                      completed={completedRef.current}
+                      showProgress
+                    />
+                  </div>
+                )}
                 {isLast && (
                   <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs italic text-foreground">
                     “{finaleQuote}”
