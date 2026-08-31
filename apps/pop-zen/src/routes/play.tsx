@@ -708,7 +708,7 @@ function PlayPage() {
       maxCombo >= JUICE.combo.minShown ? maxCombo * JUICE.combo.scoreBonusPerCombo : 0;
     const score = base + comboBonus + bonusPointsRef.current;
     setResult({ score, timeMs: t, timeLeftMs, comboBonus, maxCombo });
-    submit(pir, score, t); // best-per-phase, aggregated across worlds/rounds
+    submit(phase, score, t); // best per STAGE — each world tracks its own best
     recordRunPhase(phase, score); // run continuity is keyed by the global stage
     setState("done");
   }, [
@@ -729,7 +729,7 @@ function PlayPage() {
     cfg.timeLimitMs,
   ]);
 
-  const record = records[pir];
+  const record = records[phase];
   const isLast = phase >= TOTAL_STAGES;
   const isNewBestScore = !!result && result.score > (record?.prevBestScore ?? 0);
   const isNewBestTime =

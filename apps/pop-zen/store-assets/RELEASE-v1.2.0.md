@@ -18,7 +18,7 @@ compliance, and battery — findings and the two **must-do** items are near the 
 | App Store adam id | 6797921737 |
 | AdMob account | `pub-9628521678374705` (iOS app `~5486523715`, Android app `~9477972092`) |
 | Developer | Sole Via Entertainment LLC (Florida) · support: hello@solevia.app |
-| Availability | **US-only** today (keep US-only unless we consciously expand — see Decisions) |
+| Availability | **US, Canada, New Zealand, Australia, India, Brazil** (same as today). None are EEA/UK, so the ads/analytics consent gating is not required for this list. |
 
 Versions are correctly incremented over the shipped 1.0.x — no bump needed. If you
 re-upload a build, bump only the build number (iOS `CURRENT_PROJECT_VERSION`, Android
@@ -57,43 +57,57 @@ see **`store-assets/whats-new.md`**.
 
 ---
 
-## 4. ⚠️ Must do before submitting (2 items)
+## 4. ⚠️ Must do before submitting — Cowork tasks
 
-**A. Replace the placeholder rewarded ad unit IDs.**
-`apps/pop-zen/src/lib/ads.ts` — `LIVE_IDS.ios.rewarded` and `LIVE_IDS.android.rewarded`
-are still Google's **sample/test** unit ids (`ca-app-pub-3940256099942544/…`). Google
-sample units always serve a "Test Ad," so in production every rewarded placement
-(Revive, earn-coins) would show a **test ad to real users** — an AdMob policy risk and
-zero rewarded revenue. **Create real rewarded units** in the AdMob console for both the
-iOS and Android app, then paste the two ids into `ads.ts` and rebuild. (Banner and
-interstitial LIVE ids are already real — only rewarded is affected.)
+**A. Create the rewarded ad units, and produce a master ad-unit list.**
+`apps/pop-zen/src/lib/ads.ts` still has Google's **sample/test** ids for the *rewarded*
+placements (`LIVE_IDS.ios.rewarded` / `LIVE_IDS.android.rewarded` =
+`ca-app-pub-3940256099942544/…`). Sample units always serve a "Test Ad," so in
+production the Revive / earn-coins rewarded ads would show a **test ad to real users**
+(AdMob policy risk + zero rewarded revenue).
 
-**B. Update the privacy disclosures for the new analytics.**
+> **Cowork:** In the AdMob console for account `pub-9628521678374705`, **create real
+> Rewarded ad units** for both the **iOS** app (`~5486523715`) and the **Android** app
+> (`~9477972092`). Then produce a clean, well-formatted **master document listing every
+> Pop Zen (Zen Bubbles) ad unit id** — for each platform (iOS + Android) and each format
+> (Banner, Interstitial, Rewarded) — with the unit name and its `ca-app-pub-…/…` id.
+> Hand that list back so the two new Rewarded ids get pasted into `ads.ts` (a
+> `// TODO(admob): paste real rewarded unit id` marker is already at each spot).
+> Confirm the existing banner/interstitial live ids in the file still match the console.
+
+**B. Complete the store privacy declarations, then do your own compliance pass.**
 This version added **Google Analytics for Firebase** (anonymous gameplay/usage events).
-The in-app Privacy Policy is already updated in code (discloses it + the Settings
-opt-out). You still need to update the **store-side** declarations:
-- **iOS App Privacy label (App Store Connect)** — add **Usage Data → Product Interaction / Analytics** (in addition to the existing AdMob advertising data). Not linked to identity; not used for tracking.
+The in-app Privacy Policy is already updated in code (discloses analytics + the Settings
+opt-out). The **store-side** declarations still need updating:
+- **iOS App Privacy label (App Store Connect)** — add **Usage Data → Product Interaction / Analytics** (alongside the existing AdMob advertising data). Not linked to identity; not used for tracking.
 - **Android Data Safety form (Play Console)** — add **App activity / Analytics** and the analytics identifier, on top of the AdMob Advertising ID already declared.
 - If the hosted privacy page (solevia.app) mirrors the in-app policy, update it too. `app-ads.txt` is unchanged.
 
+> **Cowork:** Please treat the two lists above as the known minimum, then do your **own
+> final compliance review** of both stores' current requirements (App Store Review
+> Guidelines + App Privacy; Google Play Data Safety, Ads, Families/Target-audience,
+> and the DSA trader status for the target countries) and **add anything else you
+> believe the stores now require** on top of what's here. Flag any gap back to Leandro
+> before submitting.
+
 ---
 
-## 5. Decisions for Leandro (not blockers — your call)
+## 5. Decisions — RESOLVED (recorded here for the file)
 
-1. **Keep US-only, or expand?** Analytics currently initializes without gating on the
-   consent prompt. That's fine for the US launch, but before shipping to the **EEA/UK**
-   we should gate analytics behind the UMP consent signal (and the EU DSA trader-status
-   requirement kicks in). Recommendation: **stay US-only for 1.2.0**, expand in a later
-   pass once analytics-consent gating is added.
-2. **App size (~5 MB).** The equipped-skin bubble art is ~2.3 MB (near-lossless WebP,
-   kept lossless to avoid iOS gradient banding). It's **lazy-loaded** (only the equipped
-   skin downloads; default "Classic" doesn't touch it), so no launch cost. Leave as-is
-   for quality, or I can trim to ~256px lossy (~0.5 MB) and re-verify banding on device.
-3. **Worlds 2–4 "best score".** Per-phase records are aggregated across worlds, so the
-   harder worlds rarely register a new "best" (World 1 usually holds it). Intentional,
-   but if you'd rather each world track its own best, I can key records per stage.
-4. **Android `allowBackup`** is `true` (cloud-backs-up coins/streak; no PII). Fine, or
-   set `false` if you'd prefer local-only.
+1. **Availability** = US, Canada, New Zealand, Australia, India, Brazil (unchanged).
+   None are EEA/UK, so analytics/ads run with the in-app opt-out and ATT/UMP as today;
+   no consent-gating code change is needed for this country list. (If the list ever
+   adds an EEA/UK country, analytics must first be gated behind UMP consent.)
+2. **App size** — **keep the ~2.3 MB near-lossless skin art as-is** (lazy-loaded, no
+   launch cost, best quality / no iOS banding). No change.
+3. **Per-world best scores** — **DONE in this release.** Records are now keyed per stage,
+   so each of the four worlds tracks its own best score/time, and the Records screen is
+   grouped by world (World 1–4, each with its 8 phases).
+4. **Android `allowBackup = true`** — **keep it.** This lets Android auto-back-up the
+   local game data (coins, streak, owned skins, inventory) to the player's own Google
+   Drive, so progress restores after a reinstall or a new phone. No personal info is in
+   that data — only game state — so leaving it on is the player-friendly choice. (Set it
+   to `false` only if you specifically want progress to be lost on uninstall.)
 
 ---
 

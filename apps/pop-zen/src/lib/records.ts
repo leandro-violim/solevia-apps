@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { TOTAL_PHASES } from "./game-config";
+import { TOTAL_STAGES } from "./game-config";
 
 export type PhaseRecord = {
   bestScore: number;
@@ -38,7 +38,7 @@ function blank(): PhaseRecord {
 
 function emptyRecords(): RecordsMap {
   const out: RecordsMap = {};
-  for (let i = 1; i <= TOTAL_PHASES; i++) out[i] = blank();
+  for (let i = 1; i <= TOTAL_STAGES; i++) out[i] = blank();
   return out;
 }
 
@@ -80,7 +80,7 @@ export function parseStoredRecords(raw: string | null): RecordsMap {
   try {
     const phases = extractPhases(JSON.parse(raw));
     const merged = emptyRecords();
-    for (let i = 1; i <= TOTAL_PHASES; i++) {
+    for (let i = 1; i <= TOTAL_STAGES; i++) {
       const c = coercePhase(phases[i]);
       if (c) merged[i] = c;
     }
