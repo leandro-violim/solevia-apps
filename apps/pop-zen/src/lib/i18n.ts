@@ -182,6 +182,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "settings.title": "Settings",
     "settings.popSound": "Pop sound",
     "settings.popSoundDesc": "Play a soft pop when a bubble bursts.",
+    "settings.music": "Music",
+    "settings.musicDesc": "Calm piano on the home and results screens.",
     "settings.reduceMotion":
       'Motion is reduced automatically when your device has "Reduce Motion" turned on in accessibility settings.',
     "settings.vibration": "Vibration",
@@ -373,6 +375,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "settings.title": "Ajustes",
     "settings.popSound": "Som ao estourar",
     "settings.popSoundDesc": "Toca um som suave ao estourar cada bolha.",
+    "settings.music": "Música",
+    "settings.musicDesc": "Piano tranquilo nas telas de início e de resultado.",
     "settings.reduceMotion":
       'As animações são reduzidas automaticamente quando o "Reduzir movimento" está ativado na acessibilidade do seu aparelho.',
     "settings.vibration": "Vibração",

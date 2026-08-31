@@ -212,3 +212,28 @@ export function playMilestone(level: number): void {
     bell(ac, out, f * 2, t + 0.006, 0.09, 0.16); // faint, fast shimmer
   }
 }
+
+/**
+ * A single bright "plim" — the coin/points-counter tick played rapidly as a score
+ * counts up ("plim plim plim… money in your pocket"). `i` (the tick index) creeps
+ * the pitch up so the run feels like it's building. Short + through the limiter.
+ */
+export function playCoinTick(i = 0): void {
+  if (!isSoundEnabled()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  const out = getBus(ac);
+  const now = ac.currentTime;
+  const freq = 880 * Math.pow(2, Math.min(i, 16) / 24); // A5 creeping up ~a fifth
+  const o = ac.createOscillator();
+  o.type = "triangle";
+  o.frequency.setValueAtTime(freq, now);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.exponentialRampToValueAtTime(0.32, now + 0.004); // fast attack
+  g.gain.exponentialRampToValueAtTime(0.0001, now + 0.13); // short bright decay
+  o.connect(g);
+  g.connect(out);
+  o.start(now);
+  o.stop(now + 0.15);
+}

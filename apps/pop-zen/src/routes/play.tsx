@@ -46,7 +46,9 @@ import {
   TOTAL_PHASES,
 } from "../lib/game-config";
 import { layoutBubbles, type BubbleState } from "../lib/layout";
-import { playPop, playMilestone, unlockAudio } from "../lib/pop-sound";
+import { playPop, playMilestone, playCoinTick, unlockAudio } from "../lib/pop-sound";
+import { launchConfetti } from "../lib/confetti";
+import { fadeMusicIn, fadeMusicOut } from "../lib/music";
 import { popHaptic } from "../lib/haptics";
 import {
   usePhaseRecords,
@@ -157,6 +159,47 @@ function Countdown({
     return () => window.clearInterval(id);
   }, [deadline, onExpire]);
   return <span className={left <= lowMs ? "text-coral" : undefined}>{formatCountdown(left)}</span>;
+}
+
+/** Animated count-up for the phase score — eases 0→`to` and fires `onTick(i)` a
+ *  fixed number of times so a rising "plim plim plim" can play along with it. */
+function CountUp({
+  to,
+  durationMs = 950,
+  onTick,
+  className,
+}: {
+  to: number;
+  durationMs?: number;
+  onTick?: (i: number) => void;
+  className?: string;
+}) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (to <= 0) {
+      setVal(0);
+      return;
+    }
+    let raf = 0;
+    const start = performance.now();
+    const TICKS = 14;
+    let ticked = 0;
+    const loop = (now: number) => {
+      const t = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      setVal(Math.round(eased * to));
+      const should = Math.floor(eased * TICKS);
+      while (ticked < should) {
+        onTick?.(ticked);
+        ticked += 1;
+      }
+      if (t < 1) raf = requestAnimationFrame(loop);
+      else setVal(to);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [to, durationMs, onTick]);
+  return <span className={className}>{val.toLocaleString()}</span>;
 }
 
 /** Zen's field: a calm, moderate spread that regenerates endlessly. */
@@ -349,6 +392,23 @@ function PlayPage() {
     if (typeof document === "undefined") return;
     document.body.classList.toggle("game-playing", state === "playing");
     return () => document.body.classList.remove("game-playing");
+  }, [state]);
+
+  // A celebratory firework burst when a phase is cleared (the score also counts up
+  // with a rising "plim" — see the done dialog).
+  useEffect(() => {
+    if (state !== "done") return;
+    const stop = launchConfetti({ count: 46 });
+    return () => {
+      if (typeof stop === "function") stop();
+    };
+  }, [state]);
+
+  // F7: music plays BETWEEN phases (done / time-up) but not during active popping.
+  useEffect(() => {
+    if (state === "done" || state === "timeup") fadeMusicIn();
+    else fadeMusicOut();
+    return () => fadeMusicOut();
   }, [state]);
 
   // cx/cy = the popped bubble's centre (field-local px), variant = its tint.
@@ -800,7 +860,9 @@ function PlayPage() {
                 <div className="text-xs uppercase tracking-widest text-muted-foreground">
                   {t("play.phaseComplete", { phase })}
                 </div>
-                <div className="mt-2 text-4xl font-extrabold text-primary">{result.score}</div>
+                <div className="mt-2 text-5xl font-extrabold text-primary">
+                  <CountUp to={result.score} onTick={playCoinTick} />
+                </div>
                 <div className="mt-1 text-sm text-muted-foreground">
                   {t("play.time", { time: formatTime(result.timeMs) })}
                 </div>

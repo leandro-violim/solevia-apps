@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { fadeMusicIn, fadeMusicOut } from "../lib/music";
 import bubbleImg from "../assets/bubbles/real-bubble-full.webp";
 import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
 import { DailyBonus } from "../components/DailyBonus";
@@ -30,6 +32,11 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  // Calm piano on the home screen (F7); fades out when leaving.
+  useEffect(() => {
+    fadeMusicIn();
+    return () => fadeMusicOut();
+  }, []);
   return (
     <div
       className="screen-fade relative flex min-h-dvh flex-col items-center justify-between px-6 pt-14 text-center"

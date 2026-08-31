@@ -6,6 +6,7 @@ import { track, setAnalyticsEnabled, isAnalyticsEnabled } from "../lib/analytics
 import { t } from "../lib/i18n";
 import { HowToPlay } from "../components/Onboarding";
 import { PlayIcon } from "../components/icons";
+import { isMusicEnabled, setMusicEnabled } from "../lib/music";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -77,6 +78,16 @@ function SettingsPage() {
   const { reset } = usePhaseRecords();
   const [howToOpen, setHowToOpen] = useState(false);
 
+  // F7 music toggle (persisted). Read on the client to avoid SSR mismatch.
+  const [musicOn, setMusicOn] = useState(true);
+  useEffect(() => setMusicOn(isMusicEnabled()), []);
+  const toggleMusic = () => {
+    const next = !musicOn;
+    setMusicOn(next);
+    setMusicEnabled(next);
+    track("setting_changed", { key: "music", value: next });
+  };
+
   // Analytics opt-out (P1-T6, LGPD/GDPR). Read on the client to avoid SSR mismatch.
   const [analyticsOn, setAnalyticsOn] = useState(true);
   useEffect(() => setAnalyticsOn(isAnalyticsEnabled()), []);
@@ -110,6 +121,14 @@ function SettingsPage() {
             track("setting_changed", { key: "sound", value: !enabled });
           }}
         />
+        <div className="mt-3 border-t border-border/50 pt-3">
+          <ToggleRow
+            label={t("settings.music")}
+            desc={t("settings.musicDesc")}
+            checked={musicOn}
+            onToggle={toggleMusic}
+          />
+        </div>
         <p className="mt-3 text-[11px] text-muted-foreground">{t("settings.reduceMotion")}</p>
       </section>
 

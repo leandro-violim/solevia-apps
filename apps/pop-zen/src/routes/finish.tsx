@@ -9,6 +9,7 @@ import { getAllTimeBestTotal } from "../lib/records";
 import { pickQuote } from "../lib/quotes";
 import { t } from "../lib/i18n";
 import { CoinIcon, PlayIcon } from "../components/icons";
+import { fadeMusicIn, fadeMusicOut } from "../lib/music";
 
 // beat is passed as 1/0 to survive URL (de)serialization cleanly.
 const searchSchema = z.object({
@@ -74,6 +75,12 @@ function FinishPage() {
       window.clearTimeout(t);
     };
   }, [beatRecord]);
+
+  // F7: calm piano on the run-complete screen; fades out when leaving.
+  useEffect(() => {
+    fadeMusicIn();
+    return () => fadeMusicOut();
+  }, []);
 
   return (
     <div
