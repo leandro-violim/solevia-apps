@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { equippedBubbleSprite } from "../lib/skins";
+import { equippedBubbleTint, equippedSkinImage } from "../lib/skins";
 import { SPECIAL_LOOK, FROZEN_TAPS, type SpecialType } from "../lib/specials";
 import bubbleFull from "../assets/bubbles/real-bubble-full.webp";
 import bubblePopped from "../assets/bubbles/real-bubble-popped.webp";
@@ -109,11 +109,9 @@ export const Bubble = memo(function Bubble({
   // Equipped bubble skin (§6): a colour composited over the real bubble sprite
   // with mix-blend-mode:color, which recolours the plastic reliably. `undefined`
   // for Classic (no tint). Specials keep their own look, so skip the tint there.
-  // Equipped skin's real bubble sprite (a bubble cropped from the bought sheet).
-  // Specials keep their own look, so only plain bubbles get the skin sprite.
-  const sprite = special === "normal" ? equippedBubbleSprite() : undefined;
-  const fullSrc = sprite ? sprite.full : bubbleFull;
-  const poppedSrc = sprite ? sprite.popped : bubblePopped;
+  const skinTint = special === "normal" ? equippedBubbleTint() : undefined;
+  // The bought skin's actual material, zoomed so ~one pocket fills the bubble.
+  const skinImg = special === "normal" ? equippedSkinImage() : undefined;
   const look = special !== "normal" ? SPECIAL_LOOK[special] : null;
 
   return (
@@ -143,6 +141,8 @@ export const Bubble = memo(function Bubble({
               ? undefined
               : `bubbleFloat 4s ease-in-out ${driftDelay}s infinite`,
         WebkitTapHighlightColor: "transparent",
+        // Isolate so the skin tint's blend stays contained to this bubble.
+        isolation: skinTint ? "isolate" : undefined,
         borderRadius: "50%",
         boxShadow: look && !popped ? `0 0 0 2px ${look.ring}, ${look.glow}` : undefined,
       }}
@@ -153,10 +153,38 @@ export const Bubble = memo(function Bubble({
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: `url(${popped ? poppedSrc : fullSrc})`,
+          backgroundImage: `url(${popped ? bubblePopped : bubbleFull})`,
           ["--rot" as string]: rotRef.current,
         }}
       />
+      {skinTint && !popped && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            borderRadius: "50%",
+            background: skinTint,
+            mixBlendMode: "color",
+            opacity: 0.9,
+          }}
+        />
+      )}
+      {skinImg && !popped && (
+        // The bought skin's real material (metallic/neon/pastel finish + pockets)
+        // layered over the bubble's gloss so it looks like what you purchased.
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            borderRadius: "50%",
+            backgroundImage: `url(${skinImg})`,
+            backgroundSize: "300%",
+            backgroundPosition: "center",
+            mixBlendMode: "overlay",
+            opacity: 0.7,
+          }}
+        />
+      )}
       {look && !popped && (
         <span
           aria-hidden
