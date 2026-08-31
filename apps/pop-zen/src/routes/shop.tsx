@@ -10,9 +10,8 @@ import {
   isEquipped,
   buy,
   equip,
-  grantOwned,
 } from "../lib/skins";
-import { getCoins, spendCoins } from "../lib/economy";
+import { getCoins, addCoins } from "../lib/economy";
 import { showRewarded } from "../lib/ads";
 import { CONFIG } from "../lib/config";
 import { t } from "../lib/i18n";
@@ -42,19 +41,12 @@ function ShopPage() {
     equip(item.id);
     refresh();
   };
-  // §3 rewarded: watch to knock the discount off, then buy at the reduced price.
-  const onWatchDiscount = async (item: CosmeticDef) => {
+  // §3 rewarded: watch a video to EARN coins toward any skin/item.
+  const onWatchEarn = async () => {
     if (busy) return;
     setBusy(true);
-    const watched = await showRewarded("shop_discount");
-    if (watched) {
-      const discounted = Math.round(priceOf(item) * (1 - CONFIG.ads.rewarded.shopDiscountPct));
-      if (getCoins() >= discounted) {
-        spendCoins(discounted, `skin:${item.id}:discounted`);
-        grantOwned(item.id, "rewarded_discount");
-        equip(item.id);
-      }
-    }
+    const watched = await showRewarded("shop_earn_coins");
+    if (watched) addCoins(CONFIG.ads.rewarded.coinReward, "rewarded_shop");
     setBusy(false);
     refresh();
   };
@@ -72,22 +64,18 @@ function ShopPage() {
         <CoinBalance className="text-sm font-semibold text-foreground" />
       </header>
 
-      <Section
-        title={t("shop.skins")}
-        items={SKINS}
-        onBuy={onBuy}
-        onEquip={onEquip}
-        onWatch={onWatchDiscount}
-        busy={busy}
-      />
-      <Section
-        title={t("shop.zenSkins")}
-        items={ZEN_SKINS}
-        onBuy={onBuy}
-        onEquip={onEquip}
-        onWatch={onWatchDiscount}
-        busy={busy}
-      />
+      {/* §3 Earn coins by watching a rewarded video — clearly ADDS coins. */}
+      <button
+        onClick={onWatchEarn}
+        disabled={busy}
+        className="btn btn-secondary mt-1 w-full gap-2 py-3 text-sm"
+      >
+        <PlayIcon size={15} />
+        {t("shop.watchEarn", { coins: CONFIG.ads.rewarded.coinReward })}
+      </button>
+
+      <Section title={t("shop.skins")} items={SKINS} onBuy={onBuy} onEquip={onEquip} />
+      <Section title={t("shop.zenSkins")} items={ZEN_SKINS} onBuy={onBuy} onEquip={onEquip} />
     </div>
   );
 }
@@ -97,15 +85,11 @@ function Section({
   items,
   onBuy,
   onEquip,
-  onWatch,
-  busy,
 }: {
   title: string;
   items: CosmeticDef[];
   onBuy: (i: CosmeticDef) => void;
   onEquip: (i: CosmeticDef) => void;
-  onWatch: (i: CosmeticDef) => void;
-  busy: boolean;
 }) {
   return (
     <section className="mt-4">
@@ -147,26 +131,14 @@ function Section({
                   {t("shop.equip")}
                 </button>
               ) : (
-                <div className="mt-2 flex flex-col gap-1">
-                  <button
-                    onClick={() => onBuy(item)}
-                    disabled={!affordable}
-                    className="btn btn-primary w-full py-2 text-xs"
-                  >
-                    <CoinIcon size={14} className="text-primary-foreground" />
-                    {price}
-                  </button>
-                  <button
-                    onClick={() => onWatch(item)}
-                    disabled={busy}
-                    className="btn btn-ghost w-full gap-1 py-1.5 text-[11px] text-accent"
-                  >
-                    <PlayIcon size={12} />
-                    {t("shop.watchDiscount", {
-                      pct: Math.round(CONFIG.ads.rewarded.shopDiscountPct * 100),
-                    })}
-                  </button>
-                </div>
+                <button
+                  onClick={() => onBuy(item)}
+                  disabled={!affordable}
+                  className="btn btn-primary mt-2 w-full py-2 text-xs"
+                >
+                  <CoinIcon size={14} className="text-primary-foreground" />
+                  {price}
+                </button>
               )}
             </div>
           );

@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { equippedBubbleFilter } from "../lib/skins";
+import { equippedBubbleTint } from "../lib/skins";
 import { SPECIAL_LOOK, FROZEN_TAPS, type SpecialType } from "../lib/specials";
 import bubbleFull from "../assets/bubbles/real-bubble-full.webp";
 import bubblePopped from "../assets/bubbles/real-bubble-popped.webp";
@@ -106,9 +106,10 @@ export const Bubble = memo(function Bubble({
     onPop(id, x + size / 2, y + size / 2, variant, special);
   };
 
-  // Equipped bubble skin (§6) — a CSS filter tint on the button; `undefined` for
-  // the Classic/real skin (no tint).
-  const skinFilter = equippedBubbleFilter();
+  // Equipped bubble skin (§6): a colour composited over the real bubble sprite
+  // with mix-blend-mode:color, which recolours the plastic reliably. `undefined`
+  // for Classic (no tint). Specials keep their own look, so skip the tint there.
+  const skinTint = special === "normal" ? equippedBubbleTint() : undefined;
   const look = special !== "normal" ? SPECIAL_LOOK[special] : null;
 
   return (
@@ -138,7 +139,8 @@ export const Bubble = memo(function Bubble({
               ? undefined
               : `bubbleFloat 4s ease-in-out ${driftDelay}s infinite`,
         WebkitTapHighlightColor: "transparent",
-        filter: skinFilter,
+        // Isolate so the skin tint's blend stays contained to this bubble.
+        isolation: skinTint ? "isolate" : undefined,
         borderRadius: "50%",
         boxShadow: look && !popped ? `0 0 0 2px ${look.ring}, ${look.glow}` : undefined,
       }}
@@ -153,6 +155,18 @@ export const Bubble = memo(function Bubble({
           ["--rot" as string]: rotRef.current,
         }}
       />
+      {skinTint && !popped && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            borderRadius: "50%",
+            background: skinTint,
+            mixBlendMode: "color",
+            opacity: 0.9,
+          }}
+        />
+      )}
       {look && !popped && (
         <span
           aria-hidden

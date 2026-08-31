@@ -77,6 +77,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "shop.equip": "Equip",
     "shop.equipped": "Equipped",
     "shop.watchDiscount": "−{pct}%",
+    "shop.watchEarn": "Watch a video · +{coins} coins",
     "home.shop": "Shop",
     "home.streak": "Day {n}",
 
@@ -281,6 +282,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "shop.equip": "Equipar",
     "shop.equipped": "Equipado",
     "shop.watchDiscount": "−{pct}%",
+    "shop.watchEarn": "Assista um vídeo · +{coins} moedas",
     "home.shop": "Loja",
     "home.streak": "Dia {n}",
 

@@ -102,11 +102,40 @@ export function setMusicEnabled(on: boolean): void {
   else fadeMusicOut();
 }
 
-// Resume music after the app/tab returns to the foreground (if we still want it).
+/**
+ * Hard-stop the music the instant the app is backgrounded — no fade, so audio
+ * is silent immediately on minimize. Keeps `wantPlaying` so it resumes when the
+ * app returns to the foreground (if we're still on a music screen).
+ */
+function pauseImmediate(): void {
+  cancelAnimationFrame(fadeRaf);
+  if (!el) return;
+  el.volume = 0;
+  try {
+    el.pause();
+  } catch {
+    /* ignore */
+  }
+}
+
+// Stop the moment the tab/app is hidden; resume when it returns (if wanted).
 if (typeof document !== "undefined") {
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && wantPlaying && !muted && el?.paused) {
-      fadeMusicIn();
-    }
+    if (document.visibilityState === "hidden") pauseImmediate();
+    else if (wantPlaying && !muted && el?.paused) fadeMusicIn();
   });
+}
+
+// Native (WKWebView) doesn't reliably fire visibilitychange on minimize, so also
+// hard-stop on Capacitor's app-state change. Dynamically imported → native-only.
+if (typeof window !== "undefined") {
+  void import("@capacitor/app")
+    .then(({ App }) => {
+      void App.addListener("appStateChange", ({ isActive }) => {
+        if (!isActive) pauseImmediate();
+        else if (wantPlaying && !muted && el?.paused) fadeMusicIn();
+      }).catch(() => {});
+      void App.addListener("pause", () => pauseImmediate()).catch(() => {});
+    })
+    .catch(() => {});
 }

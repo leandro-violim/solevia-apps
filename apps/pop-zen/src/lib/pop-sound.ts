@@ -114,9 +114,15 @@ export function resumeAudio(): void {
   if (buffers.length !== SOURCES.length) void loadBuffers(ac); // re-decode if dropped
 }
 
+/** Suspend the audio context so any in-flight pop tail is silenced at once. */
+export function suspendAudio(): void {
+  if (ctx && ctx.state === "running") void ctx.suspend().catch(() => {});
+}
+
 if (typeof document !== "undefined") {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") resumeAudio();
+    else suspendAudio(); // minimize → silence immediately
   });
 }
 
@@ -128,8 +134,10 @@ if (typeof window !== "undefined") {
     .then(({ App }) => {
       void App.addListener("appStateChange", ({ isActive }) => {
         if (isActive) resumeAudio();
+        else suspendAudio(); // background → silence immediately
       }).catch(() => {});
       void App.addListener("resume", () => resumeAudio()).catch(() => {});
+      void App.addListener("pause", () => suspendAudio()).catch(() => {});
     })
     .catch(() => {});
 }

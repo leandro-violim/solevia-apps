@@ -37,7 +37,14 @@ export type CosmeticDef = {
   kind: ItemKind;
   rarity: Rarity;
   thumb: string; // shop preview image (real art)
-  bubbleFilter?: string; // skins: CSS tint applied to bubble art in-game
+  bubbleFilter?: string; // legacy CSS filter (near-invisible on the photo sprite)
+  /**
+   * In-game bubble tint. A solid colour composited over the (near-grayscale)
+   * real bubble sprite with `mix-blend-mode: color`, which reliably recolours
+   * the plastic while keeping its gloss/shadows — unlike hue-rotate, which does
+   * nothing to a desaturated photo. Undefined = Classic (no tint).
+   */
+  tint?: string;
   premiumGated?: boolean; // premium: also unlockable via streak / rewarded
   zen?: boolean; // Zen Mode set (auto-unlocked when Zen is played)
 };
@@ -51,6 +58,7 @@ export const SKINS: CosmeticDef[] = [
     rarity: "uncommon",
     thumb: skinNeon,
     bubbleFilter: "saturate(1.9) brightness(1.12) hue-rotate(-22deg)",
+    tint: "#7CFF4F",
   },
   {
     id: "skin-ocean",
@@ -59,6 +67,7 @@ export const SKINS: CosmeticDef[] = [
     rarity: "uncommon",
     thumb: skinOcean,
     bubbleFilter: "hue-rotate(160deg) saturate(1.25)",
+    tint: "#33B6E0",
   },
   {
     id: "skin-sunset",
@@ -67,6 +76,7 @@ export const SKINS: CosmeticDef[] = [
     rarity: "uncommon",
     thumb: skinSunset,
     bubbleFilter: "sepia(0.35) hue-rotate(-25deg) saturate(1.5) brightness(1.05)",
+    tint: "#FF8A4C",
   },
   {
     id: "skin-night",
@@ -75,6 +85,7 @@ export const SKINS: CosmeticDef[] = [
     rarity: "rare",
     thumb: skinNight,
     bubbleFilter: "brightness(0.78) saturate(0.85) hue-rotate(215deg)",
+    tint: "#4B5BFF",
   },
   {
     id: "skin-gold",
@@ -84,6 +95,7 @@ export const SKINS: CosmeticDef[] = [
     premiumGated: true,
     thumb: skinGold,
     bubbleFilter: "sepia(0.55) saturate(1.7) hue-rotate(-12deg) brightness(1.06)",
+    tint: "#F5C451",
   },
 ];
 
@@ -97,6 +109,7 @@ export const ZEN_SKINS: CosmeticDef[] = [
     zen: true,
     thumb: zenPastel,
     bubbleFilter: "saturate(0.6) brightness(1.16) hue-rotate(-8deg)",
+    tint: "#FFB6C8",
   },
   {
     id: "zen-mint",
@@ -106,6 +119,7 @@ export const ZEN_SKINS: CosmeticDef[] = [
     zen: true,
     thumb: zenMint,
     bubbleFilter: "hue-rotate(120deg) saturate(0.7) brightness(1.12)",
+    tint: "#8FE7C6",
   },
   {
     id: "zen-lavender",
@@ -115,6 +129,7 @@ export const ZEN_SKINS: CosmeticDef[] = [
     zen: true,
     thumb: zenLavender,
     bubbleFilter: "hue-rotate(250deg) saturate(0.7) brightness(1.12)",
+    tint: "#C3B2FF",
   },
 ];
 
@@ -183,4 +198,9 @@ export function equippedSkin(): CosmeticDef {
 /** CSS filter for the equipped bubble skin (undefined for Classic). */
 export function equippedBubbleFilter(): string | undefined {
   return equippedSkin().bubbleFilter;
+}
+
+/** Tint colour for the equipped bubble skin (undefined for Classic). */
+export function equippedBubbleTint(): string | undefined {
+  return equippedSkin().tint;
 }
