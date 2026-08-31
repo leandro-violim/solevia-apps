@@ -41,23 +41,44 @@ import nightFull from "../assets/bubbles/skins/skin-night-full.webp";
 import nightPop from "../assets/bubbles/skins/skin-night-popped.webp";
 import goldFull from "../assets/bubbles/skins/skin-gold-full.webp";
 import goldPop from "../assets/bubbles/skins/skin-gold-popped.webp";
-import zpFull from "../assets/bubbles/skins/zen-pastel-full.webp";
-import zpPop from "../assets/bubbles/skins/zen-pastel-popped.webp";
 import zmFull from "../assets/bubbles/skins/zen-mint-full.webp";
 import zmPop from "../assets/bubbles/skins/zen-mint-popped.webp";
 import zlFull from "../assets/bubbles/skins/zen-lavender-full.webp";
 import zlPop from "../assets/bubbles/skins/zen-lavender-popped.webp";
+// Pastel is a MULTI-COLOUR skin (matches its rainbow shop art): a set of pastel
+// hues, spread across the bubbles in a phase (picked per-bubble by id).
+import zp0f from "../assets/bubbles/skins/zen-pastel-0-full.webp";
+import zp0p from "../assets/bubbles/skins/zen-pastel-0-popped.webp";
+import zp1f from "../assets/bubbles/skins/zen-pastel-1-full.webp";
+import zp1p from "../assets/bubbles/skins/zen-pastel-1-popped.webp";
+import zp2f from "../assets/bubbles/skins/zen-pastel-2-full.webp";
+import zp2p from "../assets/bubbles/skins/zen-pastel-2-popped.webp";
+import zp3f from "../assets/bubbles/skins/zen-pastel-3-full.webp";
+import zp3p from "../assets/bubbles/skins/zen-pastel-3-popped.webp";
+import zp4f from "../assets/bubbles/skins/zen-pastel-4-full.webp";
+import zp4p from "../assets/bubbles/skins/zen-pastel-4-popped.webp";
+import zp5f from "../assets/bubbles/skins/zen-pastel-5-full.webp";
+import zp5p from "../assets/bubbles/skins/zen-pastel-5-popped.webp";
 
 export type BubbleSprite = { full: string; popped: string };
-const BUBBLE_SPRITES: Record<string, BubbleSprite> = {
-  "skin-neon": { full: neonFull, popped: neonPop },
-  "skin-ocean": { full: oceanFull, popped: oceanPop },
-  "skin-sunset": { full: sunsetFull, popped: sunsetPop },
-  "skin-night": { full: nightFull, popped: nightPop },
-  "skin-gold": { full: goldFull, popped: goldPop },
-  "zen-pastel": { full: zpFull, popped: zpPop },
-  "zen-mint": { full: zmFull, popped: zmPop },
-  "zen-lavender": { full: zlFull, popped: zlPop },
+// Each skin maps to one OR MORE bubble sprites. Single-sprite skins have a
+// one-element array; multi-colour skins (Pastel) list every variant.
+const BUBBLE_SPRITES: Record<string, BubbleSprite[]> = {
+  "skin-neon": [{ full: neonFull, popped: neonPop }],
+  "skin-ocean": [{ full: oceanFull, popped: oceanPop }],
+  "skin-sunset": [{ full: sunsetFull, popped: sunsetPop }],
+  "skin-night": [{ full: nightFull, popped: nightPop }],
+  "skin-gold": [{ full: goldFull, popped: goldPop }],
+  "zen-mint": [{ full: zmFull, popped: zmPop }],
+  "zen-lavender": [{ full: zlFull, popped: zlPop }],
+  "zen-pastel": [
+    { full: zp0f, popped: zp0p },
+    { full: zp1f, popped: zp1p },
+    { full: zp2f, popped: zp2p },
+    { full: zp3f, popped: zp3p },
+    { full: zp4f, popped: zp4p },
+    { full: zp5f, popped: zp5p },
+  ],
 };
 
 export type Rarity = "starter" | "common" | "uncommon" | "rare" | "premium";
@@ -238,9 +259,13 @@ export function equippedBubbleTint(): string | undefined {
 }
 
 /**
- * The equipped skin's real in-game bubble sprite pair (full + popped). Undefined
- * for Classic → the default bubble is used.
+ * The equipped skin's bubble sprite for a given bubble `seed` (its id). Single-
+ * colour skins always return their one sprite; multi-colour skins (Pastel) spread
+ * their variants across the field by seed so a phase shows a mix. Undefined for
+ * Classic → the default bubble is used.
  */
-export function equippedBubbleSprite(): BubbleSprite | undefined {
-  return BUBBLE_SPRITES[load().skins.equippedSkin];
+export function equippedBubbleSprite(seed = 0): BubbleSprite | undefined {
+  const arr = BUBBLE_SPRITES[load().skins.equippedSkin];
+  if (!arr || arr.length === 0) return undefined;
+  return arr[((seed % arr.length) + arr.length) % arr.length];
 }

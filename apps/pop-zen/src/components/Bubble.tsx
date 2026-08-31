@@ -108,7 +108,7 @@ export const Bubble = memo(function Bubble({
 
   // Equipped skin's own bubble art (bespoke per-skin sprite). Specials keep their
   // own look, so only plain bubbles get the skin sprite; Classic → default bubble.
-  const sprite = special === "normal" ? equippedBubbleSprite() : undefined;
+  const sprite = special === "normal" ? equippedBubbleSprite(id) : undefined;
   const fullSrc = sprite ? sprite.full : bubbleFull;
   const poppedSrc = sprite ? sprite.popped : bubblePopped;
   const look = special !== "normal" ? SPECIAL_LOOK[special] : null;
