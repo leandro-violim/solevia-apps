@@ -43,10 +43,8 @@ import goldFull from "../assets/bubbles/skins/skin-gold-full.webp";
 import goldPop from "../assets/bubbles/skins/skin-gold-popped.webp";
 import zmFull from "../assets/bubbles/skins/zen-mint-full.webp";
 import zmPop from "../assets/bubbles/skins/zen-mint-popped.webp";
-import zlFull from "../assets/bubbles/skins/zen-lavender-full.webp";
-import zlPop from "../assets/bubbles/skins/zen-lavender-popped.webp";
-// Pastel is a MULTI-COLOUR skin (matches its rainbow shop art): a set of pastel
-// hues, spread across the bubbles in a phase (picked per-bubble by id).
+// Pastel + Lavender are MULTI-COLOUR skins (match their rainbow shop art): a set
+// of colours spread across the bubbles in a phase (picked per-bubble by id).
 import zp0f from "../assets/bubbles/skins/zen-pastel-0-full.webp";
 import zp0p from "../assets/bubbles/skins/zen-pastel-0-popped.webp";
 import zp1f from "../assets/bubbles/skins/zen-pastel-1-full.webp";
@@ -59,6 +57,18 @@ import zp4f from "../assets/bubbles/skins/zen-pastel-4-full.webp";
 import zp4p from "../assets/bubbles/skins/zen-pastel-4-popped.webp";
 import zp5f from "../assets/bubbles/skins/zen-pastel-5-full.webp";
 import zp5p from "../assets/bubbles/skins/zen-pastel-5-popped.webp";
+// Lavender variants — only the colours shown in its shop art (lilac, periwinkle,
+// peach, cream, mint).
+import zl0f from "../assets/bubbles/skins/zen-lavender-0-full.webp";
+import zl0p from "../assets/bubbles/skins/zen-lavender-0-popped.webp";
+import zl1f from "../assets/bubbles/skins/zen-lavender-1-full.webp";
+import zl1p from "../assets/bubbles/skins/zen-lavender-1-popped.webp";
+import zl2f from "../assets/bubbles/skins/zen-lavender-2-full.webp";
+import zl2p from "../assets/bubbles/skins/zen-lavender-2-popped.webp";
+import zl3f from "../assets/bubbles/skins/zen-lavender-3-full.webp";
+import zl3p from "../assets/bubbles/skins/zen-lavender-3-popped.webp";
+import zl4f from "../assets/bubbles/skins/zen-lavender-4-full.webp";
+import zl4p from "../assets/bubbles/skins/zen-lavender-4-popped.webp";
 
 export type BubbleSprite = { full: string; popped: string };
 // Each skin maps to one OR MORE bubble sprites. Single-sprite skins have a
@@ -70,7 +80,6 @@ const BUBBLE_SPRITES: Record<string, BubbleSprite[]> = {
   "skin-night": [{ full: nightFull, popped: nightPop }],
   "skin-gold": [{ full: goldFull, popped: goldPop }],
   "zen-mint": [{ full: zmFull, popped: zmPop }],
-  "zen-lavender": [{ full: zlFull, popped: zlPop }],
   "zen-pastel": [
     { full: zp0f, popped: zp0p },
     { full: zp1f, popped: zp1p },
@@ -78,6 +87,13 @@ const BUBBLE_SPRITES: Record<string, BubbleSprite[]> = {
     { full: zp3f, popped: zp3p },
     { full: zp4f, popped: zp4p },
     { full: zp5f, popped: zp5p },
+  ],
+  "zen-lavender": [
+    { full: zl0f, popped: zl0p },
+    { full: zl1f, popped: zl1p },
+    { full: zl2f, popped: zl2p },
+    { full: zl3f, popped: zl3p },
+    { full: zl4f, popped: zl4p },
   ],
 };
 
