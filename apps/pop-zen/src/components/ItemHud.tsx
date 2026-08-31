@@ -1,4 +1,4 @@
-import { BombIcon, FreezeIcon } from "./icons";
+import { CONSUMABLE_EMOJI } from "../lib/consumables";
 import { t } from "../lib/i18n";
 
 /**
@@ -35,7 +35,9 @@ export function ItemHud({
             : "bg-background/80 text-foreground backdrop-blur"
         }`}
       >
-        <BombIcon size={18} />
+        <span aria-hidden className="text-base leading-none">
+          {CONSUMABLE_EMOJI.bomb}
+        </span>
         <span>×{bombCount}</span>
       </button>
 
@@ -46,7 +48,9 @@ export function ItemHud({
         aria-label={t("items.freeze")}
         className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-background/80 px-3 py-2 text-sm font-bold text-primary shadow-lg backdrop-blur transition disabled:opacity-40"
       >
-        <FreezeIcon size={18} />
+        <span aria-hidden className="text-base leading-none">
+          {CONSUMABLE_EMOJI.freeze}
+        </span>
         <span>×{freezeCount}</span>
       </button>
     </div>

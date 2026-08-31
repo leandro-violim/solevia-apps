@@ -21,6 +21,7 @@ import {
   consumeItem,
   subscribeInventory,
   priceOfConsumable,
+  CONSUMABLE_EMOJI,
 } from "../lib/consumables";
 import { PopParticles } from "../components/PopParticles";
 import { ComboHud } from "../components/ComboHud";
@@ -52,7 +53,7 @@ import { seededRand, recordDailyResult } from "../lib/daily-challenge";
 import { track } from "../lib/analytics";
 import { unlockZenSkins } from "../lib/skins";
 import { ChallengeGoals } from "../components/ChallengeGoals";
-import { CoinIcon, PlayIcon, BombIcon, FreezeIcon } from "../components/icons";
+import { CoinIcon, PlayIcon } from "../components/icons";
 import fieldSheet from "../assets/scene/field-sheet.webp";
 import {
   computeTimeAttackScore,
@@ -1110,7 +1111,7 @@ function PlayPage() {
                         className="btn btn-secondary w-full justify-between gap-1 py-2 text-xs disabled:opacity-40"
                       >
                         <span className="inline-flex items-center gap-1">
-                          <BombIcon size={15} />×{getCount("bomb")}
+                          <span aria-hidden>{CONSUMABLE_EMOJI.bomb}</span>×{getCount("bomb")}
                         </span>
                         <span className="inline-flex items-center gap-1">
                           <CoinIcon size={12} className="text-gold" />
@@ -1123,7 +1124,7 @@ function PlayPage() {
                         className="btn btn-secondary w-full justify-between gap-1 py-2 text-xs disabled:opacity-40"
                       >
                         <span className="inline-flex items-center gap-1">
-                          <FreezeIcon size={15} />×{getCount("freeze")}
+                          <span aria-hidden>{CONSUMABLE_EMOJI.freeze}</span>×{getCount("freeze")}
                         </span>
                         <span className="inline-flex items-center gap-1">
                           <CoinIcon size={12} className="text-gold" />

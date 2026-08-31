@@ -12,8 +12,19 @@ import { CONFIG } from "./config";
 import { load, update } from "./storage";
 import { track } from "./analytics";
 import { spendCoins } from "./economy";
+import { SPECIAL_LOOK } from "./specials";
 
 export type ConsumableId = "bomb" | "freeze";
+
+/**
+ * Emoji for each consumable — the SAME glyphs the matching special bubbles show
+ * in-game (💣 bomb, ❄️ frozen), so the shop/HUD icons read identically to what
+ * appears inside a bubble. Sourced from SPECIAL_LOOK so they never drift apart.
+ */
+export const CONSUMABLE_EMOJI: Record<ConsumableId, string> = {
+  bomb: SPECIAL_LOOK.bomb.emoji,
+  freeze: SPECIAL_LOOK.frozen.emoji,
+};
 
 export const CONSUMABLES: { id: ConsumableId; price: number }[] = [
   { id: "bomb", price: CONFIG.consumables.prices.bomb },
