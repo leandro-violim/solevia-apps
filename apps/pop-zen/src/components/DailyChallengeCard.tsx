@@ -4,7 +4,7 @@ import { playedToday, dailyBestToday } from "../lib/daily-challenge";
 import { unlockAudio } from "../lib/pop-sound";
 import { trackModeSelected } from "../lib/mode";
 import { t } from "../lib/i18n";
-import { CalendarIcon } from "./icons";
+import { FlameIcon } from "./icons";
 
 /**
  * Home "Daily Challenge" — the timed mode (§12). It's the Time Attack engine on a
@@ -30,7 +30,7 @@ export function DailyChallengeCard() {
         }}
         className="btn btn-primary w-full gap-2 py-4 text-base"
       >
-        <CalendarIcon size={18} />
+        <FlameIcon size={18} />
         {t("home.daily")}
       </Link>
       <div className="mt-1.5 text-xs text-muted-foreground">

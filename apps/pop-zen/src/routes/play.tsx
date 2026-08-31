@@ -221,6 +221,8 @@ function PlayPage() {
   // Pop for Fun: the current sheet's rolled size/count (stable across a re-layout,
   // re-rolled on each new/renewed sheet).
   const zenFieldRef = useRef<{ bubbles: number; size: number }>({ bubbles: 30, size: 54 });
+  // Pop for Fun: guards the delayed sheet-renewal so it's scheduled exactly once.
+  const renewPendingRef = useRef(false);
   // §7 golden/mystery bonus points accumulated this phase, added to the score.
   const bonusPointsRef = useRef(0);
   // Wall-clock at run start, for the run_end duration_s analytics param (P1-T6).
@@ -429,19 +431,34 @@ function PlayPage() {
       commitStats(bubbles.length, golden, getMaxCombo(), false); // §10 cumulative stats
       checkAchievements();
       addCoins(coinsForZenBubbles(bubbles.length), "zen");
-      const el = fieldRef.current;
-      if (el) {
-        // Pop for Fun: renew with a fresh random sheet (new size/count + pre-popped).
-        zenFieldRef.current = rollZenField();
-        const zf = zenFieldRef.current;
-        setBubbles(
-          prePopSome(
-            layoutBubbles(zf.bubbles, zf.size, el.clientWidth, usableFieldHeight(el), Math.random, {
-              phase,
-              specialsMul,
-            }),
-          ),
-        );
+      // Renew the sheet after a short beat — NOT synchronously — so the tap that
+      // cleared the last bubble (its trailing click) lands on the cleared sheet and
+      // can't carry over to auto-pop a bubble on the fresh one. Guarded so it fires
+      // once, and no-ops if the player left (fieldRef is null).
+      if (!renewPendingRef.current) {
+        renewPendingRef.current = true;
+        window.setTimeout(() => {
+          renewPendingRef.current = false;
+          const el = fieldRef.current;
+          if (!el) return;
+          zenFieldRef.current = rollZenField();
+          const zf = zenFieldRef.current;
+          setBubbles(
+            prePopSome(
+              layoutBubbles(
+                zf.bubbles,
+                zf.size,
+                el.clientWidth,
+                usableFieldHeight(el),
+                Math.random,
+                {
+                  phase,
+                  specialsMul,
+                },
+              ),
+            ),
+          );
+        }, 220);
       }
       resetCombo();
       return;
