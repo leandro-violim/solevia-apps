@@ -33,7 +33,7 @@ import {
 import { checkAchievements } from "../lib/achievements";
 import { seededRand, recordDailyResult } from "../lib/daily-challenge";
 import { track } from "../lib/analytics";
-import { equippedThemeImage, unlockZenSkins } from "../lib/skins";
+import { unlockZenSkins } from "../lib/skins";
 import { ObjectivesHud } from "../components/ObjectivesHud";
 import { CoinIcon, PlayIcon } from "../components/icons";
 import fieldSheet from "../assets/scene/field-sheet.webp";
@@ -208,10 +208,7 @@ function PlayPage() {
   const completedRef = useRef<Set<string>>(new Set());
   const [objVersion, setObjVersion] = useState(0); // bump to re-render the HUD
   const [objToast, setObjToast] = useState<Objective | null>(null);
-  // P1-T7: equipped theme backdrop — read on the client (no SSR mismatch).
-  const [themeImage, setThemeImage] = useState<string | undefined>(undefined);
   useEffect(() => {
-    setThemeImage(equippedThemeImage());
     if (isZen) unlockZenSkins(); // §6/P1-T7 — Zen set free once you play Zen
   }, [isZen]);
 
@@ -562,21 +559,9 @@ function PlayPage() {
       className="screen-fade flex min-h-dvh flex-col"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      {/* P1-T7/T8: equipped theme backdrop — full-screen, cover-fit, behind
-          content — with a calm scrim (--play-scrim) so the HUD stays legible over
-          any theme photo. */}
-      {themeImage && (
-        <div
-          aria-hidden
-          className="pointer-events-none fixed inset-0 bg-cover bg-center"
-          style={{ zIndex: -1, backgroundImage: `url(${themeImage})` }}
-        />
-      )}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0"
-        style={{ zIndex: -1, background: "var(--play-scrim)" }}
-      />
+      {/* The play screen sits on the app's own calm navy shell (styles.css body
+          bg-grad + soft aqua aurora) — same as the home/menus — so the whole
+          screen reads as one integrated surface. */}
       <header className="flex items-center justify-between px-4 py-3">
         <Link
           to="/"
@@ -631,25 +616,27 @@ function PlayPage() {
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10"
           style={{
             isolation: "isolate",
-            // Brand navy with an aqua glow — the colour the real bubble-wrap photo
-            // above gets tinted by (the approved zen-final-look recipe).
+            // A soft, lighter blue-teal field (calmer / less dark than the shell)
+            // with a gentle aqua glow — still in the app's palette, just airier.
             background:
-              "radial-gradient(130% 110% at 50% 22%, rgba(51,224,198,0.32), transparent 62%), linear-gradient(180deg, #16283f 0%, #0b1020 100%)",
+              "radial-gradient(120% 110% at 50% 12%, rgba(51,224,198,0.18), transparent 64%), linear-gradient(180deg, #2a4a6b 0%, #1b3350 100%)",
           }}
         >
-          {/* Realism: the REAL crinkly bubble-wrap photo, blended (overlay) onto
-              the navy+aqua glow so the clear plastic reads teal — fully opaque,
-              clearly visible, matching the app. Live bubbles stay foreground via
-              their gloss + drop shadow. Lazy WebP. */}
+          {/* Realism: the REAL crinkly bubble-wrap photo, softly blended onto the
+              navy so the clear plastic picks up the app's soft aqua — integrated,
+              not a stark teal. Its pocket SCALE tracks the phase's bubble size
+              (cfg.size) so the wrap and the live bubbles read at the same scale.
+              ~10 pockets across the 1125px source → tile width ≈ size × 10. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{
               backgroundImage: `url(${fieldSheet})`,
-              backgroundSize: "cover",
+              backgroundSize: `${Math.round(cfg.size * 10)}px auto`,
+              backgroundRepeat: "repeat",
               backgroundPosition: "center",
-              opacity: 0.9,
-              mixBlendMode: "overlay",
+              opacity: 0.55,
+              mixBlendMode: "soft-light",
             }}
           />
           {bubbles.map((b) => (
