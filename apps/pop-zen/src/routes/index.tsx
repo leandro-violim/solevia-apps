@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import bubbleImg from "../assets/bubble.webp";
+import bubbleImg from "../assets/bubbles/real-bubble-full.webp";
 import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
 import { DailyBonus } from "../components/DailyBonus";
 import { CoinBalance } from "../components/CoinBalance";
@@ -69,22 +69,29 @@ function Home() {
         </Link>
       </div>
 
-      {/* pb-6: F2 — guaranteed breathing room so the footer links never crowd the
-          bottom ad banner (which reserves its own height + safe-area below). */}
-      <div className="flex flex-1 flex-col items-center justify-center pb-6">
+      {/* Adaptive, no-scroll: everything below is sized in viewport units / small
+          responsive gaps so the whole screen fits any phone (notch, Dynamic
+          Island, SE) without a scroll. */}
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center pb-3">
         <div className="relative">
           <img
             src={bubbleImg}
             alt="Plastic bubble"
-            width={192}
-            height={192}
-            className="h-48 w-48 animate-[bubbleFloat_5s_ease-in-out_infinite] drop-shadow-xl"
+            width={176}
+            height={176}
+            className="animate-[bubbleFloat_5s_ease-in-out_infinite] drop-shadow-xl"
+            style={{ height: "clamp(84px, 15vh, 150px)", width: "clamp(84px, 15vh, 150px)" }}
           />
         </div>
-        <h1 className="wordmark mt-6 text-[2.6rem] leading-tight">{t("home.title")}</h1>
-        <p className="mt-3 max-w-xs text-sm text-muted-foreground">{t("home.tagline")}</p>
+        <h1
+          className="wordmark mt-3 leading-tight"
+          style={{ fontSize: "clamp(2rem, 7vh, 2.6rem)" }}
+        >
+          {t("home.title")}
+        </h1>
+        <p className="mt-2 max-w-xs text-sm text-muted-foreground">{t("home.tagline")}</p>
 
-        <div className="mt-10 flex w-full max-w-xs flex-col gap-3">
+        <div className="mt-4 flex w-full max-w-xs flex-col gap-2.5">
           {/* Zen: calm, endless, no clock. */}
           <Link
             to="/play"
@@ -95,7 +102,7 @@ function Home() {
               unlockAudio();
               trackModeSelected("zen");
             }}
-            className="btn btn-primary w-full py-4 text-base"
+            className="btn btn-primary w-full py-3.5 text-base"
           >
             {t("home.zen")}
           </Link>
@@ -108,7 +115,7 @@ function Home() {
               unlockAudio();
               trackModeSelected("time-attack");
             }}
-            className="btn btn-secondary w-full py-4 text-base"
+            className="btn btn-secondary w-full py-3.5 text-base"
           >
             {t("home.timeAttack")}
           </Link>
@@ -138,7 +145,7 @@ function Home() {
 
         <nav
           aria-label="Legal"
-          className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground"
+          className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground"
         >
           <Link to="/settings" className="hover:underline">
             {t("nav.settings")}

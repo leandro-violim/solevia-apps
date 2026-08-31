@@ -610,7 +610,17 @@ function PlayPage() {
         {t("play.bubblesLeft", { n: remaining, best: record?.bestScore ?? 0 })}
       </div>
 
-      <div className="relative flex flex-1 px-2">
+      <div
+        className="relative flex flex-1 px-2 pb-2"
+        style={{
+          // On native the AdMob banner is an overlay at the bottom — reserve its
+          // height (+ safe area) so the field square finishes a few px ABOVE it,
+          // never under it. On web the inline banner already sits below the field.
+          paddingBottom: Capacitor.isNativePlatform()
+            ? "calc(var(--ad-banner-h, 100px) + env(safe-area-inset-bottom) + 10px)"
+            : undefined,
+        }}
+      >
         <div
           ref={fieldRef}
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10"
