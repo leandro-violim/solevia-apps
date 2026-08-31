@@ -1,4 +1,4 @@
-/** Short inspirational quotes shown after clearing all 5 phases. */
+/** Short inspirational quotes shown after clearing all phases. */
 import { LANG, type Lang } from "./i18n";
 
 export const QUOTES: Record<Lang, readonly string[]> = {

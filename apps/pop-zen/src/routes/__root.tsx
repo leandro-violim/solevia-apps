@@ -14,7 +14,6 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { initAds, showBanner } from "../lib/ads";
 import { initAnalytics, track } from "../lib/analytics";
 import { AchievementToast } from "../components/AchievementToast";
-import { BootSplash } from "../components/BootSplash";
 
 function NotFoundComponent() {
   return (
@@ -90,12 +89,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Zen Bubbles" },
       {
         name: "description",
-        content: "A calming bubble-wrap popping game with five phases of shrinking bubbles.",
+        content: "A calming bubble-wrap popping game with soothing phases of shrinking bubbles.",
       },
       { property: "og:title", content: "Zen Bubbles" },
       {
         property: "og:description",
-        content: "Relax and pop plastic bubbles across five soothing phases.",
+        content: "Relax and pop plastic bubbles across soothing phases.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -153,7 +152,6 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <AchievementToast />
-      <BootSplash />
     </QueryClientProvider>
   );
 }

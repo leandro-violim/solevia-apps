@@ -166,7 +166,7 @@ export function usePhaseRecords() {
 /* ───────────────────────────────────────────────────────────────────────────
  * Full-run totals & all-time best
  *
- * A "run" is one attempt at all five phases. We accumulate each phase's score
+ * A "run" is one attempt at all phases. We accumulate each phase's score
  * as the player advances, then at the end of phase 5 compare the sum against
  * the all-time best total. These are plain functions (not a hook) so the play
  * screen can call them imperatively at the exact moment a phase settles.

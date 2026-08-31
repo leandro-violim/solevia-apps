@@ -25,7 +25,7 @@ export const Route = createFileRoute("/finish")({
       { title: "Run complete — Zen Bubbles" },
       {
         name: "description",
-        content: "Your five-phase run is complete. See if you beat your all-time record.",
+        content: "Your run is complete. See if you beat your all-time record.",
       },
     ],
   }),

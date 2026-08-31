@@ -36,7 +36,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     // Home
     "home.title": "Zen Bubbles",
     "home.tagline":
-      "Five soothing phases. Bubbles get smaller as you go. Pop them all as fast as you can to beat your record.",
+      "Soothing phases of ever-shrinking bubbles. Pop them all as fast as you can to beat your record.",
     "home.play": "Play",
     "home.zen": "Zen Mode",
     "home.timeAttack": "Time Attack",
@@ -149,7 +149,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "finish.youBeatBest": "You beat your best!",
     "finish.runComplete": "Run complete",
     "finish.soClose": "So close!",
-    "finish.yourRun": "Your run · all 5 phases",
+    "finish.yourRun": "Your run · all phases",
     "finish.overOldBest": "▲ {delta} over your old best of {prev}",
     "finish.firstTotal": "This is your first all-time total — now go beat it.",
     "finish.allTimeBest": "All-time best:",
@@ -205,7 +205,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     // About page body
     "about.title": "About & Support",
     "about.intro":
-      "Zen Bubbles is a simple relaxation game. Pop plastic bubbles across five soothing phases — bubbles shrink as you advance. The faster you clear a phase, the higher your score. Your best scores and best times are saved on your device so you can beat your own record over time.",
+      "Zen Bubbles is a simple relaxation game. Pop plastic bubbles across a series of soothing phases — bubbles shrink as you advance. The faster you clear a phase, the higher your score. Your best scores and best times are saved on your device so you can beat your own record over time.",
     "about.noAccountH": "No account required",
     "about.noAccount":
       "The App works fully offline and does not require sign-in. Records live on your device only.",
@@ -222,7 +222,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     // Home
     "home.title": "Plástico Bolha",
     "home.tagline":
-      "Cinco fases relaxantes. As bolhas ficam menores a cada fase. Estoure todas o mais rápido que puder para superar o seu recorde.",
+      "Fases relaxantes com bolhas cada vez menores. Estoure todas o mais rápido que puder para superar o seu recorde.",
     "home.play": "Jogar",
     "home.zen": "Modo Zen",
     "home.timeAttack": "Contra o Tempo",
@@ -335,7 +335,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "finish.youBeatBest": "Você superou seu recorde!",
     "finish.runComplete": "Partida concluída",
     "finish.soClose": "Quase lá!",
-    "finish.yourRun": "Sua partida · todas as 5 fases",
+    "finish.yourRun": "Sua partida · todas as fases",
     "finish.overOldBest": "▲ {delta} acima do recorde anterior de {prev}",
     "finish.firstTotal": "Este é o seu primeiro total geral — agora tente superá-lo.",
     "finish.allTimeBest": "Recorde geral:",
@@ -390,7 +390,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     // About page body
     "about.title": "Sobre e suporte",
     "about.intro":
-      "O Zen Bubbles é um jogo simples de relaxamento. Estoure bolhas de plástico em cinco fases tranquilas — as bolhas diminuem conforme você avança. Quanto mais rápido você limpa uma fase, maior a pontuação. Seus melhores resultados e tempos ficam salvos no seu aparelho para você superar o próprio recorde com o tempo.",
+      "O Zen Bubbles é um jogo simples de relaxamento. Estoure bolhas de plástico em uma série de fases tranquilas — as bolhas diminuem conforme você avança. Quanto mais rápido você limpa uma fase, maior a pontuação. Seus melhores resultados e tempos ficam salvos no seu aparelho para você superar o próprio recorde com o tempo.",
     "about.noAccountH": "Sem necessidade de conta",
     "about.noAccount":
       "O app funciona totalmente offline e não exige login. Os recordes ficam apenas no seu aparelho.",

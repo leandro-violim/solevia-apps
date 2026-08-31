@@ -33,7 +33,7 @@ function PrivacyPage() {
       <p className="mt-6">
         This Privacy Policy explains how Sole Via Entertainment LLC ("Solevia", "we", "us") handles
         information in connection with Zen Bubbles ("the App"), a relaxation game in which you pop
-        bubbles across five phases and your best scores and times are saved on your device. You can
+        bubbles across its phases and your best scores and times are saved on your device. You can
         play without an account, and we do not run servers that collect your personal information.
         The App is supported by ads through Google AdMob: we do not collect personal information
         ourselves, but our advertising partner (Google) collects certain device and usage

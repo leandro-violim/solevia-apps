@@ -19,12 +19,12 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "A calming bubble-wrap popping game. Five phases of shrinking bubbles. Pop, relax, beat your best time.",
+          "A calming bubble-wrap popping game. Soothing phases of shrinking bubbles. Pop, relax, beat your best time.",
       },
       { property: "og:title", content: "Zen Bubbles" },
       {
         property: "og:description",
-        content: "Relax and pop plastic bubbles across five soothing phases.",
+        content: "Relax and pop plastic bubbles across soothing phases.",
       },
     ],
   }),
