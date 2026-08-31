@@ -11,7 +11,6 @@ import { unlockAudio } from "../lib/pop-sound";
 import { trackModeSelected } from "../lib/mode";
 import type { Difficulty } from "../lib/config";
 import { TrophyIcon } from "../components/icons";
-import { Onboarding } from "../components/Onboarding";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,13 +40,17 @@ function Home() {
     >
       {/* Once-a-day pre-game daily bonus pop-up (self-manages whether to show). */}
       <DailyBonus />
-      {/* First-run "How to Play" (self-manages; renders above the bonus on day 1). */}
-      <Onboarding />
 
-      {/* Top bar: streak (left) + coins→shop pill (right). */}
+      {/* Top bar: streak (left) + coins→shop pill (right). F3: a FIXED app bar
+          with a navy backdrop + safe-area top padding, so its chips always sit
+          below the OS status bar / notch / Dynamic Island and content scrolls
+          UNDER it — never the other way around. */}
       <div
-        className="absolute inset-x-0 top-0 flex items-center justify-between px-5"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+        className="fixed inset-x-0 top-0 z-40 flex items-center justify-between px-5 pb-3"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top) + 12px)",
+          background: "linear-gradient(to bottom, var(--bg-0) 55%, transparent)",
+        }}
       >
         <Link
           to="/achievements"
@@ -66,7 +69,9 @@ function Home() {
         </Link>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center">
+      {/* pb-6: F2 — guaranteed breathing room so the footer links never crowd the
+          bottom ad banner (which reserves its own height + safe-area below). */}
+      <div className="flex flex-1 flex-col items-center justify-center pb-6">
         <div className="relative">
           <img
             src={bubbleImg}
@@ -112,9 +117,9 @@ function Home() {
               <button
                 key={d}
                 onClick={() => setDifficulty(d)}
-                className={`rounded-full px-3 py-1 text-xs ${
+                className={`rounded-full px-3 py-1 text-xs transition-colors ${
                   difficulty === d
-                    ? "bg-primary/15 font-semibold text-primary"
+                    ? "bg-primary font-semibold text-primary-foreground shadow-sm"
                     : "font-medium text-muted-foreground hover:text-foreground"
                 }`}
               >

@@ -195,6 +195,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
       "Reset all records? This will erase your best scores and times for every phase. This cannot be undone.",
     "settings.resetDone": "Records reset.",
     "settings.about": "About",
+    "settings.howToPlayDesc": "A quick refresher on how to play.", // F6
 
     // Common / About links
     "link.aboutSupport": "About & Support",
@@ -380,6 +381,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
       "Apagar todos os recordes? Isso vai apagar suas melhores pontuações e tempos de todas as fases. Não pode ser desfeito.",
     "settings.resetDone": "Recordes apagados.",
     "settings.about": "Sobre",
+    "settings.howToPlayDesc": "Uma revisão rápida de como jogar.", // F6
 
     // Common / About links
     "link.aboutSupport": "Sobre e suporte",

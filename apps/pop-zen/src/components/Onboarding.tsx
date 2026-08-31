@@ -1,37 +1,16 @@
 /**
- * P1-T10 — first-run "How to Play" onboarding. Shows once (localStorage flag) on
- * the home screen, with Cowork's hand-popping hero + three calm steps. Reuses the
- * shared Modal (P1-T8). Client-only decision (effect) so there's no SSR mismatch.
+ * "How to Play" modal. Cowork's hand-popping hero + three calm steps, in the
+ * shared Modal (P1-T8). F6: no longer auto-shown on launch — the game is meant to
+ * be intuitive; this now opens on demand from Settings. Controlled via `open`.
  */
-import { useEffect, useState } from "react";
 import { Modal } from "./Modal";
 import { t } from "../lib/i18n";
 import heroImg from "../assets/scene/loading-hero.webp";
 
-const KEY = "zb_onboarded";
-
-export function Onboarding() {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(KEY) !== "1") setOpen(true);
-    } catch {
-      /* storage unavailable — skip onboarding rather than nag */
-    }
-  }, []);
+export function HowToPlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null;
-
-  const done = () => {
-    try {
-      localStorage.setItem(KEY, "1");
-    } catch {
-      /* ignore */
-    }
-    setOpen(false);
-  };
-
   return (
-    <Modal onClose={done} closeLabel={t("bonus.close")}>
+    <Modal onClose={onClose} closeLabel={t("bonus.close")}>
       <img
         src={heroImg}
         alt=""
@@ -51,7 +30,7 @@ export function Onboarding() {
           </li>
         ))}
       </ol>
-      <button onClick={done} className="btn btn-primary mt-6 w-full">
+      <button onClick={onClose} className="btn btn-primary mt-6 w-full">
         {t("onboarding.cta")}
       </button>
     </Modal>
