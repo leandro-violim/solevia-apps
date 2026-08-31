@@ -99,7 +99,16 @@ export function resetAudio(): void {
  * used by the visibilitychange guard for web backgrounding. Cheap + idempotent.
  */
 export function resumeAudio(): void {
-  const ac = getCtx(); // getCtx() resumes a non-running context
+  const state = ctx?.state as string | undefined;
+  // iOS commonly leaves the context "interrupted" after the app was backgrounded
+  // (or "closed" if it was torn down) — plain resume() can't recover that, so
+  // rebuild it cleanly and pre-decode the samples so the first pop isn't silent.
+  if (!ctx || state === "interrupted" || state === "closed") {
+    resetAudio();
+    unlockAudio();
+    return;
+  }
+  const ac = getCtx(); // getCtx() resumes a merely-suspended context
   if (!ac) return;
   getBus(ac);
   if (buffers.length !== SOURCES.length) void loadBuffers(ac); // re-decode if dropped
@@ -109,6 +118,20 @@ if (typeof document !== "undefined") {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") resumeAudio();
   });
+}
+
+// Native app background → foreground: the WKWebView doesn't always fire
+// `visibilitychange`, and iOS leaves the audio session interrupted, so recover
+// the pop bus on every resume. Dynamically imported so it's client/native-only.
+if (typeof window !== "undefined") {
+  void import("@capacitor/app")
+    .then(({ App }) => {
+      void App.addListener("appStateChange", ({ isActive }) => {
+        if (isActive) resumeAudio();
+      }).catch(() => {});
+      void App.addListener("resume", () => resumeAudio()).catch(() => {});
+    })
+    .catch(() => {});
 }
 
 /**
