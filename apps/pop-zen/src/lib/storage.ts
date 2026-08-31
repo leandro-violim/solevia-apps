@@ -46,6 +46,12 @@ export type DailyChallengeState = {
   history: { date: string; best: number }[];
 };
 
+/** Owned consumable power-ups (Bombs, Time Freeze) — bought with coins, used mid-stage. */
+export type InventoryState = {
+  bomb: number;
+  freeze: number;
+};
+
 export type PlayerState = {
   version: number;
   coins: number;
@@ -54,6 +60,7 @@ export type PlayerState = {
   achievements: AchievementsState;
   stats: StatsState;
   dailyChallenge: DailyChallengeState;
+  inventory: InventoryState;
 };
 
 function defaults(): PlayerState {
@@ -80,6 +87,7 @@ function defaults(): PlayerState {
       skinsOwned: 1,
     },
     dailyChallenge: { lastDate: null, bestToday: 0, history: [] },
+    inventory: { bomb: 0, freeze: 0 },
   };
 }
 
@@ -97,6 +105,7 @@ function migrate(raw: Partial<PlayerState> | null): PlayerState {
     achievements: { ...base.achievements, ...(raw.achievements ?? {}) },
     stats: { ...base.stats, ...(raw.stats ?? {}) },
     dailyChallenge: { ...base.dailyChallenge, ...(raw.dailyChallenge ?? {}) },
+    inventory: { ...base.inventory, ...(raw.inventory ?? {}) },
   };
 }
 

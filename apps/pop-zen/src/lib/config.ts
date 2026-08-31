@@ -46,6 +46,13 @@ export const CONFIG = {
     premiumStreakMilestone: 7, // premium skin also unlockable at this streak day
   },
 
+  /** Consumable power-ups (Bombs, Time Freeze) — premium-priced (~2 runs each). */
+  consumables: {
+    prices: { bomb: 250, freeze: 300 },
+    freezeMs: 2000, // Time Freeze extends the Time Attack countdown by this much
+    bombRadiusFactor: 1.9, // used-item bomb blast: neighbours within size×this pop
+  },
+
   /** §7 Special bubbles — spawn rate (fraction) + earliest phase. Zen scales down. */
   specials: {
     golden: { rate: 0.03, fromPhase: 1 },

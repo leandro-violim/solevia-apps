@@ -78,6 +78,11 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "shop.equipped": "Equipped",
     "shop.watchDiscount": "−{pct}%",
     "shop.watchEarn": "Watch a video · +{coins} coins",
+    "items.restock": "Stock up",
+    "items.bomb": "Bomb",
+    "items.freeze": "Time Freeze",
+    "items.bombArmed": "Bomb armed — tap a bubble",
+    "items.frozen": "Frozen +{s}s",
     "home.shop": "Shop",
     "home.streak": "Day {n}",
 
@@ -283,6 +288,11 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     "shop.equipped": "Equipado",
     "shop.watchDiscount": "−{pct}%",
     "shop.watchEarn": "Assista um vídeo · +{coins} moedas",
+    "items.restock": "Reabastecer",
+    "items.bomb": "Bomba",
+    "items.freeze": "Congelar Tempo",
+    "items.bombArmed": "Bomba armada — toque numa bolha",
+    "items.frozen": "Congelado +{s}s",
     "home.shop": "Loja",
     "home.streak": "Dia {n}",
 

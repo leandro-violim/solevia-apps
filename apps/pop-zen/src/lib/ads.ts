@@ -331,6 +331,25 @@ export async function maybeShowInterstitial(placement: string): Promise<boolean>
   return shown;
 }
 
+/**
+ * Interstitial at a WORLD change (crossing into a new round, ~3× per full Pop
+ * Challenge run). Unlike `maybeShowInterstitial`, this isn't gated by the
+ * per-run frequency counter (world crossings ARE the intended breaks), but it
+ * shares the same cooldown so it never stacks on top of the run-end ad.
+ */
+export async function maybeShowWorldInterstitial(placement: string): Promise<boolean> {
+  if (!IS_NATIVE) return false;
+  const cfg = CONFIG.ads.interstitial;
+  if (Date.now() - lastInterstitialAt < cfg.cooldownMs) return false; // shared cooldown
+  const shown = await showInterstitial();
+  if (shown) {
+    lastInterstitialAt = Date.now();
+    runsSinceInterstitial = 0;
+    track("ad_interstitial_shown", { placement });
+  }
+  return shown;
+}
+
 // ── §3 Rewarded ads (opt-in) ──────────────────────────────────────────────
 // Placements: revive (+time), double coins, shop unlock/discount. On the web/dev
 // build (no native AdMob) a watch is SIMULATED as success so the reward flow is

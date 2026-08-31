@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AdBanner } from "../components/AdBanner";
 import {
   maybeShowInterstitial,
+  maybeShowWorldInterstitial,
   noteRunCompleted,
   preloadInterstitial,
   refreshBanner,
@@ -13,13 +14,27 @@ import {
 import { Bubble } from "../components/Bubble";
 import { Shields } from "../components/Shields";
 import { WorldIntro } from "../components/WorldIntro";
+import { ItemHud } from "../components/ItemHud";
+import {
+  getCount,
+  buyConsumable,
+  consumeItem,
+  subscribeInventory,
+  priceOfConsumable,
+} from "../lib/consumables";
 import { PopParticles } from "../components/PopParticles";
 import { ComboHud } from "../components/ComboHud";
 import { burstParticles } from "../lib/pop-particles";
 import { registerPop, resetCombo, getMaxCombo } from "../lib/combo";
 import { JUICE } from "../lib/juice";
 import { CONFIG } from "../lib/config";
-import { addCoins, coinsForScore, coinsForZenBubbles } from "../lib/economy";
+import {
+  addCoins,
+  getCoins,
+  subscribeCoins,
+  coinsForScore,
+  coinsForZenBubbles,
+} from "../lib/economy";
 import { rollMysteryReward, type SpecialType } from "../lib/specials";
 import { rollObjectives, checkObjectives, nextObjective, type Objective } from "../lib/objectives";
 import {
@@ -37,7 +52,7 @@ import { seededRand, recordDailyResult } from "../lib/daily-challenge";
 import { track } from "../lib/analytics";
 import { unlockZenSkins } from "../lib/skins";
 import { ChallengeGoals } from "../components/ChallengeGoals";
-import { CoinIcon, PlayIcon } from "../components/icons";
+import { CoinIcon, PlayIcon, BombIcon, FreezeIcon } from "../components/icons";
 import fieldSheet from "../assets/scene/field-sheet.webp";
 import {
   computeTimeAttackScore,
@@ -259,6 +274,23 @@ function PlayPage() {
   // Candy-Crush-style "entering World N" flourish, shown when a run crosses into
   // a new round (world 2–4 → its first phase). Dismisses into the phase.
   const [showWorldIntro, setShowWorldIntro] = useState(false);
+
+  // Consumable power-ups (Bombs, Time Freeze) — Pop Challenge only. Live counts
+  // re-read on any inventory change. Bomb is armed then detonated on a bubble tap.
+  const [, setInvVersion] = useState(0);
+  useEffect(() => {
+    const a = subscribeInventory(() => setInvVersion((v) => v + 1));
+    const b = subscribeCoins(() => setInvVersion((v) => v + 1));
+    return () => {
+      a();
+      b();
+    };
+  }, []);
+  const [bombArmed, setBombArmed] = useState(false);
+  const bombArmedRef = useRef(false);
+  const [itemFlash, setItemFlash] = useState<string | null>(null);
+  // Rewarded-video "earn coins" between stages — capped per run (anti-abuse).
+  const coinAdsUsedRef = useRef(0);
   // A bubble is blocked when its centre currently sits under a patrolling shield.
   const isCovered = useCallback((rect: DOMRect): boolean => {
     const cx = rect.left + rect.width / 2;
@@ -334,6 +366,49 @@ function PlayPage() {
     return () => window.clearTimeout(id);
   }, [objToast]);
 
+  // Auto-dismiss the power-up flash ("+2s", "Bomb armed").
+  useEffect(() => {
+    if (!itemFlash) return;
+    const id = window.setTimeout(() => setItemFlash(null), 1400);
+    return () => window.clearTimeout(id);
+  }, [itemFlash]);
+
+  // Arm a Bomb (next bubble tap detonates it). Toggles off if tapped again.
+  const armBomb = useCallback(() => {
+    if (getCount("bomb") <= 0) return;
+    const next = !bombArmedRef.current;
+    bombArmedRef.current = next;
+    setBombArmed(next);
+    setItemFlash(next ? t("items.bombArmed") : null);
+  }, []);
+
+  // Use a Time Freeze: extend the running countdown. Only while the clock runs.
+  const freezeTime = useCallback(() => {
+    if (deadline === null || state !== "playing") return;
+    if (!consumeItem("freeze")) return;
+    setDeadline((d) => (d === null ? d : d + CONFIG.consumables.freezeMs));
+    setItemFlash(t("items.frozen", { s: Math.round(CONFIG.consumables.freezeMs / 1000) }));
+  }, [deadline, state]);
+
+  // Between-stage restock: buy a power-up with coins (subscribeInventory re-renders).
+  const buyItem = useCallback((id: "bomb" | "freeze") => {
+    buyConsumable(id);
+  }, []);
+
+  // §3/§4 watch a rewarded video → earn coins toward items. Capped per run.
+  const [adBusy, setAdBusy] = useState(false);
+  const watchForCoins = useCallback(async () => {
+    if (adBusy) return;
+    if (coinAdsUsedRef.current >= CONFIG.ads.rewarded.coinRewardMaxPerRun) return;
+    setAdBusy(true);
+    const watched = await showRewarded("earn_coins_stage");
+    if (watched) {
+      coinAdsUsedRef.current += 1;
+      addCoins(CONFIG.ads.rewarded.coinReward, "rewarded_stage");
+    }
+    setAdBusy(false);
+  }, [adBusy]);
+
   // Build field for this phase
   useEffect(() => {
     const el = fieldRef.current;
@@ -367,6 +442,8 @@ function PlayPage() {
     settledRef.current = false;
     startedRef.current = false;
     bonusPointsRef.current = 0;
+    bombArmedRef.current = false; // never carry an armed bomb into a new phase
+    setBombArmed(false);
     resetCombo(); // fresh phase → no lingering combo chain
     // Start a brand-new full-run total when entering phase 1 — or when arriving
     // at a later phase that isn't a valid continuation (e.g. an edited ?phase=3
@@ -379,6 +456,7 @@ function PlayPage() {
       completedRef.current = new Set();
       setObjVersion((v) => v + 1);
       runStartAtRef.current = Date.now();
+      coinAdsUsedRef.current = 0; // reset the per-run rewarded-coins cap
       track("run_start", { mode, difficulty, phase_start: phase }); // P1-T6
     }
     // Warm up the interstitial now so it's ready (if online) by phase end.
@@ -466,6 +544,36 @@ function PlayPage() {
   // bubble state) and drives the particle burst without a re-render.
   const handlePop = useCallback(
     (id: number, cx: number, cy: number, variant: number, special: SpecialType) => {
+      // Armed Bomb power-up: this tap detonates a blast at (cx,cy) instead of a
+      // normal single pop — clears the tapped bubble + its cluster, spends one bomb.
+      if (bombArmedRef.current) {
+        bombArmedRef.current = false;
+        setBombArmed(false);
+        consumeItem("bomb");
+        if (!startedRef.current) {
+          startedRef.current = true;
+          unlockAudio();
+          setStartAt(Date.now());
+          setState("playing");
+          if (!isZen && cfg.timeLimitMs > 0) setDeadline(Date.now() + cfg.timeLimitMs);
+        }
+        playPop();
+        popHaptic();
+        noteRunPop("normal");
+        burstParticles(cx, cy, variant, 30, 1.9, "#ff9a6a");
+        const r2 = CONFIG.consumables.bombRadiusFactor;
+        setBubbles((prev) =>
+          prev.map((b) => {
+            if (b.popped) return b;
+            const dx = b.x + b.size / 2 - cx;
+            const dy = b.y + b.size / 2 - cy;
+            if (b.id === id || Math.hypot(dx, dy) <= b.size * r2) return { ...b, popped: true };
+            return b;
+          }),
+        );
+        scanObjectives();
+        return;
+      }
       if (!startedRef.current) {
         startedRef.current = true;
         unlockAudio();
@@ -632,12 +740,15 @@ function PlayPage() {
   // Skip idle float animation on the densest phase to save CPU/battery.
   const stillBubbles = cfg.bubbles >= 60;
 
-  const nextPhase = useCallback(() => {
-    navigate({
-      to: "/play",
-      search: { phase: Math.min(phase + 1, TOTAL_STAGES), mode, difficulty, daily },
-    });
-  }, [navigate, phase, mode, difficulty, daily]);
+  const nextPhase = useCallback(async () => {
+    const next = Math.min(phase + 1, TOTAL_STAGES);
+    // Interstitial on a WORLD change (crossing into a new round) — a natural
+    // "level complete" break, ~3× per full run, cooldown-gated (see ads.ts).
+    if (!isZen && roundOf(next) > roundOf(phase)) {
+      await maybeShowWorldInterstitial("world_change");
+    }
+    navigate({ to: "/play", search: { phase: next, mode, difficulty, daily } });
+  }, [navigate, phase, mode, difficulty, daily, isZen]);
 
   // End of a Time Attack run: total the phases, award coins (§1), fire the
   // run-end interstitial (§2 — a natural break, capped), then celebrate.
@@ -851,6 +962,25 @@ function PlayPage() {
           {/* Candy-Crush-style "entering World N" flourish (worlds 2–4). */}
           {showWorldIntro && <WorldIntro round={round} onDone={() => setShowWorldIntro(false)} />}
 
+          {/* Consumable power-ups (Pop Challenge only): Bomb + Time Freeze. */}
+          {!isZen && (state === "ready" || state === "playing") && !showWorldIntro && (
+            <ItemHud
+              bombCount={getCount("bomb")}
+              freezeCount={getCount("freeze")}
+              bombArmed={bombArmed}
+              onBomb={armBomb}
+              onFreeze={freezeTime}
+              freezeDisabled={state !== "playing" || deadline === null}
+            />
+          )}
+
+          {/* Power-up flash ("+2s", "Bomb armed"). */}
+          {itemFlash && (
+            <div className="pointer-events-none absolute inset-x-0 top-28 z-10 flex justify-center">
+              <div className="zc-milestone inline-flex items-center gap-1">{itemFlash}</div>
+            </div>
+          )}
+
           {/* §8 objective-complete toast — brief, centered (no longer a top-left
               overlay covering a bubble). */}
           {objToast && (
@@ -966,8 +1096,54 @@ function PlayPage() {
                     “{finaleQuote}”
                   </div>
                 )}
+                {/* Candy-Crush-style pre-next-stage restock: buy power-ups (or
+                    watch a video for coins) before heading into the next stage. */}
+                {!isZen && !isLast && (
+                  <div className="mt-3 rounded-lg bg-white/5 p-3">
+                    <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">
+                      {t("items.restock")}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => buyItem("bomb")}
+                        disabled={getCoins() < priceOfConsumable("bomb")}
+                        className="btn btn-secondary w-full justify-between gap-1 py-2 text-xs disabled:opacity-40"
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          <BombIcon size={15} />×{getCount("bomb")}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <CoinIcon size={12} className="text-gold" />
+                          {priceOfConsumable("bomb")}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => buyItem("freeze")}
+                        disabled={getCoins() < priceOfConsumable("freeze")}
+                        className="btn btn-secondary w-full justify-between gap-1 py-2 text-xs disabled:opacity-40"
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          <FreezeIcon size={15} />×{getCount("freeze")}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <CoinIcon size={12} className="text-gold" />
+                          {priceOfConsumable("freeze")}
+                        </span>
+                      </button>
+                    </div>
+                    {coinAdsUsedRef.current < CONFIG.ads.rewarded.coinRewardMaxPerRun && (
+                      <button
+                        onClick={watchForCoins}
+                        disabled={adBusy}
+                        className="btn btn-ghost mt-2 w-full gap-1 py-2 text-xs text-accent disabled:opacity-40"
+                      >
+                        <PlayIcon size={13} />
+                        {t("shop.watchEarn", { coins: CONFIG.ads.rewarded.coinReward })}
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div className="mt-4 flex flex-col gap-2">
-                  {/* §2: no between-phase interstitials — ads fire only at run end. */}
                   <button
                     onClick={() => (isLast ? goFinish() : nextPhase())}
                     className="btn btn-primary w-full"

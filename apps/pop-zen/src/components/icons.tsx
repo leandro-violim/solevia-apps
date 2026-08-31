@@ -41,6 +41,26 @@ export function TrophyIcon(p: IconProps) {
   );
 }
 
+export function BombIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="10.5" cy="14" r="6.5" />
+      <path d="M15 9.5l2-2" />
+      <path d="M17.5 7.5l1.2-1.2" />
+      <path d="M19.5 6.2l.8.3M18.2 4.5l.3.8" />
+    </Svg>
+  );
+}
+
+export function FreezeIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5L4.2 16.5" />
+      <path d="M12 6l2 2-2 2-2-2 2-2Z" opacity="0" />
+    </Svg>
+  );
+}
+
 export function CalendarIcon(p: IconProps) {
   return (
     <Svg {...p}>
