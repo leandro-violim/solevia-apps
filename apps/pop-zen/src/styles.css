@@ -357,6 +357,12 @@
   }
 }
 
+/* Born already popped (Pop for Fun's pre-popped bubbles): no pop animation, just
+   the deflated end-state. */
+.zb.popped.born {
+  animation: none;
+}
+
 /* Reduced motion: settle straight to the deflated end-state, no squish bounce. */
 @media (prefers-reduced-motion: reduce) {
   .zb.popped {

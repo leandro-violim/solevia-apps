@@ -57,6 +57,9 @@ export const Bubble = memo(function Bubble({
   // Random tilt (±8°) generated ONCE, then frozen so it's stable across renders.
   const rotRef = useRef<string | null>(null);
   if (rotRef.current === null) rotRef.current = R(-8, 8).toFixed(1) + "deg";
+  // Born already popped (Pop for Fun seeds a few)? Then show the deflated sprite
+  // WITHOUT the pop animation — no phantom pops when a sheet appears.
+  const bornPopped = useRef(popped);
 
   useEffect(() => {
     if (!popped) handled.current = false;
@@ -108,7 +111,7 @@ export const Bubble = memo(function Bubble({
       aria-label="Pop bubble"
     >
       <div
-        className={popped ? "zb popped" : "zb"}
+        className={popped ? (bornPopped.current ? "zb popped born" : "zb popped") : "zb"}
         style={{
           position: "absolute",
           inset: 0,

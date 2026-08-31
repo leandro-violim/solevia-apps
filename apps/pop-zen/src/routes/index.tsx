@@ -89,7 +89,11 @@ function Home() {
         <p className="mt-2 max-w-xs text-sm text-muted-foreground">{t("home.tagline")}</p>
 
         <div className="mt-4 flex w-full max-w-xs flex-col gap-2.5">
-          {/* Zen: calm, endless, no clock. */}
+          {/* Pop Challenge — the daily timed mode; the HERO button (most emphasis,
+              first) because it's what brings players back. */}
+          <DailyChallengeCard />
+
+          {/* Pop for Fun — casual, endless; quieter (ghost) so the Challenge leads. */}
           <Link
             to="/play"
             search={{ mode: "zen", phase: 1, difficulty: "normal", daily: 0 }}
@@ -99,15 +103,15 @@ function Home() {
               unlockAudio();
               trackModeSelected("zen");
             }}
-            className="btn btn-primary w-full py-3.5 text-base"
+            className="btn btn-ghost w-full py-3.5 text-base"
           >
             {t("home.zen")}
           </Link>
 
-          {/* The daily challenge — the timed mode (date-seeded, one loop/day). */}
-          <DailyChallengeCard />
-
-          <Link to="/records" className="btn btn-ghost w-full text-sm">
+          <Link
+            to="/records"
+            className="mt-1 text-center text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
             {t("home.viewRecords")}
           </Link>
         </div>

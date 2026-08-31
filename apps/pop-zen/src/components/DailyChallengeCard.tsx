@@ -28,7 +28,7 @@ export function DailyChallengeCard() {
           unlockAudio();
           trackModeSelected("time-attack");
         }}
-        className="btn btn-secondary w-full gap-2 py-3.5 text-base"
+        className="btn btn-primary w-full gap-2 py-4 text-base"
       >
         <CalendarIcon size={18} />
         {t("home.daily")}

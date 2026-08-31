@@ -168,6 +168,25 @@ const ZEN_FIELD: ReturnType<typeof getPhase> = {
   key: "phase3",
 };
 
+/** Pop for Fun: each renewed sheet varies the bubble SIZE + count a little, so no
+ *  two sheets look the same. */
+function rollZenField(): { bubbles: number; size: number } {
+  return {
+    size: Math.round(42 + Math.random() * 36), // 42–78 px
+    bubbles: Math.round(22 + Math.random() * 14), // 22–36
+  };
+}
+
+/** Pop for Fun: seed a few bubbles as already-popped — like a real, partly-used
+ *  bubble-wrap sheet (up to ~18%, always leaving plenty to pop). */
+function prePopSome(list: BubbleState[]): BubbleState[] {
+  const maxPre = Math.floor(list.length * 0.18);
+  let pre = 0;
+  return list.map((b) =>
+    pre < maxPre && Math.random() < 0.25 ? ((pre += 1), { ...b, popped: true }) : b,
+  );
+}
+
 function PlayPage() {
   const { phase, mode, difficulty, daily } = Route.useSearch();
   const navigate = useNavigate({ from: "/play" });
@@ -199,6 +218,9 @@ function PlayPage() {
   // True once the first bubble of this phase is popped (starts the clock). A ref,
   // not state, so handlePop stays referentially stable and <Bubble>'s memo works.
   const startedRef = useRef(false);
+  // Pop for Fun: the current sheet's rolled size/count (stable across a re-layout,
+  // re-rolled on each new/renewed sheet).
+  const zenFieldRef = useRef<{ bubbles: number; size: number }>({ bubbles: 30, size: 54 });
   // §7 golden/mystery bonus points accumulated this phase, added to the score.
   const bonusPointsRef = useRef(0);
   // Wall-clock at run start, for the run_end duration_s analytics param (P1-T6).
@@ -234,12 +256,21 @@ function PlayPage() {
     if (!el) return;
     const w = el.clientWidth;
     const h = usableFieldHeight(el);
-    setBubbles(
-      layoutBubbles(cfg.bubbles, cfg.size, w, h, isDaily ? seededRand(phase) : Math.random, {
-        phase,
-        specialsMul,
-      }),
-    );
+    if (isZen) {
+      // Pop for Fun: fresh sheet → new random size/count + a few pre-popped.
+      zenFieldRef.current = rollZenField();
+      const zf = zenFieldRef.current;
+      setBubbles(
+        prePopSome(layoutBubbles(zf.bubbles, zf.size, w, h, Math.random, { phase, specialsMul })),
+      );
+    } else {
+      setBubbles(
+        layoutBubbles(cfg.bubbles, cfg.size, w, h, isDaily ? seededRand(phase) : Math.random, {
+          phase,
+          specialsMul,
+        }),
+      );
+    }
     setStartAt(null);
     setDeadline(null);
     setReviveBusy(false);
@@ -276,19 +307,22 @@ function PlayPage() {
     const onResize = () => {
       const el = fieldRef.current;
       if (!el || state !== "ready") return;
-      setBubbles(
-        layoutBubbles(
-          cfg.bubbles,
-          cfg.size,
-          el.clientWidth,
-          usableFieldHeight(el),
-          isDaily ? seededRand(phase) : Math.random,
-          {
+      const w = el.clientWidth;
+      const h = usableFieldHeight(el);
+      if (isZen) {
+        // Keep the CURRENT sheet's rolled size (don't re-roll on a banner resize).
+        const zf = zenFieldRef.current;
+        setBubbles(
+          prePopSome(layoutBubbles(zf.bubbles, zf.size, w, h, Math.random, { phase, specialsMul })),
+        );
+      } else {
+        setBubbles(
+          layoutBubbles(cfg.bubbles, cfg.size, w, h, isDaily ? seededRand(phase) : Math.random, {
             phase,
             specialsMul,
-          },
-        ),
-      );
+          }),
+        );
+      }
     };
     window.addEventListener("ad-banner-resize", onResize);
     window.visualViewport?.addEventListener("resize", onResize);
@@ -296,7 +330,7 @@ function PlayPage() {
       window.removeEventListener("ad-banner-resize", onResize);
       window.visualViewport?.removeEventListener("resize", onResize);
     };
-  }, [state, cfg.bubbles, cfg.size, phase, specialsMul, isDaily]);
+  }, [state, cfg.bubbles, cfg.size, phase, specialsMul, isDaily, isZen]);
 
   // Freeze the animated full-screen aurora while actively playing — a large
   // blurred, continuously-animated layer under the field's backdrop-blur is a
@@ -394,20 +428,18 @@ function PlayPage() {
       const golden = bubbles.filter((b) => b.special === "golden").length;
       commitStats(bubbles.length, golden, getMaxCombo(), false); // §10 cumulative stats
       checkAchievements();
-      addCoins(coinsForZenBubbles(cfg.bubbles), "zen");
+      addCoins(coinsForZenBubbles(bubbles.length), "zen");
       const el = fieldRef.current;
       if (el) {
+        // Pop for Fun: renew with a fresh random sheet (new size/count + pre-popped).
+        zenFieldRef.current = rollZenField();
+        const zf = zenFieldRef.current;
         setBubbles(
-          layoutBubbles(
-            cfg.bubbles,
-            cfg.size,
-            el.clientWidth,
-            usableFieldHeight(el),
-            isDaily ? seededRand(phase) : Math.random,
-            {
+          prePopSome(
+            layoutBubbles(zf.bubbles, zf.size, el.clientWidth, usableFieldHeight(el), Math.random, {
               phase,
               specialsMul,
-            },
+            }),
           ),
         );
       }
