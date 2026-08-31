@@ -27,12 +27,24 @@ let loading = false;
 
 function getCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
+  // iOS leaves the context "interrupted" after a full-screen ad or backgrounding;
+  // resume() can't revive that, so drop it and build a fresh one. Because getCtx
+  // is reached from the pop tap (a user gesture), the new context resumes and
+  // plays — so pops always come back, even mid-phase after a rewarded video.
+  const st = ctx?.state as string | undefined;
+  if (ctx && (st === "interrupted" || st === "closed")) {
+    void ctx.close().catch(() => {});
+    ctx = null;
+    bus = null;
+    buffers = [];
+  }
   if (!ctx) {
     const AC =
       window.AudioContext ||
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AC) return null;
     ctx = new AC();
+    bus = null;
     buffers = []; // a fresh context needs freshly-decoded buffers
   }
   if (ctx.state !== "running") void ctx.resume();

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { StatusBarCover } from "../components/StatusBarCover";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/terms")({
 function TermsPage() {
   return (
     <main className="mx-auto max-w-2xl px-6 pb-[calc(var(--ad-banner-h,72px)+env(safe-area-inset-bottom)+1.25rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)] text-sm leading-relaxed text-foreground">
+      <StatusBarCover />
       <Link to="/" className="text-xs text-muted-foreground">
         ← Back home
       </Link>

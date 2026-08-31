@@ -170,18 +170,18 @@ export const Bubble = memo(function Bubble({
         />
       )}
       {skinImg && !popped && (
-        // The bought skin's real material (metallic/neon/pastel finish) layered
-        // over the bubble's gloss so it looks like what you actually purchased.
+        // The bought skin's real material (metallic/neon/pastel finish + pockets)
+        // layered over the bubble's gloss so it looks like what you purchased.
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
             borderRadius: "50%",
             backgroundImage: `url(${skinImg})`,
-            backgroundSize: "260%",
+            backgroundSize: "300%",
             backgroundPosition: "center",
-            mixBlendMode: "soft-light",
-            opacity: 0.55,
+            mixBlendMode: "overlay",
+            opacity: 0.7,
           }}
         />
       )}

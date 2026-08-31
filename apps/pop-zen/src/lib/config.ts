@@ -28,7 +28,7 @@ export const CONFIG = {
       reviveSeconds: 15, // +time granted by a revive
       shopUnlock: "discount" as "discount" | "dayPass", // how the shop rewarded works
       shopDiscountPct: 0.5, // discount mode: fraction knocked off the price
-      coinReward: 40, // §3 "watch a video → earn coins" (shop + between-phase)
+      coinReward: 20, // §3 "watch a video → earn coins" (shop + between-phase)
       coinRewardMaxPerRun: 3, // between-phase earn-coins cap per run (anti-abuse)
     },
   },

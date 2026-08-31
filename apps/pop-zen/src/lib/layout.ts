@@ -36,6 +36,19 @@ export function layoutBubbles(
   },
 ): BubbleState[] {
   const padding = 6;
+  // Adaptive fit: shrink the bubble size (never enlarge) until ALL `count`
+  // bubbles fit fully inside width×height, so the last row is never clipped on
+  // smaller screens. Capacity = cols-that-fit × rows-that-fit. `size` is the max.
+  if (width > 0 && height > 0) {
+    let s = size;
+    while (s > 10) {
+      const colsFit = Math.max(1, Math.floor(width / (s + padding)));
+      const rowsFit = Math.max(1, Math.floor(height / (s + padding)));
+      if (colsFit * rowsFit >= count) break;
+      s -= 1;
+    }
+    size = s;
+  }
   const step = size + padding;
   const cols = Math.max(1, Math.floor(width / step));
   const rows = Math.max(1, Math.ceil(count / cols));
