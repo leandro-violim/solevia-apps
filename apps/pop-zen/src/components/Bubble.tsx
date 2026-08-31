@@ -24,6 +24,19 @@ type Props = {
   /** §7 special-bubble type — changes look + pop effect. */
   special: SpecialType;
   /**
+   * Round-3 "moving" mechanic: the bubble slowly orbits AND only a center tap
+   * counts. `centerHitFrac` (0–1) is the fraction of the radius that pops — a
+   * tap landing outside that inner circle is ignored (no latch → try again).
+   */
+  moving?: boolean;
+  centerHitFrac?: number;
+  /**
+   * Round-4 "shielded" mechanic: called with the bubble's live screen rect just
+   * before a pop. Return false to block the tap (a moving shield is covering it)
+   * WITHOUT latching, so it pops fine once the shield slides past.
+   */
+  canActivate?: (rect: DOMRect) => boolean;
+  /**
    * Receives the bubble id plus its centre (field-local px), variant, and special
    * type so the parent can drive the particle burst + the special pop effect.
    * Passing geometry here keeps the parent's ONE callback referentially stable.
@@ -48,12 +61,16 @@ export const Bubble = memo(function Bubble({
   still,
   driftDelay,
   special,
+  moving,
+  centerHitFrac = 1,
+  canActivate,
   onPop,
 }: Props) {
   // One-shot guard so a pointerdown plus its trailing synthetic click (or any
   // rapid double input) pops a bubble only once. Reset when the bubble is
   // re-laid-out (e.g. on restart) so the same id can be popped again.
   const handled = useRef(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
   // Random tilt (±8°) generated ONCE, then frozen so it's stable across renders.
   const rotRef = useRef<string | null>(null);
   if (rotRef.current === null) rotRef.current = R(-8, 8).toFixed(1) + "deg";
@@ -68,8 +85,19 @@ export const Bubble = memo(function Bubble({
   // Frozen bubbles (§7) need FROZEN_TAPS taps; earlier taps just crack the ice.
   const [frozenTaps, setFrozenTaps] = useState(0);
 
-  const activate = () => {
+  const activate = (point?: { clientX: number; clientY: number }) => {
     if (popped || handled.current) return;
+    const rect = btnRef.current?.getBoundingClientRect();
+    // Round-4 shields: blocked while a moving shield covers the bubble. Don't
+    // latch `handled`, so it pops normally the moment the shield slides past.
+    if (canActivate && rect && !canActivate(rect)) return;
+    // Round-3 center hit: a pointer tap must land within the inner circle.
+    // Keyboard / assistive activations carry no point → always allowed.
+    if (point && centerHitFrac < 1 && rect && rect.width > 0) {
+      const nx = (point.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+      const ny = (point.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
+      if (nx * nx + ny * ny > centerHitFrac * centerHitFrac) return; // off-center → miss
+    }
     if (special === "frozen" && frozenTaps < FROZEN_TAPS - 1) {
       setFrozenTaps((n) => n + 1); // still frozen — needs another tap
       return;
@@ -85,15 +113,16 @@ export const Bubble = memo(function Bubble({
 
   return (
     <button
+      ref={btnRef}
       type="button"
       onPointerDown={(e) => {
         // Fast pop on touch/mouse; preventDefault also suppresses the trailing click.
         e.preventDefault();
-        activate();
+        activate({ clientX: e.clientX, clientY: e.clientY });
       }}
       // Keyboard (Enter/Space) and assistive tech (VoiceOver / Switch Control) fire
       // click, not pointerdown — this handler is what makes the game operable for them.
-      onClick={activate}
+      onClick={() => activate()}
       className="absolute select-none touch-manipulation rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       style={{
         left: x,
@@ -101,8 +130,13 @@ export const Bubble = memo(function Bubble({
         width: size,
         height: size,
         pointerEvents: popped ? "none" : "auto",
-        animation:
-          popped || still ? undefined : `bubbleFloat 4s ease-in-out ${driftDelay}s infinite`,
+        animation: popped
+          ? undefined
+          : moving
+            ? `bubbleOrbit ${(3 + (driftDelay % 1.5)).toFixed(2)}s ease-in-out ${driftDelay}s infinite`
+            : still
+              ? undefined
+              : `bubbleFloat 4s ease-in-out ${driftDelay}s infinite`,
         WebkitTapHighlightColor: "transparent",
         filter: skinFilter,
         borderRadius: "50%",

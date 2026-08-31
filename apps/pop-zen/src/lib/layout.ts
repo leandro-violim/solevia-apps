@@ -24,7 +24,16 @@ export function layoutBubbles(
   height: number,
   rand: () => number = Math.random,
   /** Enable §7 special bubbles for this field (Time Attack passes the phase + mode multiplier). */
-  opts?: { phase: number; specialsMul: number },
+  opts?: {
+    phase: number;
+    specialsMul: number;
+    /**
+     * Round-2 "jitter" mechanic: 0 = tidy grid (default), up to 1 = each bubble
+     * offset randomly within its own cell so the field reads as un-aligned. The
+     * offset is bounded by the free space in the cell, so bubbles never overlap.
+     */
+    jitter?: number;
+  },
 ): BubbleState[] {
   const padding = 6;
   const step = size + padding;
@@ -53,9 +62,15 @@ export function layoutBubbles(
     // Center the final (possibly partial) row for a tidier look.
     const rowCount = Math.min(cols, count - row * cols);
     const rowIndent = spread ? ((cols - rowCount) * cellW) / 2 : 0;
-    // Slight jitter so it doesn't look like a rigid grid
-    const jitterX = (rand() - 0.5) * padding * 0.8;
-    const jitterY = (rand() - 0.5) * padding * 0.8;
+    // Baseline: a slight jitter so it doesn't look like a rigid grid. The
+    // round-2 "jitter" mechanic scales this up to the full free space in each
+    // cell (only when `spread`, so tightly-packed dense phases never overlap).
+    const freeX = spread ? Math.max(0, cellW - size) : 0;
+    const freeY = spread ? Math.max(0, cellH - size) : 0;
+    const jAmt = opts?.jitter ?? 0;
+    const baseJ = padding * 0.8;
+    const jitterX = (rand() - 0.5) * (baseJ + jAmt * freeX);
+    const jitterY = (rand() - 0.5) * (baseJ + jAmt * freeY);
     bubbles.push({
       id: i,
       x: spread

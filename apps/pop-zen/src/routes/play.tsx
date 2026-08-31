@@ -11,6 +11,8 @@ import {
   showRewarded,
 } from "../lib/ads";
 import { Bubble } from "../components/Bubble";
+import { Shields } from "../components/Shields";
+import { WorldIntro } from "../components/WorldIntro";
 import { PopParticles } from "../components/PopParticles";
 import { ComboHud } from "../components/ComboHud";
 import { burstParticles } from "../lib/pop-particles";
@@ -39,11 +41,15 @@ import { CoinIcon, PlayIcon } from "../components/icons";
 import fieldSheet from "../assets/scene/field-sheet.webp";
 import {
   computeTimeAttackScore,
-  difficultyPhase,
   formatCountdown,
   formatTime,
   getPhase,
-  TOTAL_PHASES,
+  stageConfig,
+  roundOf,
+  phaseInRound,
+  mechanicOf,
+  PHASES_PER_ROUND,
+  TOTAL_STAGES,
 } from "../lib/game-config";
 import { layoutBubbles, type BubbleState } from "../lib/layout";
 import { playPop, playMilestone, playCoinTick, unlockAudio } from "../lib/pop-sound";
@@ -62,7 +68,7 @@ import { pickQuote } from "../lib/quotes";
 import { t } from "../lib/i18n";
 
 const searchSchema = z.object({
-  phase: z.number().int().min(1).max(TOTAL_PHASES).optional().default(1),
+  phase: z.number().int().min(1).max(TOTAL_STAGES).optional().default(1),
   mode: z.enum(["zen", "time-attack"]).optional().default("time-attack"),
   difficulty: z.enum(["easy", "normal", "hard"]).optional().default("normal"),
   daily: z.coerce.number().optional().default(0), // 1 = date-seeded daily challenge (§12)
@@ -237,8 +243,34 @@ function PlayPage() {
   const isDaily = daily === 1; // §12 date-seeded Time Attack run
   // Zen makes specials rare; Time Attack full-rate (§7/§9). Primitive → effect-safe.
   const specialsMul = isZen ? CONFIG.specials.zenMultiplier : 1;
-  const cfg = isZen ? ZEN_FIELD : difficultyPhase(phase, difficulty);
+  const cfg = isZen ? ZEN_FIELD : stageConfig(phase, difficulty);
+  // Rounds / "worlds" (Pop Challenge only). Round 1 = classic grid, 2 = off-grid
+  // jitter, 3 = drifting bubbles you must tap dead-center, 4 = sliding shields.
+  // Zen (Pop for Fun) stays the plain endless grid regardless of `phase`.
+  const round = isZen ? 1 : roundOf(phase);
+  const pir = isZen ? phase : phaseInRound(phase); // in-round phase (1–8)
+  const mech = isZen ? "grid" : mechanicOf(phase);
+  const fieldJitter = mech === "jitter" ? 0.9 : 0;
   const { submit, records } = usePhaseRecords();
+
+  // Round-4 shield elements, read live by `isCovered` to block covered pops.
+  const shieldBarsRef = useRef<HTMLDivElement[]>([]);
+  const [fieldWidth, setFieldWidth] = useState(0);
+  // Candy-Crush-style "entering World N" flourish, shown when a run crosses into
+  // a new round (world 2–4 → its first phase). Dismisses into the phase.
+  const [showWorldIntro, setShowWorldIntro] = useState(false);
+  // A bubble is blocked when its centre currently sits under a patrolling shield.
+  const isCovered = useCallback((rect: DOMRect): boolean => {
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    for (const bar of shieldBarsRef.current) {
+      const s = bar.getBoundingClientRect();
+      if (cx >= s.left && cx <= s.right && cy >= s.top && cy <= s.bottom) return true;
+    }
+    return false;
+  }, []);
+  // Stable so <Bubble>'s memo holds; only round 4 passes it (else undefined).
+  const canPop = useCallback((r: DOMRect) => !isCovered(r), [isCovered]);
 
   const fieldRef = useRef<HTMLDivElement>(null);
   const [bubbles, setBubbles] = useState<BubbleState[]>([]);
@@ -308,6 +340,7 @@ function PlayPage() {
     if (!el) return;
     const w = el.clientWidth;
     const h = usableFieldHeight(el);
+    setFieldWidth(w);
     if (isZen) {
       // Pop for Fun: fresh sheet → new random size/count + a few pre-popped.
       zenFieldRef.current = rollZenField();
@@ -318,8 +351,9 @@ function PlayPage() {
     } else {
       setBubbles(
         layoutBubbles(cfg.bubbles, cfg.size, w, h, isDaily ? seededRand(phase) : Math.random, {
-          phase,
+          phase: pir,
           specialsMul,
+          jitter: fieldJitter,
         }),
       );
     }
@@ -327,6 +361,8 @@ function PlayPage() {
     setDeadline(null);
     setReviveBusy(false);
     setState("ready");
+    // Announce a new world when arriving at its first phase (worlds 2–4).
+    setShowWorldIntro(!isZen && round > 1 && pir === 1);
     setResult(null);
     settledRef.current = false;
     startedRef.current = false;
@@ -350,7 +386,19 @@ function PlayPage() {
     // Ask for a fresh banner creative for the new phase (rate-limited internally
     // to stay within AdMob's refresh policy).
     void refreshBanner();
-  }, [phase, cfg.bubbles, cfg.size, specialsMul, isZen, isDaily, mode, difficulty]);
+  }, [
+    phase,
+    pir,
+    round,
+    fieldJitter,
+    cfg.bubbles,
+    cfg.size,
+    specialsMul,
+    isZen,
+    isDaily,
+    mode,
+    difficulty,
+  ]);
 
   // Re-lay-out the field when the native ad banner reports its real height,
   // so bubbles clear it exactly. Only while "ready" so an in-progress game
@@ -361,6 +409,7 @@ function PlayPage() {
       if (!el || state !== "ready") return;
       const w = el.clientWidth;
       const h = usableFieldHeight(el);
+      setFieldWidth(w);
       if (isZen) {
         // Keep the CURRENT sheet's rolled size (don't re-roll on a banner resize).
         const zf = zenFieldRef.current;
@@ -370,8 +419,9 @@ function PlayPage() {
       } else {
         setBubbles(
           layoutBubbles(cfg.bubbles, cfg.size, w, h, isDaily ? seededRand(phase) : Math.random, {
-            phase,
+            phase: pir,
             specialsMul,
+            jitter: fieldJitter,
           }),
         );
       }
@@ -382,7 +432,7 @@ function PlayPage() {
       window.removeEventListener("ad-banner-resize", onResize);
       window.visualViewport?.removeEventListener("resize", onResize);
     };
-  }, [state, cfg.bubbles, cfg.size, phase, specialsMul, isDaily, isZen]);
+  }, [state, cfg.bubbles, cfg.size, phase, pir, fieldJitter, specialsMul, isDaily, isZen]);
 
   // Freeze the animated full-screen aurora while actively playing — a large
   // blurred, continuously-animated layer under the field's backdrop-blur is a
@@ -547,8 +597,8 @@ function PlayPage() {
       maxCombo >= JUICE.combo.minShown ? maxCombo * JUICE.combo.scoreBonusPerCombo : 0;
     const score = base + comboBonus + bonusPointsRef.current;
     setResult({ score, timeMs: t, timeLeftMs, comboBonus, maxCombo });
-    submit(phase, score, t);
-    recordRunPhase(phase, score);
+    submit(pir, score, t); // best-per-phase, aggregated across worlds/rounds
+    recordRunPhase(phase, score); // run continuity is keyed by the global stage
     setState("done");
   }, [
     bubbles,
@@ -558,6 +608,7 @@ function PlayPage() {
     cfg.bubbles,
     cfg.size,
     phase,
+    pir,
     submit,
     scanObjectives,
     isZen,
@@ -567,8 +618,8 @@ function PlayPage() {
     cfg.timeLimitMs,
   ]);
 
-  const record = records[phase];
-  const isLast = phase >= TOTAL_PHASES;
+  const record = records[pir];
+  const isLast = phase >= TOTAL_STAGES;
   const isNewBestScore = !!result && result.score > (record?.prevBestScore ?? 0);
   const isNewBestTime =
     !!result &&
@@ -584,7 +635,7 @@ function PlayPage() {
   const nextPhase = useCallback(() => {
     navigate({
       to: "/play",
-      search: { phase: Math.min(phase + 1, TOTAL_PHASES), mode, difficulty, daily },
+      search: { phase: Math.min(phase + 1, TOTAL_STAGES), mode, difficulty, daily },
     });
   }, [navigate, phase, mode, difficulty, daily]);
 
@@ -644,6 +695,7 @@ function PlayPage() {
   const restart = useCallback(() => {
     const el = fieldRef.current;
     if (!el) return;
+    setFieldWidth(el.clientWidth);
     setBubbles(
       layoutBubbles(
         cfg.bubbles,
@@ -652,8 +704,9 @@ function PlayPage() {
         usableFieldHeight(el),
         isDaily ? seededRand(phase) : Math.random,
         {
-          phase,
+          phase: pir,
           specialsMul,
+          jitter: fieldJitter,
         },
       ),
     );
@@ -666,7 +719,7 @@ function PlayPage() {
     startedRef.current = false;
     bonusPointsRef.current = 0;
     resetCombo();
-  }, [cfg.bubbles, cfg.size, phase, specialsMul, isDaily]);
+  }, [cfg.bubbles, cfg.size, phase, pir, fieldJitter, specialsMul, isDaily]);
 
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
 
@@ -703,7 +756,9 @@ function PlayPage() {
         </Link>
         <div className="hud-chip flex-col gap-0 px-4 py-1">
           <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-            {isZen ? t("home.zen") : t("play.phaseOf", { phase, total: TOTAL_PHASES })}
+            {isZen
+              ? t("home.zen")
+              : t("play.worldPhase", { world: round, phase: pir, per: PHASES_PER_ROUND })}
           </div>
           {!isZen && <div className="text-sm font-semibold text-foreground">{t(cfg.key)}</div>}
         </div>
@@ -775,15 +830,26 @@ function PlayPage() {
               special={b.special}
               driftDelay={b.drift}
               still={stillBubbles}
+              moving={mech === "moving"}
+              centerHitFrac={mech === "moving" ? 0.58 : 1}
+              canActivate={mech === "shielded" ? canPop : undefined}
               onPop={handlePop}
             />
           ))}
+
+          {/* Round-4 patrolling shields (block covered pops; see isCovered). */}
+          {mech === "shielded" && state !== "done" && (
+            <Shields fieldWidth={fieldWidth} barsRef={shieldBarsRef} />
+          )}
 
           {/* Pop particle burst — canvas overlay above the bubbles, below the UI overlays. */}
           <PopParticles fieldRef={fieldRef} />
 
           {/* Combo readout + milestone flourish (feedback-only). */}
           <ComboHud />
+
+          {/* Candy-Crush-style "entering World N" flourish (worlds 2–4). */}
+          {showWorldIntro && <WorldIntro round={round} onDone={() => setShowWorldIntro(false)} />}
 
           {/* §8 objective-complete toast — brief, centered (no longer a top-left
               overlay covering a bubble). */}

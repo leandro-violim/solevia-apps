@@ -1,5 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { getPhase, computeScore, formatTime, PHASES, TOTAL_PHASES } from "./game-config";
+import {
+  getPhase,
+  computeScore,
+  formatTime,
+  PHASES,
+  TOTAL_PHASES,
+  roundOf,
+  phaseInRound,
+  mechanicOf,
+  stageConfig,
+  TOTAL_STAGES,
+  TOTAL_ROUNDS,
+} from "./game-config";
 
 describe("getPhase", () => {
   it("clamps below and above the valid range", () => {
@@ -10,6 +22,37 @@ describe("getPhase", () => {
 
   it("returns the requested phase in range", () => {
     expect(getPhase(3).phase).toBe(3);
+  });
+});
+
+describe("rounds / worlds", () => {
+  it("maps global stages to the right world + in-round phase", () => {
+    expect([roundOf(1), phaseInRound(1)]).toEqual([1, 1]);
+    expect([roundOf(8), phaseInRound(8)]).toEqual([1, 8]);
+    expect([roundOf(9), phaseInRound(9)]).toEqual([2, 1]);
+    expect([roundOf(17), phaseInRound(17)]).toEqual([3, 1]);
+    expect([roundOf(32), phaseInRound(32)]).toEqual([4, 8]);
+  });
+
+  it("assigns one mechanic per round", () => {
+    expect(mechanicOf(1)).toBe("grid");
+    expect(mechanicOf(9)).toBe("jitter");
+    expect(mechanicOf(17)).toBe("moving");
+    expect(mechanicOf(25)).toBe("shielded");
+  });
+
+  it("clamps out-of-range stages into the valid window", () => {
+    expect(roundOf(0)).toBe(1);
+    expect(roundOf(999)).toBe(TOTAL_ROUNDS);
+    expect(TOTAL_STAGES).toBe(TOTAL_PHASES * TOTAL_ROUNDS);
+  });
+
+  it("reuses the in-round phase's field config across worlds", () => {
+    // Stage 3 (world 1 phase 3) and stage 11 (world 2 phase 3) share geometry.
+    const a = stageConfig(3, "normal");
+    const b = stageConfig(11, "normal");
+    expect(b.bubbles).toBe(a.bubbles);
+    expect(b.size).toBe(a.size);
   });
 });
 

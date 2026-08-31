@@ -36,6 +36,23 @@ describe("layoutBubbles", () => {
     expect(a).toEqual(c);
   });
 
+  it("keeps bubbles in-bounds even at full round-2 jitter", () => {
+    const w = 400;
+    const h = 700;
+    const size = 48;
+    // rand()=>1 pushes every jitter to its positive maximum; =>0 to its minimum.
+    for (const rand of [() => 1, () => 0]) {
+      const b = layoutBubbles(20, size, w, h, rand, { phase: 3, specialsMul: 0, jitter: 1 });
+      for (const bub of b) {
+        // Allow the tiny baseline (~2.4px) jitter slack beyond the cell edge.
+        expect(bub.x).toBeGreaterThanOrEqual(-3);
+        expect(bub.y).toBeGreaterThanOrEqual(-3);
+        expect(bub.x + size).toBeLessThanOrEqual(w + 3);
+        expect(bub.y + size).toBeLessThanOrEqual(h + 3);
+      }
+    }
+  });
+
   it("does not throw on a zero-size field", () => {
     expect(() => layoutBubbles(10, 40, 0, 0, noJitter)).not.toThrow();
     expect(layoutBubbles(10, 40, 0, 0, noJitter)).toHaveLength(10);

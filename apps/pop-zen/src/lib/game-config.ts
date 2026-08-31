@@ -29,8 +29,46 @@ export const PHASES: PhaseConfig[] = [
 
 export const TOTAL_PHASES = PHASES.length;
 
+// ── Rounds / "worlds" (Pop Challenge only) ───────────────────────────────────
+// The 8 phases repeat as escalating ROUNDS. Each round reuses the same per-phase
+// bubble counts/sizes/time, but layers a new mechanic on top (Candy-Crush-style
+// worlds). A full Pop Challenge run is TOTAL_STAGES stages (rounds × phases).
+export const PHASES_PER_ROUND = TOTAL_PHASES; // 8
+export const TOTAL_ROUNDS = 4;
+export const TOTAL_STAGES = PHASES_PER_ROUND * TOTAL_ROUNDS; // 32
+
+/** The extra twist a round adds. Round 1 is the classic perfect grid. */
+export type RoundMechanic = "grid" | "jitter" | "moving" | "shielded";
+export const ROUND_MECHANIC: readonly RoundMechanic[] = ["grid", "jitter", "moving", "shielded"];
+
+/** Which round (1–TOTAL_ROUNDS) a global stage number belongs to. */
+export function roundOf(stage: number): number {
+  const s = Math.min(Math.max(stage, 1), TOTAL_STAGES);
+  return Math.floor((s - 1) / PHASES_PER_ROUND) + 1;
+}
+
+/** Position within the round (1–PHASES_PER_ROUND) for a global stage number. */
+export function phaseInRound(stage: number): number {
+  const s = Math.min(Math.max(stage, 1), TOTAL_STAGES);
+  return ((s - 1) % PHASES_PER_ROUND) + 1;
+}
+
+/** The mechanic active for a given global stage. */
+export function mechanicOf(stage: number): RoundMechanic {
+  return ROUND_MECHANIC[roundOf(stage) - 1];
+}
+
 export function getPhase(phase: number): PhaseConfig {
   return PHASES[Math.min(Math.max(phase, 1), TOTAL_PHASES) - 1];
+}
+
+/**
+ * Config for a global stage (1–TOTAL_STAGES): the same per-phase field as its
+ * position within the round, so counts/sizes/time stay tuned while the round's
+ * mechanic supplies the escalating difficulty. `.phase` is the in-round phase.
+ */
+export function stageConfig(stage: number, difficulty: Difficulty): PhaseConfig {
+  return difficultyPhase(phaseInRound(stage), difficulty);
 }
 
 /**

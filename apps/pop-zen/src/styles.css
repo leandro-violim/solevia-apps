@@ -275,6 +275,88 @@
   }
 }
 
+/* Round-3 "moving" mechanic: a slow drifting orbit. Small amplitude so the
+   center-tap skill check stays fair, but clearly in motion. */
+@keyframes bubbleOrbit {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(7px, -5px);
+  }
+  50% {
+    transform: translate(0, -9px);
+  }
+  75% {
+    transform: translate(-7px, -5px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* Round-4 "shielded" mechanic: opaque bars that slide across the field and
+   block pops on the bubbles they cover. Pointer-events stay off so the tap
+   still reaches the bubble button underneath (the JS cover-test does the
+   blocking) — this keeps a bubble instantly poppable the frame a shield clears. */
+.zb-shield {
+  position: absolute;
+  top: -6%;
+  height: 112%;
+  border-radius: 14px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-0) 78%, #7f8cff 22%),
+    color-mix(in srgb, var(--bg-0) 92%, #000 8%)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  will-change: transform;
+}
+.zb-shield::after {
+  /* a soft grip highlight down the middle so it reads as a solid slab */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0 14px,
+    rgba(255, 255, 255, 0.05) 14px 16px
+  );
+}
+@keyframes shieldSlide {
+  from {
+    transform: translateX(var(--from));
+  }
+  to {
+    transform: translateX(var(--to));
+  }
+}
+
+/* World-intro flourish (Candy-Crush-style "entering World N"). */
+@keyframes worldIntroIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes worldIntroPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.7) translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 /* Pop: quick squish, then collapse flat, keeping a small per-bubble tilt
    (--pop-rot). Bubble.tsx uses a plain fade instead when reduced motion is on. */
 /* ── Bubble-wrap bubble + round pop — ported 1:1 from _reference/zen-final-look.html ── */
