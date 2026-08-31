@@ -132,9 +132,11 @@ export const Bubble = memo(function Bubble({
         width: size,
         height: size,
         pointerEvents: popped ? "none" : "auto",
+        // Orbit (round 3) only when NOT a dense phase — the same still-guard the
+        // float uses — so we never GPU-composite ~86 animated bubbles at once.
         animation: popped
           ? undefined
-          : moving
+          : moving && !still
             ? `bubbleOrbit ${(3 + (driftDelay % 1.5)).toFixed(2)}s ease-in-out ${driftDelay}s infinite`
             : still
               ? undefined

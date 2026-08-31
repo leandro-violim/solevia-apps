@@ -166,7 +166,7 @@ function Section({
                 <span className="text-sm font-semibold text-foreground">{item.name}</span>
                 {item.rarity !== "starter" && (
                   <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    {item.rarity}
+                    {t(`rarity.${item.rarity}` as "rarity.common")}
                   </span>
                 )}
               </div>

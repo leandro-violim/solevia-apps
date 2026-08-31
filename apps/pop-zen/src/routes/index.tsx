@@ -80,7 +80,8 @@ function Home() {
         <div className="relative">
           <img
             src={bubbleImg}
-            alt="Plastic bubble"
+            alt=""
+            aria-hidden
             width={176}
             height={176}
             className="animate-[bubbleFloat_5s_ease-in-out_infinite] drop-shadow-xl"

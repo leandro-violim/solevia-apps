@@ -30,16 +30,18 @@ function PrivacyPage() {
         ← Back home
       </Link>
       <h1 className="mt-4 text-3xl font-bold tracking-tight">Privacy Policy</h1>
-      <p className="mt-2 text-xs text-muted-foreground">Last updated: July 25, 2026</p>
+      <p className="mt-2 text-xs text-muted-foreground">Last updated: August 31, 2026</p>
 
       <p className="mt-6">
         This Privacy Policy explains how Sole Via Entertainment LLC ("Solevia", "we", "us") handles
         information in connection with Zen Bubbles ("the App"), a relaxation game in which you pop
         bubbles across its phases and your best scores and times are saved on your device. You can
-        play without an account, and we do not run servers that collect your personal information.
-        The App is supported by ads through Google AdMob: we do not collect personal information
-        ourselves, but our advertising partner (Google) collects certain device and usage
-        information to show and measure ads, as described below.
+        play without an account, and we do not run servers that store your personal information, nor
+        do we collect information that identifies you personally. To understand how the App is used
+        so we can improve it, we collect anonymous, aggregated usage statistics through Google
+        Analytics for Firebase (you can turn this off in Settings → Analytics). The App is also
+        supported by ads through Google AdMob: our advertising partner (Google) collects certain
+        device and usage information to show and measure ads, as described below.
       </p>
 
       <h2 className="mt-8 text-lg font-semibold">1. Information stored on your device</h2>
@@ -55,19 +57,30 @@ function PrivacyPage() {
         <li>We do not require an account or sign-in.</li>
         <li>We do not collect your name, email, phone number, or contact details.</li>
         <li>We do not access your location (GPS), camera, microphone, photos, or contacts.</li>
-        <li>We do not operate a backend that receives your gameplay or personal data.</li>
+        <li>
+          We do not receive information that personally identifies you. Your best scores and
+          settings stay on your device; the only usage data we collect is anonymous and aggregated
+          (see section 3).
+        </li>
       </ul>
 
-      <h2 className="mt-8 text-lg font-semibold">3. Advertising (Google AdMob)</h2>
+      <h2 className="mt-8 text-lg font-semibold">3. Advertising and analytics (Google)</h2>
       <p className="mt-2">
-        The App displays banner and full-screen (interstitial) ads through Google AdMob, a Google
-        service. To serve, cap, measure, and — where permitted — personalize ads, Google and its
-        partners may collect and process: your device's advertising identifier (IDFA on iOS,
-        Advertising ID on Android); your IP address and a coarse location derived from it; technical
-        device information (model, OS version, language); and ad interaction and app-activity data.
-        Google collects and uses this information as an independent party under its own policies; we
-        only receive aggregate, anonymous reporting (such as total impressions and estimated
-        earnings). See Google's{" "}
+        <strong>Analytics.</strong> The App uses Google Analytics for Firebase to collect anonymous,
+        aggregated usage statistics — such as when a game starts and ends, scores and combos
+        reached, which features are used, and basic device/app information — so we can understand
+        how the App is used and improve it. This data is not used to identify you personally, and we
+        see it only in aggregate. You can turn analytics off at any time in Settings → Analytics.
+      </p>
+      <p className="mt-4">
+        <strong>Advertising.</strong> The App displays banner and full-screen (interstitial) ads
+        through Google AdMob, a Google service. To serve, cap, measure, and — where permitted —
+        personalize ads, Google and its partners may collect and process: your device's advertising
+        identifier (IDFA on iOS, Advertising ID on Android); your IP address and a coarse location
+        derived from it; technical device information (model, OS version, language); and ad
+        interaction and app-activity data. Google collects and uses this information as an
+        independent party under its own policies; we only receive aggregate, anonymous reporting
+        (such as total impressions and estimated earnings). See Google's{" "}
         <a
           href="https://policies.google.com/privacy"
           className="underline"
@@ -122,6 +135,7 @@ function PrivacyPage() {
       <h2 className="mt-8 text-lg font-semibold">8. Your choices and controls</h2>
       <ul className="mt-2 list-disc pl-5">
         <li>Reset your locally-stored records from the Records or Settings screen.</li>
+        <li>Turn off anonymous usage analytics at Settings → Analytics (in the App).</li>
         <li>
           iOS: allow or deny tracking via the ATT prompt; limit ad personalization at Settings →
           Privacy & Security → Apple Advertising.

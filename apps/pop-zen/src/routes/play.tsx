@@ -459,6 +459,7 @@ function PlayPage() {
       setObjVersion((v) => v + 1);
       runStartAtRef.current = Date.now();
       coinAdsUsedRef.current = 0; // reset the per-run rewarded-coins cap
+      worldAdsRef.current = 0; // reset the per-run world-interstitial cap
       track("run_start", { mode, difficulty, phase_start: phase }); // P1-T6
     }
     // Warm up the interstitial now so it's ready (if online) by phase end.
@@ -742,11 +743,25 @@ function PlayPage() {
   // Skip idle float animation on the densest phase to save CPU/battery.
   const stillBubbles = cfg.bubbles >= 60;
 
+  // Guard end-of-run / next-phase navigation: a double-tap must not double-award
+  // coins/stats or fire the ad twice. Reset when a fresh phase builds (below).
+  const advancingRef = useRef(false);
+  const [advancing, setAdvancing] = useState(false);
+  // Cap world-change interstitials to one per run (on top of the 75s cooldown).
+  const worldAdsRef = useRef(0);
+  // Live count of un-popped bubbles, so the countdown-expiry handler can tell a
+  // last-frame clear from a real time-up (avoids "Time up" on a cleared field).
+  const remainingRef = useRef(0);
+
   const nextPhase = useCallback(async () => {
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+    setAdvancing(true);
     const next = Math.min(phase + 1, TOTAL_STAGES);
     // Interstitial on a WORLD change (crossing into a new round) — a natural
-    // "level complete" break, ~3× per full run, cooldown-gated (see ads.ts).
-    if (!isZen && roundOf(next) > roundOf(phase)) {
+    // "level complete" break, cooldown-gated (ads.ts) AND ≤1 per run.
+    if (!isZen && roundOf(next) > roundOf(phase) && worldAdsRef.current < 1) {
+      worldAdsRef.current += 1;
       await maybeShowWorldInterstitial("world_change");
     }
     navigate({ to: "/play", search: { phase: next, mode, difficulty, daily } });
@@ -756,6 +771,9 @@ function PlayPage() {
   // run-end interstitial (§2 — a natural break, capped), then celebrate.
   const goFinish = useCallback(
     async (endedBy: "completed" | "timeout" = "completed") => {
+      if (advancingRef.current) return; // re-entrancy guard (double-tap safe)
+      advancingRef.current = true;
+      setAdvancing(true);
       const rs = getRunStats();
       commitStats(rs.popped, rs.goldenPopped, rs.maxCombo, true); // §10 cumulative stats
       checkAchievements();
@@ -783,6 +801,9 @@ function PlayPage() {
 
   // P1-T4: the countdown hit 0 with bubbles still up → offer a revive / end run.
   const handleTimeUp = useCallback(() => {
+    // Last-frame clear? The field is empty — let the completion effect settle the
+    // phase; don't flip to "time up" on an already-cleared board.
+    if (remainingRef.current === 0) return;
     setState((s) => (s === "playing" ? "timeup" : s));
     track("time_up", { mode, phase });
   }, [mode, phase]);
@@ -834,7 +855,15 @@ function PlayPage() {
     resetCombo();
   }, [cfg.bubbles, cfg.size, phase, pir, fieldJitter, specialsMul, isDaily]);
 
+  // A fresh phase re-enables the advance buttons (nextPhase set the guard, then
+  // navigated here). goFinish leaves for /finish, so it never needs a reset.
+  useEffect(() => {
+    advancingRef.current = false;
+    setAdvancing(false);
+  }, [phase]);
+
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
+  remainingRef.current = remaining; // keep the expiry-handler's live count fresh
 
   return (
     <div
@@ -1044,7 +1073,7 @@ function PlayPage() {
                   )}
                   <button
                     onClick={() => goFinish("timeout")}
-                    disabled={reviveBusy}
+                    disabled={reviveBusy || advancing}
                     className="btn btn-ghost w-full text-sm"
                   >
                     {t("play.endRun")}
@@ -1153,11 +1182,16 @@ function PlayPage() {
                 <div className="mt-4 flex flex-col gap-2">
                   <button
                     onClick={() => (isLast ? goFinish() : nextPhase())}
+                    disabled={advancing}
                     className="btn btn-primary w-full"
                   >
                     {isLast ? t("play.finish") : t("play.nextPhase")}
                   </button>
-                  <button onClick={restart} className="btn btn-ghost w-full text-sm">
+                  <button
+                    onClick={restart}
+                    disabled={advancing}
+                    className="btn btn-ghost w-full text-sm"
+                  >
                     {t("play.replayPhase")}
                   </button>
                 </div>
