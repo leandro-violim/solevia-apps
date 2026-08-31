@@ -622,10 +622,11 @@ function PlayPage() {
               "radial-gradient(120% 110% at 50% 10%, rgba(51,224,198,0.16), transparent 62%), linear-gradient(180deg, #b6d6ea 0%, #86b0d2 100%)",
           }}
         >
-          {/* The REAL crinkly bubble-wrap photo blended (soft-light) onto the light
-              base so it reads as genuine, see-through bubble wrap on a soft light
-              surface. Pocket SCALE tracks the phase's bubble size (cfg.size);
-              ~10 pockets across the 1125px source → tile width ≈ size × 10. */}
+          {/* The REAL crinkly bubble-wrap photo, softly BLURRED + dimmed so it
+              reads as the out-of-focus BACK layer — this is the depth cue that
+              stops it merging with the crisp interactive bubbles on top. Pocket
+              SCALE tracks the phase's bubble size (cfg.size); ~10 pockets across
+              the 1125px source → tile width ≈ size × 10. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
@@ -634,8 +635,9 @@ function PlayPage() {
               backgroundSize: `${Math.round(cfg.size * 10)}px auto`,
               backgroundRepeat: "repeat",
               backgroundPosition: "center",
-              opacity: 0.7,
+              opacity: 0.5,
               mixBlendMode: "soft-light",
+              filter: "blur(3px)",
             }}
           />
           {bubbles.map((b) => (

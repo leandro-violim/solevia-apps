@@ -296,7 +296,11 @@
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.45);
+  /* Stronger, tighter drop shadow so an unpopped bubble lifts clearly off the
+     (blurred) bubble-wrap background — the key foreground/background separation. */
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.35);
   transition:
     transform 0.28s cubic-bezier(0.34, 1.4, 0.5, 1),
     opacity 0.3s,
@@ -665,35 +669,6 @@
   }
 }
 
-/* P1-T10 — boot/loading splash. Rendered in SSR so it covers the very first
-   paint, then auto-fades with pure CSS (deterministic → no hydration mismatch,
-   no JS gate). pointer-events:none so a tap is never trapped if it lingers.
-   On an SPA it plays once per full load; client route changes don't remount it.
-   Reduced-motion collapses the animation to ~instant via the global rule. */
-@keyframes bootFade {
-  0%,
-  58% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-.boot-splash {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  pointer-events: none;
-  background-color: var(--bg-0);
-  background-image: var(--bg-grad);
-  animation: bootFade 1.15s ease forwards;
-}
 
 /* Respect the user's reduced-motion preference across the app. */
 @media (prefers-reduced-motion: reduce) {
