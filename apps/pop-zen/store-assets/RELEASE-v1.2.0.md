@@ -59,7 +59,13 @@ see **`store-assets/whats-new.md`**.
 
 ## 4. ⚠️ Must do before submitting — Cowork tasks
 
-**A. Create the rewarded ad units, and produce a master ad-unit list.**
+**A. Rewarded ad units — ✅ DONE.** Cowork created the real Rewarded units in AdMob and
+returned the full ad-unit list (saved at `store-assets/admob-ad-units.md`). Claude Code
+pasted the two rewarded ids into `ads.ts`; all six LIVE ids are the real Sole Via units
+and verified present (zero test ids) in a production bundle. Nothing left here.
+
+<details><summary>Original task (for the record)</summary>
+
 `apps/pop-zen/src/lib/ads.ts` still has Google's **sample/test** ids for the *rewarded*
 placements (`LIVE_IDS.ios.rewarded` / `LIVE_IDS.android.rewarded` =
 `ca-app-pub-3940256099942544/…`). Sample units always serve a "Test Ad," so in
@@ -75,12 +81,15 @@ production the Revive / earn-coins rewarded ads would show a **test ad to real u
 > `// TODO(admob): paste real rewarded unit id` marker is already at each spot).
 > Confirm the existing banner/interstitial live ids in the file still match the console.
 
+</details>
+
 **B. Complete the store privacy declarations, then do your own compliance pass.**
 This version added **Google Analytics for Firebase** (anonymous gameplay/usage events).
 The in-app Privacy Policy is already updated in code (discloses analytics + the Settings
 opt-out). The **store-side** declarations still need updating:
 - **iOS App Privacy label (App Store Connect)** — add **Usage Data → Product Interaction / Analytics** (alongside the existing AdMob advertising data). Not linked to identity; not used for tracking.
 - **Android Data Safety form (Play Console)** — add **App activity / Analytics** and the analytics identifier, on top of the AdMob Advertising ID already declared.
+- **Apple privacy-policy URL is per-language.** This release ships Portuguese (Brazil). If you add a **pt-BR localization** to the App Store Connect listing, its **Privacy Policy URL field starts empty** and Apple only validates it at "Add for Review" — set the pt-BR privacy URL (and any other pt-BR-required fields) so the localized listing doesn't get rejected for a missing policy.
 - If the hosted privacy page (solevia.app) mirrors the in-app policy, update it too. `app-ads.txt` is unchanged.
 
 > **Cowork:** Please treat the two lists above as the known minimum, then do your **own
@@ -125,13 +134,46 @@ world-ad cap) or are noted in Decisions.
 
 ---
 
-## 7. Build & submit (reference)
+## 7. Store-declaration pre-flight (release-check, verified 2026-08-31)
+
+Ran the Sole Via store-release checklist against the 1.0.x → 1.2.0 diff:
+
+- **IARC content rating (Play) / Apple age rating — no change.** No new IAP (coins are
+  *earned* in-game / via rewarded video, never bought with money), no user-to-user
+  interaction, no user-generated content (no nicknames/leaderboard names), no location.
+  Ads were already declared. So the questionnaire answers don't change.
+- **Play Data safety & Apple App Privacy — UPDATE (see §4B).** New Firebase Analytics =
+  new "App activity / Usage Data" collection. This is the one declaration diff.
+- **Apple encryption (`ITSAppUsesNonExemptEncryption`) — stays `false`.** Firebase/ads
+  use HTTPS only; no new crypto.
+- **`PrivacyInfo.xcprivacy` — no change.** Firebase here is the JS web SDK (no native
+  pod / required-reason API); AdMob ships its own manifest. Existing UserDefaults reason
+  still present.
+- **Android developer verification — no change.** Same package `app.solevia.zenbubbles`,
+  Play App Signing.
+- **Target API level — OK.** `targetSdk 36` (exceeds the current Play floor).
+- **UMP consent — OK for this country list.** Off today; the target countries
+  (US/CA/NZ/AU/IN/BR) are non-EEA/UK, so no gating required. (Re-enable before ever
+  adding an EEA/UK/CH country.)
+- **Version codes — OK.** Android `versionCode 2` > 1; iOS build `6` > shipped `3`.
+- **Live-ad binary — VERIFIED.** A clean production `build:mobile` (no `VITE_USE_TEST_ADS`)
+  was synced to `ios/` and `android/`; the bundle carries the LIVE rewarded id and **zero
+  test-id strings**.
+
+## 8. Build & submit (reference)
+
+> **⚠️ The store binary must be a LIVE build.** `USE_TEST_ADS` is on whenever
+> `import.meta.env.DEV` is true **or** `VITE_USE_TEST_ADS=true`. Archive from a plain
+> `bun run build:mobile` (no env flag) — which is what is currently synced. **Do not tap
+> ads if you smoke-test this build on a device: they are your LIVE ads and tapping your
+> own risks an AdMob strike.** For safe on-device testing, rebuild with
+> `VITE_USE_TEST_ADS=true bun run build:mobile && bunx cap sync ios` (test ads), then
+> re-sync a clean LIVE build before archiving.
 
 - **iOS:** open `apps/pop-zen/ios/App/App.xcodeproj` (SPM project, no .xcworkspace) →
-  Product ▸ Archive ▸ Distribute ▸ App Store Connect ▸ Upload. Native-only changes
-  don't need a web rebuild; if web code changed, run `bun run build:mobile` +
-  `bunx cap sync ios` first. The GoogleMobileAds dSYM upload warning is harmless.
-- **Android:** `bun run build:mobile` + `bunx cap sync android`, then build the signed
-  AAB (Play App Signing) and upload as a new release (versionCode 2).
+  Product ▸ Archive ▸ Distribute ▸ App Store Connect ▸ Upload. The GoogleMobileAds dSYM
+  upload warning is harmless.
+- **Android:** build the signed AAB from the synced project (Play App Signing) and upload
+  as a new release (versionCode 2).
 - **Post-approval:** confirm `app-ads.txt` is live on solevia.app and the AdMob app is
   linked to the store listing so live ads serve.
