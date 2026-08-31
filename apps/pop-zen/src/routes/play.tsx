@@ -36,6 +36,7 @@ import { track } from "../lib/analytics";
 import { unlockZenSkins } from "../lib/skins";
 import { ObjectivesHud } from "../components/ObjectivesHud";
 import { CoinIcon, PlayIcon } from "../components/icons";
+import { BgTuner } from "../components/BgTuner";
 import fieldSheet from "../assets/scene/field-sheet.webp";
 import {
   computeTimeAttackScore,
@@ -553,6 +554,8 @@ function PlayPage() {
   }, [cfg.bubbles, cfg.size, phase, specialsMul, isDaily]);
 
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
+  // TEMP: Zen-only live background tuner override (a CSS colour, or null = default).
+  const [tunerBg, setTunerBg] = useState<string | null>(null);
 
   return (
     <div
@@ -618,15 +621,17 @@ function PlayPage() {
             isolation: "isolate",
             // A soft, LIGHT blue base (real bubble wrap photographs on a light
             // surface) with a gentle aqua glow — airy, calm, in the app palette.
+            // TEMP: the Zen background tuner overrides this base live.
             background:
-              "radial-gradient(120% 110% at 50% 10%, rgba(51,224,198,0.16), transparent 62%), linear-gradient(180deg, #b6d6ea 0%, #86b0d2 100%)",
+              isZen && tunerBg
+                ? tunerBg
+                : "radial-gradient(120% 110% at 50% 10%, rgba(51,224,198,0.16), transparent 62%), linear-gradient(180deg, #b6d6ea 0%, #86b0d2 100%)",
           }}
         >
-          {/* The REAL crinkly bubble-wrap photo, softly BLURRED + dimmed so it
-              reads as the out-of-focus BACK layer — this is the depth cue that
-              stops it merging with the crisp interactive bubbles on top. Pocket
-              SCALE tracks the phase's bubble size (cfg.size); ~10 pockets across
-              the 1125px source → tile width ≈ size × 10. */}
+          {/* The REAL crinkly bubble-wrap photo blended (soft-light) onto the base
+              so it reads as genuine, see-through bubble wrap. Pocket SCALE tracks
+              the phase's bubble size (cfg.size); ~10 pockets across the 1125px
+              source → tile width ≈ size × 10. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
@@ -635,9 +640,8 @@ function PlayPage() {
               backgroundSize: `${Math.round(cfg.size * 10)}px auto`,
               backgroundRepeat: "repeat",
               backgroundPosition: "center",
-              opacity: 0.5,
+              opacity: 0.7,
               mixBlendMode: "soft-light",
-              filter: "blur(3px)",
             }}
           />
           {bubbles.map((b) => (
@@ -762,6 +766,9 @@ function PlayPage() {
           )}
         </div>
       </div>
+
+      {/* TEMP: live background tuner — Zen Mode only, for choosing the field colour. */}
+      {isZen && <BgTuner onChange={setTunerBg} />}
 
       {/* Web/dev only: on native the AdMob banner overlays the bottom of the
           screen and the play field is sized to clear it (see usableFieldHeight). */}
