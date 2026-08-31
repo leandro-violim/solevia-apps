@@ -614,19 +614,12 @@ function PlayPage() {
         <div
           ref={fieldRef}
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10"
-          style={{
-            isolation: "isolate",
-            // A soft, clean blue — the calm "third" tonality alongside the Zen
-            // aqua and Time-Attack coral buttons — with a gentle aqua glow up top.
-            background:
-              "radial-gradient(120% 110% at 50% 10%, rgba(51,224,198,0.2), transparent 64%), linear-gradient(180deg, #4d90cf 0%, #2f5f95 100%)",
-          }}
         >
-          {/* Realism: the REAL crinkly bubble-wrap photo, softly blended onto the
-              navy so the clear plastic picks up the app's soft aqua — integrated,
-              not a stark teal. Its pocket SCALE tracks the phase's bubble size
-              (cfg.size) so the wrap and the live bubbles read at the same scale.
-              ~10 pockets across the 1125px source → tile width ≈ size × 10. */}
+          {/* Transparent field: the REAL crinkly bubble-wrap photo blends straight
+              onto the app's own navy shell (no colour panel behind), so it reads as
+              real bubble wrap laid on the app. Pocket SCALE tracks the phase's
+              bubble size (cfg.size); ~10 pockets across the 1125px source → tile
+              width ≈ size × 10. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
@@ -635,7 +628,7 @@ function PlayPage() {
               backgroundSize: `${Math.round(cfg.size * 10)}px auto`,
               backgroundRepeat: "repeat",
               backgroundPosition: "center",
-              opacity: 0.55,
+              opacity: 0.6,
               mixBlendMode: "soft-light",
             }}
           />
