@@ -65,19 +65,16 @@ const LIVE_IDS = {
     // ca-app-pub-9628521678374705~5486523715
     banner: "ca-app-pub-9628521678374705/2860360372",
     interstitial: "ca-app-pub-9628521678374705/7191467566",
-    // TODO(admob): real rewarded unit (iOS) — placeholder = Google test id so it
-    // never soft-locks before the real unit exists.
-    rewarded: "ca-app-pub-3940256099942544/1712485313",
+    // Sole Via — Bubble Pop Calm Rewarded (iOS). Created in AdMob 2026-08-31.
+    rewarded: "ca-app-pub-9628521678374705/2754567480",
   },
   android: {
     // Sole Via — Bubble Pop Calm (Android). AdMob App ID:
     // ca-app-pub-9628521678374705~9477972092
     banner: "ca-app-pub-9628521678374705/3973580155",
     interstitial: "ca-app-pub-9628521678374705/1211685446",
-    // TODO(admob): real rewarded units (iOS+Android) — create in AdMob console,
-    // paste here. Until then production rewarded falls back to the test id below
-    // so it never soft-locks (test id kept as a safe placeholder value).
-    rewarded: "ca-app-pub-3940256099942544/5224354917",
+    // Sole Via — Bubble Pop Calm Rewarded (Android). Created in AdMob 2026-08-31.
+    rewarded: "ca-app-pub-9628521678374705/5189159137",
   },
 };
 
