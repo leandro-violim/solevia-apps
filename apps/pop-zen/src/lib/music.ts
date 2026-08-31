@@ -1,5 +1,5 @@
 /**
- * F7 — calm ambient music. Loops "Calm Piano" by Alex Morgan (Pixabay Content
+ * F7 — ambient menu music. Loops an upbeat "fun things" track (Pixabay Content
  * License — free for commercial use, no attribution required; using it as
  * in-game background music is a permitted use). Plays on Home + between phases +
  * the finish screen; NOT during active popping. Low volume, fades in/out, loops.
@@ -9,7 +9,7 @@
  * (`zb_music_off`, default ON). iOS won't start audio without a user gesture, so
  * the first play() is armed to retry on the next tap. Recovers after backgrounding.
  */
-import homeLoop from "../assets/audio/home-loop.m4a";
+import menuLoop from "../assets/audio/menu-loop.m4a";
 
 const KEY = "zb_music_off";
 const TARGET_VOL = 0.32; // low, ambient
@@ -30,7 +30,7 @@ try {
 function getEl(): HTMLAudioElement | null {
   if (typeof window === "undefined") return null;
   if (!el) {
-    el = new Audio(homeLoop);
+    el = new Audio(menuLoop);
     el.loop = true;
     el.preload = "none"; // don't fetch until we actually play
     el.volume = 0;
