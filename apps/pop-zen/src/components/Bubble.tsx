@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { equippedBubbleSprite } from "../lib/skins";
 import { SPECIAL_LOOK, FROZEN_TAPS, type SpecialType } from "../lib/specials";
+import type { BubbleStyle } from "../lib/field-style";
 import bubbleFull from "../assets/bubbles/real-bubble-full.webp";
 import bubblePopped from "../assets/bubbles/real-bubble-popped.webp";
 
@@ -36,6 +37,8 @@ type Props = {
    * WITHOUT latching, so it pops fine once the shield slides past.
    */
   canActivate?: (rect: DOMRect) => boolean;
+  /** TEMP eval: interactive-bubble readability style (plain/shadow/frost/rim). */
+  bubbleStyle?: BubbleStyle;
   /**
    * Receives the bubble id plus its centre (field-local px), variant, and special
    * type so the parent can drive the particle burst + the special pop effect.
@@ -64,6 +67,7 @@ export const Bubble = memo(function Bubble({
   moving,
   centerHitFrac = 1,
   canActivate,
+  bubbleStyle = "plain",
   onPop,
 }: Props) {
   // One-shot guard so a pointerdown plus its trailing synthetic click (or any
@@ -141,7 +145,12 @@ export const Bubble = memo(function Bubble({
               : `bubbleFloat 4s ease-in-out ${driftDelay}s infinite`,
         WebkitTapHighlightColor: "transparent",
         borderRadius: "50%",
-        boxShadow: look && !popped ? `0 0 0 2px ${look.ring}, ${look.glow}` : undefined,
+        boxShadow:
+          look && !popped
+            ? `0 0 0 2px ${look.ring}, ${look.glow}`
+            : bubbleStyle === "rim" && !popped
+              ? "0 0 0 1.5px rgba(51,224,198,0.7), 0 0 10px rgba(51,224,198,0.5)"
+              : undefined,
       }}
       aria-label="Pop bubble"
     >
@@ -152,8 +161,24 @@ export const Bubble = memo(function Bubble({
           inset: 0,
           backgroundImage: `url(${popped ? poppedSrc : fullSrc})`,
           ["--rot" as string]: rotRef.current,
+          filter:
+            bubbleStyle === "shadow" && !popped
+              ? "drop-shadow(0 5px 6px rgba(0,0,0,0.55))"
+              : undefined,
         }}
       />
+      {bubbleStyle === "frost" && !popped && (
+        // Faint milky frosted fill — lifts the poppable bubble off the wrap.
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle at 36% 30%, rgba(255,255,255,0.55), rgba(255,255,255,0.16) 55%, rgba(255,255,255,0.06) 100%)",
+          }}
+        />
+      )}
       {look && !popped && (
         <span
           aria-hidden

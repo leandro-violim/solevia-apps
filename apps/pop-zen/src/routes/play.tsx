@@ -57,6 +57,15 @@ import { CoinBalance } from "../components/CoinBalance";
 import { CoinIcon, PlayIcon } from "../components/icons";
 import fieldSheet from "../assets/scene/field-sheet.webp";
 import {
+  FIELDS,
+  BUBBLE_STYLES,
+  getFieldIndex,
+  setFieldIndex,
+  getBubbleStyle,
+  setBubbleStyle,
+  type BubbleStyle,
+} from "../lib/field-style";
+import {
   computeTimeAttackScore,
   formatCountdown,
   formatTime,
@@ -276,6 +285,27 @@ function PlayPage() {
   // Candy-Crush-style "entering World N" flourish, shown when a run crosses into
   // a new round (world 2–4 → its first phase). Dismisses into the phase.
   const [showWorldIntro, setShowWorldIntro] = useState(false);
+
+  // TEMP evaluation toggles (Pop for Fun): cycle the playfield background + the
+  // interactive-bubble style live, to pick the most readable combo. Persisted.
+  const [fieldIdx, setFieldIdxState] = useState(0);
+  const [bubbleStyle, setBubbleStyleState] = useState<BubbleStyle>("plain");
+  useEffect(() => {
+    setFieldIdxState(getFieldIndex());
+    setBubbleStyleState(getBubbleStyle());
+  }, []);
+  const cycleField = () =>
+    setFieldIdxState((i) => {
+      const n = (i + 1) % FIELDS.length;
+      setFieldIndex(n);
+      return n;
+    });
+  const cycleBubbleStyle = () =>
+    setBubbleStyleState((s) => {
+      const n = BUBBLE_STYLES[(BUBBLE_STYLES.indexOf(s) + 1) % BUBBLE_STYLES.length];
+      setBubbleStyle(n);
+      return n;
+    });
 
   // Consumable power-ups (Bombs, Time Freeze) — Pop Challenge only. Live counts
   // re-read on any inventory change. Bomb is armed then detonated on a bubble tap.
@@ -915,22 +945,35 @@ function PlayPage() {
             background: "rgba(0, 0, 0, 0.2)",
           }}
         >
-          {/* The REAL crinkly bubble-wrap photo blended (soft-light) onto the base
-              so it reads as genuine, see-through bubble wrap. Pocket SCALE tracks
-              the phase's bubble size (cfg.size); ~10 pockets across the 1125px
-              source → tile width ≈ size × 10. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage: `url(${fieldSheet})`,
-              backgroundSize: `${Math.round(cfg.size * 10)}px auto`,
-              backgroundRepeat: "repeat",
-              backgroundPosition: "center",
-              opacity: 0.7,
-              mixBlendMode: "soft-light",
-            }}
-          />
+          {/* Playfield background. Pop for Fun (eval): the selected candidate field
+              (full cover, one uniform knock-back so the comparison is fair, and
+              the poppable bubbles read on top). Elsewhere: the tiled soft-light
+              bubble-wrap as before. */}
+          {isZen ? (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+              style={{
+                backgroundImage: `url(${FIELDS[fieldIdx].img})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity: 0.85,
+              }}
+            />
+          ) : (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+              style={{
+                backgroundImage: `url(${fieldSheet})`,
+                backgroundSize: `${Math.round(cfg.size * 10)}px auto`,
+                backgroundRepeat: "repeat",
+                backgroundPosition: "center",
+                opacity: 0.7,
+                mixBlendMode: "soft-light",
+              }}
+            />
+          )}
           {bubbles.map((b) => (
             <Bubble
               key={b.id}
@@ -946,9 +989,30 @@ function PlayPage() {
               moving={mech === "moving"}
               centerHitFrac={mech === "moving" ? 0.58 : 1}
               canActivate={mech === "shielded" ? canPop : undefined}
+              bubbleStyle={isZen ? bubbleStyle : "plain"}
               onPop={handlePop}
             />
           ))}
+
+          {/* TEMP eval toggles (Pop for Fun): cycle field background + bubble style. */}
+          {isZen && (
+            <div className="pointer-events-none absolute inset-x-0 top-2 z-20 flex flex-wrap justify-center gap-2 px-2">
+              <button
+                type="button"
+                onClick={cycleField}
+                className="pointer-events-auto rounded-full bg-background/85 px-3 py-1 text-[11px] font-semibold text-foreground shadow-lg backdrop-blur"
+              >
+                Field {fieldIdx + 1}/{FIELDS.length} · {FIELDS[fieldIdx].name}
+              </button>
+              <button
+                type="button"
+                onClick={cycleBubbleStyle}
+                className="pointer-events-auto rounded-full bg-background/85 px-3 py-1 text-[11px] font-semibold text-primary shadow-lg backdrop-blur"
+              >
+                Bubble · {bubbleStyle}
+              </button>
+            </div>
+          )}
 
           {/* Round-4 patrolling shields (block covered pops; see isCovered). */}
           {mech === "shielded" && state !== "done" && (
