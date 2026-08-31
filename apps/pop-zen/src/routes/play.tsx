@@ -36,7 +36,7 @@ import { track } from "../lib/analytics";
 import { equippedThemeImage, unlockZenSkins } from "../lib/skins";
 import { ObjectivesHud } from "../components/ObjectivesHud";
 import { CoinIcon, PlayIcon } from "../components/icons";
-import level1Bg from "../assets/scene/level1-bg.webp";
+import fieldWrap from "../assets/scene/field-bubblewrap.webp";
 import {
   computeTimeAttackScore,
   difficultyPhase,
@@ -628,21 +628,20 @@ function PlayPage() {
       <div className="relative flex flex-1 px-2">
         <div
           ref={fieldRef}
-          className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm"
+          className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10"
+          style={{ backgroundColor: "var(--bg-0)" }}
         >
-          {/* Realism background (restored): a REAL bubble-wrap sheet on the back,
-              kept semi-transparent so the calm dark shell / equipped theme shows
-              through — not a white field — and softly blurred so the live bubbles
-              stay foreground. Lazy WebP. */}
+          {/* A real bubble-wrap sheet on the back, recoloured to the app's navy →
+              aqua brand palette and rendered FULLY OPAQUE (not gray, not
+              see-through) so the field matches the rest of the app. The live
+              bubbles stay foreground via their gloss + drop shadow. Lazy WebP. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{
-              backgroundImage: `url(${level1Bg})`,
+              backgroundImage: `url(${fieldWrap})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
-              opacity: 0.8, // only ~20% transparent — the wrap reads clearly
-              filter: "brightness(0.82) blur(1px)",
             }}
           />
           {bubbles.map((b) => (
