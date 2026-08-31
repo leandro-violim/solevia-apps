@@ -327,46 +327,41 @@
   box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.26);
 }
 /* POPPED — stays ROUND (no clip-path). Option A: filter dims the same image. */
+/* F8: popped swaps to the deflated sprite (set in Bubble.tsx) and settles ~26%
+   SMALLER than full — no colour dim, the sprite itself carries the flat, crinkled
+   look. The 0.74 end-state is also the reduced-motion fallback below. */
 .zb.popped {
   animation: zpop var(--zb-pop-dur) var(--zb-pop-ease) forwards;
-  /* Static dim = the animation's end-state; also the reduced-motion fallback
-     (that @media below sets animation:none and relies on this filter). */
-  filter: brightness(0.58) saturate(0.6) contrast(0.8);
-  opacity: 0.6;
+  transform: scale(0.74) rotate(var(--rot, -4deg));
+  opacity: 0.96;
   box-shadow: none;
-}
-.zb.popped .zb-cracks {
-  opacity: 1;
-}
-.zb.popped .zb-deflate {
-  opacity: 1;
 }
 
 @keyframes zpop {
   0% {
     transform: scale(1);
-    /* Colour flash at the instant of the pop, then it settles to the dim shell. */
-    filter: brightness(var(--zb-pop-flash)) saturate(0.85) contrast(0.95);
+    /* A brief brightness flash at the instant of the pop. */
+    filter: brightness(var(--zb-pop-flash));
   }
-  18% {
+  22% {
     transform: scale(var(--zb-pop-overshoot)); /* squash-&-stretch peak */
-    filter: brightness(1.25) saturate(0.8) contrast(0.9);
+    filter: brightness(1.12);
   }
-  55% {
-    transform: scale(0.55) rotate(var(--rot, -4deg));
-    filter: brightness(0.58) saturate(0.6) contrast(0.8);
+  60% {
+    transform: scale(0.68) rotate(var(--rot, -4deg)); /* dip past the resting size */
+    filter: none;
   }
   100% {
-    transform: scale(0.52) rotate(var(--rot, -4deg));
-    filter: brightness(0.58) saturate(0.6) contrast(0.8);
+    transform: scale(0.74) rotate(var(--rot, -4deg)); /* deflated + smaller */
+    filter: none;
   }
 }
 
-/* Reduced motion: settle straight to the popped end-state, no squish bounce. */
+/* Reduced motion: settle straight to the deflated end-state, no squish bounce. */
 @media (prefers-reduced-motion: reduce) {
   .zb.popped {
     animation: none;
-    transform: scale(0.52) rotate(var(--rot, -4deg));
+    transform: scale(0.74) rotate(var(--rot, -4deg));
   }
 }
 

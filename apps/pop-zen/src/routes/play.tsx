@@ -628,12 +628,17 @@ function PlayPage() {
       <div className="relative flex flex-1 px-2">
         <div
           ref={fieldRef}
-          className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm"
+          className="relative w-full flex-1 overflow-hidden rounded-3xl border border-black/5"
+          style={{
+            // F8: a soft, warm off-white play field with a faint aqua tint (never
+            // stark white) — the calm tone the realistic clear bubbles read best on.
+            background:
+              "radial-gradient(120% 90% at 50% 0%, rgba(51,224,198,0.1), transparent 55%), linear-gradient(180deg, #f2f0ea 0%, #e7edeb 100%)",
+          }}
         >
-          {/* P1-T10: bright bubble-wrap-on-white sheet behind the grid. Per the
-              ticket's option (a) it's DIMMED + softly blurred + low-opacity so the
-              live, crisp, popping bubbles clearly read as the foreground and there's
-              no "double bubbles" clash. Lazy WebP, sized to device height. */}
+          {/* P1-T10 + F8: bubble-wrap sheet behind the grid, DIMMED + softly
+              blurred so it's just texture and the live bubbles stay foreground
+              (no "double bubbles" clash). Lazy WebP. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
@@ -641,8 +646,8 @@ function PlayPage() {
               backgroundImage: `url(${level1Bg})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
-              opacity: 0.4,
-              filter: "brightness(0.9) blur(1px)",
+              opacity: 0.3,
+              filter: "blur(1.5px)",
             }}
           />
           {bubbles.map((b) => (
