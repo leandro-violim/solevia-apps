@@ -213,6 +213,12 @@
     min-height: 100dvh;
     overscroll-behavior: none;
     -webkit-font-smoothing: antialiased;
+    /* It's a game — never let a fast tap/drag start a text/element selection or
+       the iOS long-press "copy/look up" callout. */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
   /* Calm aqua glow — sits behind all content. Aqua only, no purple; low
