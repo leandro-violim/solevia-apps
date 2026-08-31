@@ -616,10 +616,10 @@ function PlayPage() {
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10"
           style={{
             isolation: "isolate",
-            // A soft, lighter blue-teal field (calmer / less dark than the shell)
-            // with a gentle aqua glow — still in the app's palette, just airier.
+            // A soft, clean blue — the calm "third" tonality alongside the Zen
+            // aqua and Time-Attack coral buttons — with a gentle aqua glow up top.
             background:
-              "radial-gradient(120% 110% at 50% 12%, rgba(51,224,198,0.18), transparent 64%), linear-gradient(180deg, #2a4a6b 0%, #1b3350 100%)",
+              "radial-gradient(120% 110% at 50% 10%, rgba(51,224,198,0.2), transparent 64%), linear-gradient(180deg, #4d90cf 0%, #2f5f95 100%)",
           }}
         >
           {/* Realism: the REAL crinkly bubble-wrap photo, softly blended onto the
