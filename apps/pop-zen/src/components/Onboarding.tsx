@@ -23,7 +23,7 @@ export function HowToPlay({ open, onClose }: { open: boolean; onClose: () => voi
       <h2 className="text-2xl font-extrabold text-foreground">{t("onboarding.title")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("onboarding.intro")}</p>
 
-      <div className="mt-4 max-h-[46vh] space-y-3 overflow-y-auto pr-1 text-left">
+      <div className="mt-4 space-y-3 text-left">
         {/* Pop Challenge — the timed mode + its rules. */}
         <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
           <div className="flex items-center gap-2">

@@ -29,7 +29,7 @@ function AboutPage() {
   // both languages ({email} is left un-interpolated so we can split on it).
   const [supportBefore, supportAfter] = t("about.support").split("{email}");
   return (
-    <main className="mx-auto max-w-2xl px-6 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)] text-sm leading-relaxed text-foreground">
+    <main className="mx-auto max-w-2xl px-6 pb-[calc(var(--ad-banner-h,72px)+env(safe-area-inset-bottom)+1.25rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)] text-sm leading-relaxed text-foreground">
       <Link to="/" className="text-xs text-muted-foreground">
         {t("common.backHome")}
       </Link>

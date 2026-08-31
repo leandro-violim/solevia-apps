@@ -53,6 +53,7 @@ import { seededRand, recordDailyResult } from "../lib/daily-challenge";
 import { track } from "../lib/analytics";
 import { unlockZenSkins } from "../lib/skins";
 import { ChallengeGoals } from "../components/ChallengeGoals";
+import { CoinBalance } from "../components/CoinBalance";
 import { CoinIcon, PlayIcon } from "../components/icons";
 import fieldSheet from "../assets/scene/field-sheet.webp";
 import {
@@ -1101,8 +1102,11 @@ function PlayPage() {
                     watch a video for coins) before heading into the next stage. */}
                 {!isZen && !isLast && (
                   <div className="mt-3 rounded-lg bg-white/5 p-3">
-                    <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">
-                      {t("items.restock")}
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                        {t("items.restock")}
+                      </span>
+                      <CoinBalance className="text-xs font-semibold text-foreground" />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <button

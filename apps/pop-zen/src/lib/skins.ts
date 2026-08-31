@@ -204,3 +204,13 @@ export function equippedBubbleFilter(): string | undefined {
 export function equippedBubbleTint(): string | undefined {
   return equippedSkin().tint;
 }
+
+/**
+ * The equipped skin's art, used as a MATERIAL overlay on the in-game bubble so
+ * it reads like the bubble wrap you actually bought (its finish/texture), not
+ * just a recolour. Undefined for Classic (the plain real bubble).
+ */
+export function equippedSkinImage(): string | undefined {
+  const s = equippedSkin();
+  return s.id === "skin-classic" ? undefined : s.thumb;
+}

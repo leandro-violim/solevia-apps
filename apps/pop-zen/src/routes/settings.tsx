@@ -100,7 +100,7 @@ function SettingsPage() {
 
   return (
     <main
-      className="screen-fade mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10"
+      className="screen-fade mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-[calc(var(--ad-banner-h,72px)+env(safe-area-inset-bottom)+1.25rem)]"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
     >
       <header className="mb-6 flex items-center justify-between">

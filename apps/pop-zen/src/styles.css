@@ -673,6 +673,14 @@
   position: relative;
   width: 100%;
   max-width: 20rem;
+  /* Never taller than the viewport (minus the overlay padding + safe areas +
+     the native ad banner): if the content is tall, the CARD scrolls internally
+     so its buttons are always reachable on any phone. */
+  max-height: calc(
+    100dvh - 3rem - env(safe-area-inset-top) - env(safe-area-inset-bottom) - var(--ad-banner-h, 0px)
+  );
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 1.5rem;
   border-radius: 1.25rem;
   text-align: center;

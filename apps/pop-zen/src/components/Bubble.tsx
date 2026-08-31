@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { equippedBubbleTint } from "../lib/skins";
+import { equippedBubbleTint, equippedSkinImage } from "../lib/skins";
 import { SPECIAL_LOOK, FROZEN_TAPS, type SpecialType } from "../lib/specials";
 import bubbleFull from "../assets/bubbles/real-bubble-full.webp";
 import bubblePopped from "../assets/bubbles/real-bubble-popped.webp";
@@ -110,6 +110,8 @@ export const Bubble = memo(function Bubble({
   // with mix-blend-mode:color, which recolours the plastic reliably. `undefined`
   // for Classic (no tint). Specials keep their own look, so skip the tint there.
   const skinTint = special === "normal" ? equippedBubbleTint() : undefined;
+  // The bought skin's actual material, zoomed so ~one pocket fills the bubble.
+  const skinImg = special === "normal" ? equippedSkinImage() : undefined;
   const look = special !== "normal" ? SPECIAL_LOOK[special] : null;
 
   return (
@@ -164,6 +166,22 @@ export const Bubble = memo(function Bubble({
             background: skinTint,
             mixBlendMode: "color",
             opacity: 0.9,
+          }}
+        />
+      )}
+      {skinImg && !popped && (
+        // The bought skin's real material (metallic/neon/pastel finish) layered
+        // over the bubble's gloss so it looks like what you actually purchased.
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            borderRadius: "50%",
+            backgroundImage: `url(${skinImg})`,
+            backgroundSize: "260%",
+            backgroundPosition: "center",
+            mixBlendMode: "soft-light",
+            opacity: 0.55,
           }}
         />
       )}
