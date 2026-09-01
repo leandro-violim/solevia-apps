@@ -21,6 +21,9 @@ function PrivacyPage() {
       <H>{t("privacy.collectH")}</H>
       <p>{t("privacy.collectBody")}</p>
 
+      <H>{t("privacy.analyticsH")}</H>
+      <p>{t("privacy.analyticsBody")}</p>
+
       <H>{t("privacy.adsH")}</H>
       <p>{t("privacy.adsBody1")}</p>
       <p>{t("privacy.adsBody2")}</p>

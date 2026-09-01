@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { CAP_STYLES, styleById } from "../game/caps/styles";
 import { loadCapStyleId, saveCapStyleId } from "../game/caps/storage";
+import { trackCapSelected } from "../lib/analytics";
 import { drawCap } from "../game/render/draw";
 import { useT } from "../lib/i18n";
 
@@ -35,6 +36,7 @@ function CapsPage() {
   const choose = (id: string) => {
     setSelected(id);
     saveCapStyleId(id);
+    trackCapSelected(id);
   };
 
   return (

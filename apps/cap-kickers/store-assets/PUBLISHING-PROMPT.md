@@ -99,7 +99,8 @@ Studio. The iOS Simulator's GPU is broken on this machine — test iOS on a real
 - Android: `android/` project created, AdMob `APPLICATION_ID` meta-data in the manifest (Google TEST id),
   launcher icons generated, `INTERNET` permission, targetSdk 36.
 - Ads engine `src/lib/ads.ts`: banner/interstitial/rewarded with frequency caps, all no-ops on web,
-  test/live auto-switch. UMP consent form is intentionally commented out (US-first launch).
+  test/live auto-switch. UMP consent form is intentionally commented out (not required in any of the
+  six launch countries — see the note in `src/lib/ads.ts`).
 - Full EN + pt-BR localization incl. legal pages; in-app About/Privacy/Terms; app icons.
 - Legal governing-law state set to **Florida** (`-legal-doc.tsx`); tutorial illustrations use the real
   gameplay cap art.
@@ -222,4 +223,5 @@ below map to it.
       (`store-assets/feature-graphic-en.png` / `-pt.png`); app-preview video recorded on-device per
       `store-assets/VIDEO-GUIDE.md` (optional).
 - [ ] Tested a production-config build on a real device (ads load, gameplay unaffected offline).
-- [ ] (Before EU/Brazil later) re-enable the UMP consent block in `src/lib/ads.ts`.
+- [ ] (Before an **EEA / UK / Switzerland** launch) re-enable the UMP consent block in `src/lib/ads.ts`.
+      Not needed for Brazil or India — AdMob offers no message type for either.

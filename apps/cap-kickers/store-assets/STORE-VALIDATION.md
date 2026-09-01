@@ -53,10 +53,13 @@ These are **owner actions** (they need accounts/assets I can't create). The code
 7. **AdMob max ad content rating = G**, to stay consistent with a 4+/Everyone rating (otherwise a mature
    ad could appear in a kid-friendly-looking game and trip a reviewer).
 
-8. **EU/Brazil consent (UMP) is intentionally disabled.** `runConsentAndTracking()` in `src/lib/ads.ts`
-   has the Google UMP consent-form call commented out (owner chose to drop the "keep this app free"
-   popup). That's fine for a **US-first** launch. Before you expand to the EU/EEA (GDPR) or Brazil (LGPD),
-   re-enable the UMP block (it's right there, commented, with a note) or you'll be non-compliant. iOS ATT
+8. **UMP consent is intentionally disabled — and that is correct for these six countries.**
+   `runConsentAndTracking()` in `src/lib/ads.ts` has the Google UMP consent-form call commented out
+   (owner chose to drop the "keep this app free" popup). Google **mandates** a certified consent
+   platform only in the **EEA, UK and Switzerland** — none of which are launch countries. Re-enable it
+   before you go there. It is **not** needed for Brazil or India: checked 2026-08-26, AdMob ▸ Privacy &
+   messaging on pub-9628521678374705 offers only European regulations, US state regulations and the
+   IDFA explainer, so re-enabling UMP would show those users nothing. iOS ATT
    is still active and correct.
 
 9. **Confirm support email.** `SUPPORT_EMAIL = "hello@solevia.app"` (`-legal-doc.tsx` line 12) — make sure

@@ -115,3 +115,64 @@ Pegue sua tampinha e mande ver!
 - **Privacy policy URL:** host the in-app text (see STORE-VALIDATION.md blocker #2).
 - **Copyright:** © 2026 Sole Via Entertainment LLC.
 - **Contains ads:** YES (declare on Play; Apple has no field but be consistent).
+
+---
+
+## 🌎 Español (Latinoamérica) — "Fútbol de Tapitas"
+
+Added 2026-09-01 for the Latin America launch. **Play locale: `es-419` (Spanish – Latin America).
+Apple locale: `Spanish (Mexico)`** — Apple has no es-419; es-MX is what serves all of LatAm.
+Do *not* also add Spanish (Spain) unless you decide to ship to Spain, which needs the UMP
+consent form first (EEA).
+
+Vocabulary note: LatAm Spanish splits hard on some words (*corcholata* in Mexico, *chapita* in
+Argentina, *tapa* in Chile). The in-app strings use **tapita** and **portero** throughout, which
+read naturally almost everywhere; the alternates live in the Apple keyword field instead so
+search still finds the game.
+
+**Nombre de la app (Apple + título Play, ≤30):** `Fútbol de Tapitas`  *(17)*
+
+**Subtítulo Apple (≤30):** `Fútbol de tapitas con el dedo`  *(29)*
+
+**Descripción breve Play (≤80):**
+`Dale un toque a las tapitas, pasa por el hueco y mete gol. ¡Fútbol rápido!`  *(74)*
+
+**Texto promocional Apple (≤170):**
+`No apuntes: dale un toque. Mientras más fuerte, más lejos llega la tapita. Pasa por el hueco, vence al portero y llévate la copa. Gratis, sin conexión, sin registro.`  *(165)*
+
+**Palabras clave Apple (≤100, separadas por comas, sin espacios después de las comas):**
+`fútbol,tapitas,chapitas,corcholatas,gol,portero,arcade,deportes,casual,sin conexión,2 jugadores`  *(95)*
+
+**Descripción (Apple + descripción completa Play, ≤4000):**
+```
+¡Un toque, un gol!
+
+Fútbol de Tapitas es el fútbol de mesa de toda la vida, ahora en tu bolsillo.
+Dale un toque a la tapita con el dedo: mientras más rápido y fuerte sea el
+toque, más lejos llega. Un toque suave apenas la mueve. Sin flechas, sin mira
+— todo es cuestión de tacto.
+
+CÓMO SE JUEGA
+• Controlas tres tapitas y tienes cinco toques por turno.
+• Pasa una tapita por el hueco entre las otras dos para conservar la posesión.
+• En el quinto toque se abre la portería: dispara y vence al portero.
+• El primero en llegar al marcador gana el partido.
+
+MODOS
+• Campaña — sube el escalafón contra la máquina, de Fácil a Difícil.
+• Pasa y Juega — dos jugadores en un solo dispositivo.
+• Práctica — calienta sin presión.
+
+HAZLO TUYO
+• Elige la cancha: pasto, pupitre, mesa o cemento.
+• Elige el estilo de tu tapita.
+• Juega en español, portugués o inglés.
+
+Gratis. Funciona sin conexión. Sin cuenta y sin registro.
+¡Agarra tu tapita y dispara!
+```
+
+**On-device app name:** Spanish-language devices now show **"Fútbol de Tapitas"**
+(`android/app/src/main/res/values-es/strings.xml` and `ios/App/App/es.lproj/InfoPlist.strings`,
+both created 2026-09-01). The iOS one only takes effect once Spanish is added under
+Xcode → project → Info → Localizations.

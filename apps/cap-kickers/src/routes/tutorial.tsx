@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { TUTORIAL_STEPS, isLastStep, stepCount } from "../game/tutorial/steps";
 import { markTutorialSeen } from "../game/tutorial/storage";
+import { trackTutorialBegin, trackTutorialComplete, trackTutorialSkip } from "../lib/analytics";
 import { useT } from "../lib/i18n";
 import { drawPitch, drawGoal, drawCap, drawKeeper } from "../game/render/draw";
 import { styleById, type CapStyle } from "../game/caps/styles";
@@ -25,7 +26,16 @@ function TutorialPage() {
   const step = TUTORIAL_STEPS[i];
   const nav = useNavigate();
 
-  const finish = () => {
+  // One tutorial_begin per visit to the tutorial.
+  useEffect(() => {
+    trackTutorialBegin();
+  }, []);
+
+  // `completed` distinguishes "Start playing" on the last step from the Skip
+  // button, which is the drop-off signal we actually care about.
+  const finish = (completed: boolean) => {
+    if (completed) trackTutorialComplete();
+    else trackTutorialSkip(i);
     markTutorialSeen();
     nav({ to: "/" });
   };
@@ -37,7 +47,7 @@ function TutorialPage() {
     >
       <button
         type="button"
-        onClick={finish}
+        onClick={() => finish(false)}
         className="font-display absolute right-5 text-sm uppercase tracking-wide text-muted-foreground"
         style={{ top: "calc(env(safe-area-inset-top) + 14px)" }}
       >
@@ -86,7 +96,7 @@ function TutorialPage() {
           </button>
         ) : null}
         {isLastStep(i) ? (
-          <button type="button" onClick={finish} className="arcade-btn arcade-btn--gold flex-1 py-4 text-lg">
+          <button type="button" onClick={() => finish(true)} className="arcade-btn arcade-btn--gold flex-1 py-4 text-lg">
             {t("tutorial.start")}
           </button>
         ) : (

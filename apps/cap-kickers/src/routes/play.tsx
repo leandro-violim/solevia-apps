@@ -12,13 +12,23 @@ import { styleById, opponentFor } from "../game/caps/styles";
 import { loadCapStyleId } from "../game/caps/storage";
 import { pitchStyleById } from "../game/pitches/styles";
 import { loadPitchStyleId } from "../game/pitches/storage";
-import { completeLevel, levelById, nextLevelId } from "../game/campaign/ladder";
+import { completeLevel, levelById, levelIndex, nextLevelId } from "../game/campaign/ladder";
 import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 import { gameAudio } from "../lib/audio";
 import { notifyMatchEnded, rewardedAvailable, showRewarded } from "../lib/ads";
 import { t as tRaw, useT } from "../lib/i18n";
+import {
+  trackCampaignComplete,
+  trackLevelComplete,
+  trackMatchEnd,
+  trackMatchStart,
+  trackRewardedOffered,
+  trackRewardedSkipped,
+  trackRewardedWatched,
+  type GameMode,
+} from "../lib/analytics";
 import {
   createFx,
   updateCapFx,
@@ -72,6 +82,15 @@ const MIN_GRAB_PX = 24;
 
 function PlayPage() {
   const { mode, difficulty, goals, campaign } = Route.useSearch();
+  // Which bucket this match reports as. Campaign wins over the raw mode so a
+  // ladder match is never counted as a plain vs-AI one.
+  const analyticsMode: GameMode = campaign
+    ? "campaign"
+    : mode === "2p"
+      ? "pass_play"
+      : mode === "ai"
+        ? "solo_ai"
+        : "practice";
   const t = useT();
 
   // Cap styles: the player's chosen cap vs a contrasting opponent cap. Side 0
@@ -104,6 +123,11 @@ function PlayPage() {
   // Guards against double-recording campaign completion when the "won"
   // match state triggers more than one re-render.
   const recordedRef = useRef(false);
+  // Analytics: wall-clock start of the current match, and a latch so match_end
+  // fires exactly once per match even though the effect re-runs on every state
+  // change while the win overlay is up.
+  const matchStartedAtRef = useRef(Date.now());
+  const endLoggedRef = useRef(false);
 
   const [match, setMatch] = useState<MatchState>(() => sessionRef.current!.match);
   const [banner, setBanner] = useState<Banner | null>(null);
@@ -167,7 +191,10 @@ function PlayPage() {
     setViewAttacker(sessionRef.current.match.attacker);
     setHandoffTo(null);
     recordedRef.current = false;
-  }, [mode, difficulty, goals]);
+    matchStartedAtRef.current = Date.now();
+    endLoggedRef.current = false;
+    trackMatchStart(analyticsMode, mode === "ai" ? difficulty : undefined);
+  }, [mode, difficulty, goals, analyticsMode]);
 
   // rAF render/tick loop. Owns the canvas backing-store sizing and never
   // touches React state except to publish HUD-relevant snapshots.
@@ -369,7 +396,10 @@ function PlayPage() {
               wasShot &&
               session.canRetryShot() &&
               (rewardedAvailable() || import.meta.env.DEV);
-            if (offerRetry) setRetry(true);
+            if (offerRetry) {
+              setRetry(true);
+              trackRewardedOffered();
+            }
             else showBanner(tRaw("play.turnOver"));
           }
 
@@ -451,6 +481,25 @@ function PlayPage() {
     [],
   );
 
+  // One match_start per mounted match. The route remounts whenever mode /
+  // difficulty / goals / campaign change (see remountDeps), so this fires once
+  // per real match rather than on every re-render.
+  useEffect(() => {
+    matchStartedAtRef.current = Date.now();
+    endLoggedRef.current = false;
+    trackMatchStart(analyticsMode, mode === "ai" ? difficulty : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // One match_end per match, whoever won. Practice has no winner concept we
+  // care about beyond "the match ended".
+  useEffect(() => {
+    if (match.phase !== "won" || endLoggedRef.current) return;
+    endLoggedRef.current = true;
+    const seconds = (Date.now() - matchStartedAtRef.current) / 1000;
+    trackMatchEnd(analyticsMode, match.winner === 0 ? "win" : "loss", seconds);
+  }, [match.phase, match.winner, analyticsMode]);
+
   // Record campaign level completion exactly once, the moment a campaign
   // match is won by the human player.
   useEffect(() => {
@@ -462,6 +511,9 @@ function PlayPage() {
     ) {
       recordedRef.current = true;
       saveProgress(completeLevel(campaign, loadProgress()));
+      const idx = levelIndex(campaign);
+      trackLevelComplete(idx >= 0 ? idx + 1 : 0);
+      if (!nextLevelId(campaign)) trackCampaignComplete();
     }
   }, [campaign, match.phase, match.winner]);
 
@@ -566,6 +618,10 @@ function PlayPage() {
     // Real rewarded ad on device; in dev (no native ad) the reward is granted so
     // the flow is testable in the browser.
     const earned = rewardedAvailable() ? await showRewarded() : import.meta.env.DEV;
+    // `rewarded_watched` means the reward was actually earned, not merely that
+    // the player tapped — an abandoned or failed ad counts as skipped.
+    if (earned) trackRewardedWatched();
+    else trackRewardedSkipped();
     if (earned && session.retryShot()) {
       setMatch(session.match);
       setViewAttacker(session.match.attacker);
@@ -577,13 +633,14 @@ function PlayPage() {
     setRetry(false);
   };
   const handleDeclineRetry = () => {
+    trackRewardedSkipped();
     const session = sessionRef.current;
     if (session) {
       session.declineRetry();
       setMatch(session.match);
     }
     setRetry(false);
-    showBanner("Turn over");
+    showBanner(t("play.turnOver"));
   };
 
   const won = match.phase === "won";

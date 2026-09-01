@@ -6,9 +6,15 @@ export type Settings = {
   sound: boolean; // sound effects (pops, whistle, crowd)
   music: boolean; // menu / background music
   vibration: boolean; // haptic feedback
+  analytics: boolean; // anonymous usage analytics (Firebase); player can opt out
 };
 
-export const DEFAULT_SETTINGS: Settings = { sound: true, music: true, vibration: true };
+export const DEFAULT_SETTINGS: Settings = {
+  sound: true,
+  music: true,
+  vibration: true,
+  analytics: true,
+};
 
 export type StorageLike = {
   getItem(k: string): string | null;
@@ -41,6 +47,7 @@ export const loadSettings = (storage: StorageLike | null = defaultStorage()): Se
       sound: asBool(parsed.sound, DEFAULT_SETTINGS.sound),
       music: asBool(parsed.music, DEFAULT_SETTINGS.music),
       vibration: asBool(parsed.vibration, DEFAULT_SETTINGS.vibration),
+      analytics: asBool(parsed.analytics, DEFAULT_SETTINGS.analytics),
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

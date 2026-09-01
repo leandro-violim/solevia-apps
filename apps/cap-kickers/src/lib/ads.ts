@@ -13,6 +13,7 @@
  * VITE_USE_TEST_ADS=true. NEVER tap your own LIVE ads (invalid-traffic risk).
  */
 import { Capacitor } from "@capacitor/core";
+import { trackInterstitialShown } from "./analytics";
 import type { PluginListenerHandle } from "@capacitor/core";
 import {
   AdMob,
@@ -69,11 +70,18 @@ const now = (): number => (typeof performance !== "undefined" ? performance.now(
 
 // ── Consent + iOS ATT — inlined; run before any ad id is used ──
 async function runConsentAndTracking(): Promise<void> {
-  // NOTE: the Google UMP consent form (the "keep this app free" popup) is
-  // disabled at the owner's request — its wording is configured in the AdMob
-  // console, not here. Re-enable before an EU/EEA (GDPR) or Brazil (LGPD) launch,
-  // where showing a consent form is legally required; ads then run without it as
-  // non-personalized where consent would otherwise be needed.
+  // NOTE: the Google UMP consent form is disabled at the owner's request — its
+  // wording is configured in the AdMob console, not here.
+  //
+  // Re-enable it before launching in the EEA, the UK or Switzerland. Google
+  // MANDATES a certified consent platform there, and the "European regulations"
+  // message type exists in AdMob ▸ Privacy & messaging to serve it.
+  //
+  // It does NOT need re-enabling for Brazil or India. Checked 2026-08-26 against
+  // AdMob ▸ Privacy & messaging on pub-9628521678374705: the only message types
+  // offered are European regulations, US state regulations and the IDFA explainer.
+  // There is no Brazil/LGPD or India/DPDP type, so turning UMP back on would show
+  // those users nothing at all.
   // try {
   //   const info = await AdMob.requestConsentInfo();
   //   if (info.isConsentFormAvailable && info.status === AdmobConsentStatus.REQUIRED) {
@@ -237,6 +245,7 @@ export async function notifyMatchEnded(): Promise<void> {
   if (matchesSinceAd >= MATCHES_PER_AD && now() - lastInterstitialAt > INTERSTITIAL_MIN_MS) {
     matchesSinceAd = 0;
     lastInterstitialAt = now();
+    trackInterstitialShown();
     await showInterstitial();
   } else {
     void preloadInterstitial();

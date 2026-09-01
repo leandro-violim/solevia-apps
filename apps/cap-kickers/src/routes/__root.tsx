@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { gameAudio } from "../lib/audio";
 import { loadSettings } from "../game/settings/storage";
 import { initAds, showBanner, hideBanner } from "../lib/ads";
+import { initAnalytics, trackGameReady, trackScreen } from "../lib/analytics";
 
 function NotFoundComponent() {
   return (
@@ -138,9 +139,13 @@ function RootComponent() {
   // foreground resume that recovers sound after an ad/call interruption (#13).
   // Ads: initialize AdMob + consent (native only; no-op on web).
   useEffect(() => {
-    gameAudio.setSettings(loadSettings());
+    const settings = loadSettings();
+    gameAudio.setSettings(settings);
     gameAudio.init();
     void initAds();
+    // Analytics honours the persisted opt-in before anything is logged. Events
+    // fired during startup buffer inside the module and flush once this resolves.
+    void initAnalytics(settings.analytics).then(trackGameReady);
   }, []);
 
   // Banner shows on menu screens only — hidden during a game so it never covers
@@ -148,6 +153,7 @@ function RootComponent() {
   useEffect(() => {
     if (pathname.startsWith("/play")) void hideBanner();
     else void showBanner();
+    trackScreen(pathname === "/" ? "home" : pathname.replace(/^\//, ""));
   }, [pathname]);
 
   return (

@@ -1,5 +1,5 @@
 /**
- * Tiny in-app localization — no dependency. English + Portuguese (BR).
+ * Tiny in-app localization — no dependency. English + Portuguese (BR) + Spanish.
  *
  * The starting language is detected from the device (pt-* → pt-BR, else en) but,
  * unlike the Zen Bubbles version, the player can override it in Settings. The
@@ -12,21 +12,28 @@
  */
 import { useCallback, useSyncExternalStore } from "react";
 
-export type Locale = "en" | "pt-BR";
-export const LOCALES: Locale[] = ["en", "pt-BR"];
-export const LOCALE_LABEL: Record<Locale, string> = { en: "English", "pt-BR": "Português" };
+export type Locale = "en" | "pt-BR" | "es";
+export const LOCALES: Locale[] = ["en", "pt-BR", "es"];
+export const LOCALE_LABEL: Record<Locale, string> = {
+  en: "English",
+  "pt-BR": "Português",
+  es: "Español",
+};
 
 const KEY = "capkickers.locale.v1";
 
 const deviceDefault = (): Locale => {
   const l = typeof navigator !== "undefined" && navigator.language ? navigator.language : "en";
-  return l.toLowerCase().startsWith("pt") ? "pt-BR" : "en";
+  const low = l.toLowerCase();
+  if (low.startsWith("pt")) return "pt-BR";
+  if (low.startsWith("es")) return "es";
+  return "en";
 };
 
 const loadLocale = (): Locale => {
   try {
     const raw = typeof localStorage !== "undefined" ? localStorage.getItem(KEY) : null;
-    if (raw === "en" || raw === "pt-BR") return raw;
+    if (raw === "en" || raw === "pt-BR" || raw === "es") return raw;
   } catch {
     /* ignore */
   }
@@ -66,6 +73,9 @@ const interpolate = (s: string, params?: Params): string =>
 
 const lookup = (lang: Locale, key: string, params?: Params): string =>
   interpolate(STRINGS[lang][key] ?? STRINGS.en[key] ?? key, params);
+
+/** Every key defined for a locale — used by the parity test. */
+export const localeKeys = (lang: Locale): string[] => Object.keys(STRINGS[lang]);
 
 /** Non-reactive translate (for the render loop / non-component code). */
 export const t = (key: string, params?: Params): string => lookup(current, key, params);
@@ -124,6 +134,8 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "settings.pitch": "Pitch",
     "settings.yourCap": "Your Cap",
     "settings.language": "Language",
+    "settings.analytics": "Usage Analytics",
+    "settings.analyticsDesc": "Share anonymous usage to help improve the game.",
     "settings.aboutLegal": "About & Legal",
 
     // Pitch picker
@@ -183,6 +195,9 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "privacy.lead": "{studio} (“we”) built Cap Kickers to be fun and private. This policy explains what data the app handles.",
     "privacy.collectH": "What we collect",
     "privacy.collectBody": "We do not require an account and do not ask you for personal information. Your game settings, chosen cap and pitch, and campaign progress are stored only on your device and are not sent to us.",
+    "privacy.analyticsH": "Usage analytics",
+    "privacy.analyticsBody":
+      "We use Google Analytics for Firebase to understand how the game is played — which levels get completed, where players leave the tutorial, and which languages and settings are used. These reports are anonymous and aggregated; they include an app-instance identifier, device model, OS version, and approximate country derived from your IP address. We do not collect your name, email, or precise location, and we do not link this data to your identity. We also receive aggregated ad-revenue reporting through the AdMob–Firebase link.",
     "privacy.adsH": "Advertising",
     "privacy.adsBody1": "Cap Kickers is free and supported by ads through Google AdMob. To show and measure ads, Google may collect and process device information, including advertising identifiers (such as Apple's IDFA) and general usage data.",
     "privacy.adsBody2": "On iOS we ask your permission through Apple's App Tracking Transparency prompt before any tracking. You can decline, and you can change your choice anytime in iOS Settings → Privacy & Security → Tracking. Declining still lets you play; you may simply see less-relevant ads.",
@@ -190,7 +205,8 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "privacy.childrenH": "Children",
     "privacy.childrenBody": "Cap Kickers is intended for a general audience and is not directed to children under 13. We do not knowingly collect personal information from children.",
     "privacy.choicesH": "Your choices",
-    "privacy.choicesBody": "Manage ad tracking through the iOS Tracking settings above. Deleting the app removes the settings and progress stored on your device.",
+    "privacy.choicesBody":
+      "You can turn usage analytics off at any time in Settings → Usage Analytics. Manage ad tracking through the iOS Tracking settings above. Deleting the app removes the settings and progress stored on your device.",
     "privacy.changesH": "Changes & contact",
     "privacy.changesBody": "We may update this policy; the date above shows the latest version. Questions? Email us at {email}.",
     "terms.lead": "By downloading or playing Cap Kickers (“the game”), you agree to these terms. If you do not agree, please do not use the game.",
@@ -257,6 +273,8 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "settings.pitch": "Campo",
     "settings.yourCap": "Sua Tampinha",
     "settings.language": "Idioma",
+    "settings.analytics": "Análises de uso",
+    "settings.analyticsDesc": "Compartilhe dados anônimos de uso para ajudar a melhorar o jogo.",
     "settings.aboutLegal": "Sobre e Jurídico",
 
     // Pitch picker
@@ -316,6 +334,9 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "privacy.lead": "A {studio} (“nós”) criou o Cap Kickers para ser divertido e respeitar sua privacidade. Esta política explica quais dados o app utiliza.",
     "privacy.collectH": "O que coletamos",
     "privacy.collectBody": "Não exigimos conta nem pedimos informações pessoais. Seus ajustes, a tampinha e o campo escolhidos e o progresso da campanha ficam salvos apenas no seu aparelho e não são enviados para nós.",
+    "privacy.analyticsH": "Análises de uso",
+    "privacy.analyticsBody":
+      "Usamos o Google Analytics para Firebase para entender como o jogo é jogado: quais fases são concluídas, onde os jogadores abandonam o tutorial e quais idiomas e ajustes são usados. Esses relatórios são anônimos e agregados; incluem um identificador de instância do app, o modelo do aparelho, a versão do sistema e o país aproximado deduzido do seu endereço IP. Não coletamos seu nome, e-mail ou localização precisa, e não vinculamos esses dados à sua identidade. Também recebemos relatórios agregados de receita de anúncios pela integração entre AdMob e Firebase.",
     "privacy.adsH": "Publicidade",
     "privacy.adsBody1": "O Cap Kickers é gratuito e mantido por anúncios do Google AdMob. Para exibir e medir anúncios, o Google pode coletar e processar informações do aparelho, incluindo identificadores de publicidade (como o IDFA da Apple) e dados gerais de uso.",
     "privacy.adsBody2": "No iOS, pedimos sua permissão pelo aviso de Transparência no Rastreamento de Apps da Apple antes de qualquer rastreamento. Você pode recusar e mudar sua escolha quando quiser em Ajustes do iOS → Privacidade e Segurança → Rastreamento. Recusar não impede de jogar; você apenas verá anúncios menos relevantes.",
@@ -323,7 +344,8 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "privacy.childrenH": "Crianças",
     "privacy.childrenBody": "O Cap Kickers é destinado ao público geral e não é direcionado a menores de 13 anos. Não coletamos intencionalmente informações pessoais de crianças.",
     "privacy.choicesH": "Suas opções",
-    "privacy.choicesBody": "Gerencie o rastreamento de anúncios nos ajustes de Rastreamento do iOS acima. Apagar o app remove os ajustes e o progresso salvos no seu aparelho.",
+    "privacy.choicesBody":
+      "Você pode desativar as análises de uso quando quiser em Ajustes → Análises de uso. Gerencie o rastreamento de anúncios nos ajustes de Rastreamento do iOS acima. Apagar o app remove os ajustes e o progresso salvos no seu aparelho.",
     "privacy.changesH": "Alterações e contato",
     "privacy.changesBody": "Podemos atualizar esta política; a data acima indica a versão mais recente. Dúvidas? Escreva para {email}.",
     "terms.lead": "Ao baixar ou jogar o Cap Kickers (“o jogo”), você concorda com estes termos. Se não concordar, não use o jogo.",
@@ -341,5 +363,143 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "terms.changesBody": "Podemos atualizar o jogo e estes termos; continuar jogando significa que você aceita as alterações. Estes termos são regidos pelas leis de {state}, EUA.",
     "terms.contactH": "Contato",
     "terms.contactBody": "Dúvidas sobre estes termos? Escreva para {email}.",
+  },
+  es: {
+    // Common
+    "common.back": "Volver",
+    "common.done": "Listo",
+
+    // Home / menu
+    "home.tagline": "Impulsa las tapitas por la cancha con un toque del dedo y mete goles.",
+    "home.campaign": "Campaña",
+    "home.passPlay": "Pasa y Juega",
+    "home.practice": "Práctica",
+    "home.soloVsAi": "Contra la Máquina",
+    "home.settings": "Ajustes",
+    "home.howToPlay": "Cómo Jugar",
+    "diff.easy": "Fácil",
+    "diff.normal": "Normal",
+    "diff.hard": "Difícil",
+
+    // Play HUD + overlays
+    "play.playerTouch": "Jugador {n} — toque {t}/{shot}",
+    "play.aiTouch": "Máquina — toque {t}/{shot}",
+    "play.playerWins": "¡Gana el Jugador {n}!",
+    "play.goal": "¡GOL!",
+    "play.turnOver": "Perdiste el turno",
+    "play.menu": "⌂ Menú",
+    "play.newMatch": "Nuevo partido",
+    "play.passPhone": "Pásale el teléfono al Jugador {n}",
+    "play.ready": "Listo",
+    "play.soClose": "¡Por poco!",
+    "play.watchPrompt": "¿Ver un anuncio corto para tirar una vez más?",
+    "play.watchShoot": "▶ Ver y tirar",
+    "play.noThanks": "No, gracias",
+    "play.levelComplete": "¡Nivel completado!",
+    "play.campaignComplete": "¡Campaña completada!",
+    "play.nextLevel": "Siguiente nivel",
+    "play.backToCampaign": "Volver a la campaña",
+    "play.youLost": "Perdiste",
+    "play.tryAgain": "Intentar de nuevo",
+    "play.rematch": "Revancha",
+
+    // Settings
+    "settings.title": "Ajustes",
+    "settings.soundFx": "Efectos de sonido",
+    "settings.music": "Música",
+    "settings.vibration": "Vibración",
+    "settings.pitch": "Cancha",
+    "settings.yourCap": "Tu Tapita",
+    "settings.language": "Idioma",
+    "settings.analytics": "Análisis de uso",
+    "settings.analyticsDesc": "Comparte datos anónimos de uso para ayudar a mejorar el juego.",
+    "settings.aboutLegal": "Acerca de y Legal",
+
+    // Pitch picker
+    "pitch.title": "Cancha",
+    "pitch.subtitle": "Juega donde sea: elige la superficie.",
+    "pitch.grass": "Pasto",
+    "pitch.school": "Pupitre",
+    "pitch.table": "Mesa",
+    "pitch.cement": "Cemento",
+
+    // Cap picker
+    "caps.title": "Tu Tapita",
+    "caps.subtitle": "Elige tu tapita. Tu rival recibe una de color distinto.",
+
+    // Campaign
+    "campaign.title": "Campaña",
+    "campaign.subtitle": "Vence a cada rival para desbloquear el siguiente.",
+    "campaign.locked": "Bloqueado",
+    "campaign.play": "Jugar",
+    "campaign.done": "Completado",
+    "campaign.firstTo": "Primero en llegar a {n}",
+    "campaign.level.l1": "Novato",
+    "campaign.level.l2": "Aficionado",
+    "campaign.level.l3": "Regular",
+    "campaign.level.l4": "Veterano",
+    "campaign.level.l5": "Profesional",
+    "campaign.level.l6": "Campeón",
+
+    // Tutorial
+    "tutorial.skip": "Saltar",
+    "tutorial.next": "Siguiente",
+    "tutorial.back": "Volver",
+    "tutorial.start": "Empezar a jugar",
+    "tutorial.intro.title": "Bienvenido a Cap Kickers",
+    "tutorial.intro.body": "Impulsa tus tapitas por la cancha con un toque del dedo y mete gol. Este es el truco.",
+    "tutorial.flick.title": "Toque, sin apuntar",
+    "tutorial.flick.body": "Controlas tres tapitas. Solo dale un toque con el dedo: mientras más rápido y fuerte, más lejos llega. Un toque suave casi no la mueve, así que no hay flechas ni mira.",
+    "tutorial.thread.title": "Pasa por el hueco",
+    "tutorial.thread.body": "Dale un toque a una tapita para que pase ENTRE las otras dos. Si fallas el hueco, pierdes el turno.",
+    "tutorial.advance.title": "Avanza por la cancha",
+    "tutorial.advance.body": "Tienes cinco toques por turno. Sigue pasando por el hueco para llevar las tapitas hasta la portería.",
+    "tutorial.shoot.title": "¡Dispara!",
+    "tutorial.shoot.body": "En el quinto toque se abre el camino: dispara a la portería y vence al portero. El primero en llegar a la meta de goles gana el partido.",
+
+    // Legal (Acerca de / Privacidad / Términos)
+    "legal.about": "Acerca de",
+    "legal.privacy": "Privacidad",
+    "legal.terms": "Términos",
+    "legal.updated": "Última actualización: {date}",
+    "about.intro": "Cap Kickers es un juego de fútbol de tapitas rápido y con física real, inspirado en el fútbol de tampinhas brasileño. Impulsa tus tapitas por la cancha, pásalas entre tus defensores y vence al portero para meter gol.",
+    "about.madeBy": "Hecho por {studio}. Versión {version}.",
+    "about.legalH": "Legal",
+    "about.privacyLink": "Política de Privacidad ›",
+    "about.termsLink": "Términos de Uso ›",
+    "about.contactH": "Contacto",
+    "about.contactBody": "¿Dudas o comentarios? Escríbenos a {email}.",
+    "privacy.lead": "{studio} (“nosotros”) creó Cap Kickers para que sea divertido y respete tu privacidad. Esta política explica qué datos maneja la aplicación.",
+    "privacy.collectH": "Qué recopilamos",
+    "privacy.collectBody": "No requerimos una cuenta ni te pedimos información personal. Tus ajustes, la tapita y la cancha que elijas y tu progreso en la campaña se guardan únicamente en tu dispositivo y no se nos envían.",
+    "privacy.analyticsH": "Análisis de uso",
+    "privacy.analyticsBody":
+      "Usamos Google Analytics para Firebase para entender cómo se juega: qué niveles se completan, dónde se abandona el tutorial y qué idiomas y ajustes se usan. Estos informes son anónimos y agregados; incluyen un identificador de instancia de la aplicación, el modelo del dispositivo, la versión del sistema y el país aproximado deducido de tu dirección IP. No recopilamos tu nombre, tu correo ni tu ubicación precisa, y no vinculamos estos datos con tu identidad. También recibimos informes agregados de ingresos por anuncios mediante la vinculación entre AdMob y Firebase.",
+    "privacy.adsH": "Publicidad",
+    "privacy.adsBody1": "Cap Kickers es gratuito y se mantiene con anuncios de Google AdMob. Para mostrar y medir anuncios, Google puede recopilar y procesar información del dispositivo, incluidos identificadores de publicidad (como el IDFA de Apple) y datos generales de uso.",
+    "privacy.adsBody2": "En iOS te pedimos permiso mediante el aviso de Transparencia de Seguimiento de Apps de Apple antes de cualquier seguimiento. Puedes rechazarlo y cambiar tu elección cuando quieras en Ajustes de iOS → Privacidad y Seguridad → Rastreo. Rechazar no te impide jugar; simplemente verás anuncios menos relevantes.",
+    "privacy.adsBody3": "Más información en la Política de Privacidad de Google (policies.google.com/privacy) y en cómo Google usa los datos de las apps que utilizan sus servicios (policies.google.com/technologies/partner-sites).",
+    "privacy.childrenH": "Menores",
+    "privacy.childrenBody": "Cap Kickers está dirigido al público general y no a menores de 13 años. No recopilamos intencionalmente información personal de niños.",
+    "privacy.choicesH": "Tus opciones",
+    "privacy.choicesBody":
+      "Puedes desactivar el análisis de uso cuando quieras en Ajustes → Análisis de uso. Administra el seguimiento de anuncios en los ajustes de Rastreo de iOS mencionados arriba. Eliminar la aplicación borra los ajustes y el progreso guardados en tu dispositivo.",
+    "privacy.changesH": "Cambios y contacto",
+    "privacy.changesBody": "Podemos actualizar esta política; la fecha de arriba indica la versión más reciente. ¿Dudas? Escríbenos a {email}.",
+    "terms.lead": "Al descargar o jugar Cap Kickers (“el juego”), aceptas estos términos. Si no estás de acuerdo, no uses el juego.",
+    "terms.licenseH": "Licencia",
+    "terms.licenseBody": "{studio} te concede una licencia personal, no exclusiva e intransferible para instalar y jugar el juego para tu propio entretenimiento no comercial.",
+    "terms.fairH": "Uso adecuado",
+    "terms.fairBody": "No hagas ingeniería inversa, no alteres ni intentes interrumpir el juego o sus anuncios, y no lo uses de forma ilegal.",
+    "terms.adsH": "Anuncios y costo",
+    "terms.adsBody": "El juego es gratuito y se mantiene con publicidad servida por Google AdMob. Podemos agregar o cambiar los espacios publicitarios con el tiempo.",
+    "terms.warrantyH": "Sin garantías",
+    "terms.warrantyBody": "El juego se ofrece “tal cual”, sin garantías de ningún tipo. No garantizamos que funcione sin interrupciones ni errores.",
+    "terms.liabilityH": "Limitación de responsabilidad",
+    "terms.liabilityBody": "En la máxima medida permitida por la ley, {studio} no se responsabiliza por daños indirectos o incidentales derivados de tu uso del juego.",
+    "terms.changesH": "Cambios y legislación aplicable",
+    "terms.changesBody": "Podemos actualizar el juego y estos términos; seguir jugando significa que aceptas los cambios. Estos términos se rigen por las leyes de {state}, EE. UU.",
+    "terms.contactH": "Contacto",
+    "terms.contactBody": "¿Dudas sobre estos términos? Escribe a {email}.",
   },
 };

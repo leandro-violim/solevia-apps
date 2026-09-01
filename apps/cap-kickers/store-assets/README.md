@@ -66,7 +66,8 @@ TanStack Start's SPA-shell prerender). It reproduces even in English, React reco
 the app works, and it's invisible to users and to store review. Not a fix-before-launch item.
 
 **Key decisions already locked:** general-audience rating (keeps all AdMob formats) · ship **universal
-incl. iPad** · US-first launch with UMP consent disabled (re-enable before EU/Brazil).
+incl. iPad** · UMP consent disabled — re-enable only before an EEA/UK/Switzerland launch, not for
+Brazil or India.
 
 ## The three actors (don't let sessions collide)
 - **Claude Code (this Mac):** code edits + builds/archives + asset regen. All code is done here.

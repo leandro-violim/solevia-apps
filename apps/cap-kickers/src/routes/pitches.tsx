@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { PITCH_STYLES, pitchStyleById } from "../game/pitches/styles";
 import { loadPitchStyleId, savePitchStyleId } from "../game/pitches/storage";
+import { trackPitchSelected } from "../lib/analytics";
 import { drawPitch } from "../game/render/draw";
 import { useT } from "../lib/i18n";
 
@@ -35,6 +36,7 @@ function PitchesPage() {
   const choose = (id: string) => {
     setSelected(id);
     savePitchStyleId(id);
+    trackPitchSelected(id);
   };
 
   return (
