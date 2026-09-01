@@ -12,7 +12,7 @@ import { styleById, opponentFor } from "../game/caps/styles";
 import { loadCapStyleId } from "../game/caps/storage";
 import { pitchStyleById } from "../game/pitches/styles";
 import { loadPitchStyleId } from "../game/pitches/storage";
-import { completeLevel, levelById, levelIndex, nextLevelId } from "../game/campaign/ladder";
+import { completeLevel, isCompleted, levelById, levelIndex, nextLevelId } from "../game/campaign/ladder";
 import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
@@ -27,8 +27,11 @@ import {
   trackRewardedOffered,
   trackRewardedSkipped,
   trackRewardedWatched,
+  trackCurrencyEarned,
+  trackItemUnlocked,
   type GameMode,
 } from "../lib/analytics";
+import { earn, EARN, claimFirstWin } from "../game/economy/currency";
 import {
   createFx,
   updateCapFx,
@@ -79,6 +82,13 @@ const AI_THINK_SECONDS = 0.5;
 // ~5px radius; without this floor the touch target shrinks with it and the cap
 // becomes near-impossible to grab.
 const MIN_GRAB_PX = 24;
+
+/** Local (not UTC) YYYY-MM-DD — the day boundary the daily Caps bonus uses. */
+const localToday = (): string => {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
 
 function PlayPage() {
   const { mode, difficulty, goals, campaign } = Route.useSearch();
@@ -498,7 +508,27 @@ function PlayPage() {
     endLoggedRef.current = true;
     const seconds = (Date.now() - matchStartedAtRef.current) / 1000;
     trackMatchEnd(analyticsMode, match.winner === 0 ? "win" : "loss", seconds);
-  }, [match.phase, match.winner, analyticsMode]);
+    // Award Caps (Trophy Cabinet). Campaign base is handled in the campaign
+    // effect below; here: vs-AI wins, pass&play/practice finishes, and the
+    // once-a-day first-win bonus. Cosmetics only — never gates anything.
+    const playerWon = match.winner === 0;
+    if (!campaign) {
+      if (analyticsMode === "solo_ai") {
+        if (playerWon) {
+          earn(EARN.aiWin);
+          trackCurrencyEarned("solo_ai", EARN.aiWin);
+        }
+      } else {
+        // pass_play / practice: a small, deliberately low finish reward.
+        earn(EARN.passPlayOrPractice);
+        trackCurrencyEarned(analyticsMode, EARN.passPlayOrPractice);
+      }
+    }
+    if (playerWon && claimFirstWin(localToday())) {
+      earn(EARN.firstWinOfDay);
+      trackCurrencyEarned("first_win_of_day", EARN.firstWinOfDay);
+    }
+  }, [match.phase, match.winner, analyticsMode, campaign]);
 
   // Record campaign level completion exactly once, the moment a campaign
   // match is won by the human player.
@@ -510,10 +540,27 @@ function PlayPage() {
       !recordedRef.current
     ) {
       recordedRef.current = true;
-      saveProgress(completeLevel(campaign, loadProgress()));
+      const prog = loadProgress();
+      const firstClear = !isCompleted(campaign, prog);
+      saveProgress(completeLevel(campaign, prog));
       const idx = levelIndex(campaign);
       trackLevelComplete(idx >= 0 ? idx + 1 : 0);
-      if (!nextLevelId(campaign)) trackCampaignComplete();
+      // Caps: the main campaign earn, plus a one-off bonus the first time a level
+      // is cleared (rewards progress, not grinding the same level).
+      earn(EARN.campaignWin);
+      trackCurrencyEarned("campaign", EARN.campaignWin);
+      if (firstClear) {
+        earn(EARN.firstLevelClear);
+        trackCurrencyEarned("first_level_clear", EARN.firstLevelClear);
+        // Beating the Veteran (l4) unlocks the Night pitch (progress gate).
+        if (campaign === "l4") trackItemUnlocked("pitch-night", "pitch", "progress");
+      }
+      if (!nextLevelId(campaign)) {
+        trackCampaignComplete();
+        earn(EARN.campaignComplete);
+        trackCurrencyEarned("campaign_complete", EARN.campaignComplete);
+        if (firstClear) trackItemUnlocked("cap-gold-legendary", "cap", "progress");
+      }
     }
   }, [campaign, match.phase, match.winner]);
 
