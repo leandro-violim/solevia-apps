@@ -110,6 +110,14 @@ function SettingsPage() {
           }}
         />
         <Toggle
+          label={t("settings.ambience")}
+          on={s.ambience}
+          onToggle={() => {
+            update({ ambience: !s.ambience });
+            trackSettingChanged("ambience", !s.ambience);
+          }}
+        />
+        <Toggle
           label={t("settings.vibration")}
           on={s.vibration}
           onToggle={() => {

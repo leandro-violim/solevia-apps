@@ -5,6 +5,7 @@
 export type Settings = {
   sound: boolean; // sound effects (pops, whistle, crowd)
   music: boolean; // menu / background music
+  ambience: boolean; // looping stadium crowd bed under matches (unlockable pack)
   vibration: boolean; // haptic feedback
   analytics: boolean; // anonymous usage analytics (Firebase); player can opt out
 };
@@ -12,6 +13,7 @@ export type Settings = {
 export const DEFAULT_SETTINGS: Settings = {
   sound: true,
   music: true,
+  ambience: true,
   vibration: true,
   analytics: true,
 };
@@ -46,6 +48,7 @@ export const loadSettings = (storage: StorageLike | null = defaultStorage()): Se
     return {
       sound: asBool(parsed.sound, DEFAULT_SETTINGS.sound),
       music: asBool(parsed.music, DEFAULT_SETTINGS.music),
+      ambience: asBool(parsed.ambience, DEFAULT_SETTINGS.ambience),
       vibration: asBool(parsed.vibration, DEFAULT_SETTINGS.vibration),
       analytics: asBool(parsed.analytics, DEFAULT_SETTINGS.analytics),
     };

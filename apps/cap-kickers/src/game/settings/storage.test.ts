@@ -17,10 +17,11 @@ describe("settings storage", () => {
 
   it("round-trips saved settings", () => {
     const s = fakeStorage();
-    saveSettings({ sound: false, music: true, vibration: false, analytics: false }, s);
+    saveSettings({ sound: false, music: true, ambience: false, vibration: false, analytics: false }, s);
     expect(loadSettings(s)).toEqual({
       sound: false,
       music: true,
+      ambience: false,
       vibration: false,
       analytics: false,
     });
@@ -28,9 +29,9 @@ describe("settings storage", () => {
 
   it("patch merges over stored values and returns the new state", () => {
     const s = fakeStorage();
-    saveSettings({ sound: true, music: true, vibration: true, analytics: true }, s);
+    saveSettings({ sound: true, music: true, ambience: true, vibration: true, analytics: true }, s);
     const next = patchSettings({ music: false }, s);
-    expect(next).toEqual({ sound: true, music: false, vibration: true, analytics: true });
+    expect(next).toEqual({ sound: true, music: false, ambience: true, vibration: true, analytics: true });
     expect(loadSettings(s)).toEqual(next);
   });
 

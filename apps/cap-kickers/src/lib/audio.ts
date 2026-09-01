@@ -8,8 +8,20 @@
 // resumes the context whenever the app returns to the foreground (and on the
 // next SFX), so game sound comes back on its own. See resumeIfSuspended().
 
+import {
+  loadSample,
+  cachedSample,
+  playSample,
+  CROWD_FILES,
+  AMBIENCE_FILE,
+  packFiles,
+  type CrowdSfx,
+} from "./samples";
+
 export type SfxName = "flick" | "clack" | "whistle" | "horn" | "cheer" | "ohh";
-export type AudioSettings = { sound: boolean; music: boolean };
+export type AudioSettings = { sound: boolean; music: boolean; ambience: boolean };
+/** Which unlocked audio packs may play (from the Trophy Cabinet inventory). */
+export type AudioPacks = { crowd: boolean; stadium: boolean };
 
 // Minimal WebAudio surface we rely on (lets tests inject a mock in a node env).
 type Ctx = AudioContext;
@@ -22,7 +34,11 @@ export class GameAudio {
   private master: GainNode | null = null;
   private sfxGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
-  private settings: AudioSettings = { sound: true, music: true };
+  private ambienceGain: GainNode | null = null;
+  private ambienceSrc: AudioBufferSourceNode | null = null;
+  private settings: AudioSettings = { sound: true, music: true, ambience: true };
+  private packs: AudioPacks = { crowd: false, stadium: false };
+  private inGame = false; // true while a match is on-screen (ambience plays)
   private music: { stop: () => void } | null = null;
   private wantMusic = false; // true while on a menu-type screen
   private initialized = false;
@@ -50,10 +66,13 @@ export class GameAudio {
       sfxGain.connect(master);
       const musicGain = ctx.createGain();
       musicGain.connect(master);
+      const ambienceGain = ctx.createGain();
+      ambienceGain.connect(master);
       this.ctx = ctx;
       this.master = master;
       this.sfxGain = sfxGain;
       this.musicGain = musicGain;
+      this.ambienceGain = ambienceGain;
       this.applyGains();
       return true;
     } catch {
@@ -65,14 +84,34 @@ export class GameAudio {
   private applyGains(): void {
     if (this.sfxGain) this.sfxGain.gain.value = this.settings.sound ? 0.9 : 0;
     if (this.musicGain) this.musicGain.gain.value = this.settings.music ? 0.32 : 0;
+    // Ambience sits ~6 dB under the one-shots (§3). Its own Settings toggle.
+    if (this.ambienceGain) this.ambienceGain.gain.value = this.settings.ambience ? 0.18 : 0;
   }
 
-  /** Apply the latest settings live (mute/unmute SFX + music, stop/restart music). */
+  /** Apply the latest settings live (mute/unmute SFX + music + ambience, stop/restart). */
   setSettings(s: AudioSettings): void {
     this.settings = { ...s };
     this.applyGains();
     if (!s.music) this.stopMusic();
     else if (this.wantMusic) this.startMusic();
+    if (!s.ambience) this.stopAmbience();
+    else if (this.inGame) this.startAmbience();
+  }
+
+  /**
+   * Which audio packs are unlocked (from the Cabinet inventory). Prefetch a pack's
+   * samples once it's unlocked AND sound is on — never at cold start (§3 lazy-load).
+   */
+  setPacks(p: AudioPacks): void {
+    this.packs = { ...p };
+    if (p.crowd && this.settings.sound) this.prefetch("crowd");
+    if (p.stadium && (this.settings.sound || this.settings.ambience)) this.prefetch("stadium");
+    if (this.inGame) this.startAmbience();
+  }
+
+  private prefetch(pack: string): void {
+    if (!this.ensure() || !this.ctx) return;
+    for (const id of packFiles(pack)) void loadSample(this.ctx, id);
   }
 
   /** One-time wiring: resume on foreground (#13) + unlock on the first gesture. */
@@ -80,8 +119,14 @@ export class GameAudio {
     if (this.initialized || typeof document === "undefined") return;
     this.initialized = true;
     const resume = () => {
-      if (typeof document !== "undefined" && document.hidden) return;
+      // Backgrounded: stop the ambience so a phone in a pocket isn't decoding a
+      // stadium (§3 efficiency). Foregrounded: resume and restart if still in-game.
+      if (typeof document !== "undefined" && document.hidden) {
+        this.stopAmbience();
+        return;
+      }
       this.resumeIfSuspended();
+      if (this.inGame) this.startAmbience();
     };
     document.addEventListener("visibilitychange", resume);
     if (typeof window !== "undefined") {
@@ -115,12 +160,16 @@ export class GameAudio {
   /** Menu screens call this (music plays); games call enterGame(). */
   enterMenu(): void {
     this.wantMusic = true;
+    this.inGame = false;
+    this.stopAmbience();
     this.startMusic();
   }
 
   enterGame(): void {
     this.wantMusic = false;
+    this.inGame = true;
     this.stopMusic();
+    this.startAmbience();
   }
 
   // ---- SFX -------------------------------------------------------------
@@ -131,9 +180,63 @@ export class GameAudio {
     // A suspended context (post-interruption) would swallow the sound — nudge it.
     if (this.ctx.state === "suspended") this.ctx.resume().catch(() => {});
     try {
-      synth(this.ctx, this.sfxGain, name);
+      // Sample layer IN FRONT of the synth: a real crowd recording when the pack is
+      // unlocked and the buffer is already decoded, else the synth baseline. flick/
+      // clack are not in CROWD_FILES, so they always stay synthesised.
+      const file = this.packs.crowd ? CROWD_FILES[name as CrowdSfx] : undefined;
+      const buf = file ? cachedSample(file) : undefined;
+      if (buf) {
+        playSample(this.ctx, this.sfxGain, buf);
+      } else {
+        if (file) void loadSample(this.ctx, file); // warm the cache for next time
+        synth(this.ctx, this.sfxGain, name);
+      }
     } catch {
       /* never let audio break gameplay */
+    }
+  }
+
+  // ---- Ambience (looping stadium bed under a match) ----------------------
+
+  private startAmbience(): void {
+    if (!this.settings.ambience || !this.packs.stadium || !this.inGame) return;
+    if (this.ambienceSrc) return; // already looping — never start a second (cf. startMusic)
+    if (!this.ensure() || !this.ctx || !this.ambienceGain) return;
+    const buf = cachedSample(AMBIENCE_FILE);
+    if (!buf) {
+      // Lazy-load once, then start if still in a match.
+      void loadSample(this.ctx, AMBIENCE_FILE).then(() => {
+        if (this.inGame) this.startAmbience();
+      });
+      return;
+    }
+    try {
+      this.ambienceSrc = playSample(this.ctx, this.ambienceGain, buf, 1, true);
+    } catch {
+      this.ambienceSrc = null;
+    }
+  }
+
+  private stopAmbience(): void {
+    try {
+      this.ambienceSrc?.stop();
+    } catch {
+      /* already stopped */
+    }
+    this.ambienceSrc = null;
+  }
+
+  /** Play ~1.5 s of a sample at low volume for a Cabinet preview button. */
+  async previewSample(id: string): Promise<void> {
+    if (!this.ensure() || !this.ctx || !this.master) return;
+    await this.unlock();
+    const buf = cachedSample(id) ?? (await loadSample(this.ctx, id));
+    if (!buf || !this.ctx || !this.master) return;
+    try {
+      const src = playSample(this.ctx, this.master, buf, 0.5);
+      src.stop(this.ctx.currentTime + 1.5);
+    } catch {
+      /* ignore */
     }
   }
 

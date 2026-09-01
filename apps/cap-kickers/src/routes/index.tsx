@@ -92,6 +92,12 @@ function Home() {
 
         <div className="mt-1 flex items-center justify-center gap-5">
           <Link
+            to="/cabinet"
+            className="font-display text-sm uppercase tracking-wider text-muted-foreground underline underline-offset-4"
+          >
+            {t("home.cabinet")}
+          </Link>
+          <Link
             to="/settings"
             className="font-display text-sm uppercase tracking-wider text-muted-foreground underline underline-offset-4"
           >

@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { CAP_STYLES, styleById } from "../game/caps/styles";
 import { loadCapStyleId, saveCapStyleId } from "../game/caps/storage";
+import { loadOwned } from "../game/economy/inventory";
+import { loadProgress } from "../game/campaign/storage";
+import { isStyleEquippable } from "../game/economy/catalog";
 import { trackCapSelected } from "../lib/analytics";
 import { drawCap } from "../game/render/draw";
 import { useT } from "../lib/i18n";
@@ -33,6 +36,10 @@ export const Route = createFileRoute("/caps")({
 function CapsPage() {
   const t = useT();
   const [selected, setSelected] = useState(() => loadCapStyleId());
+  // Only base + unlocked caps are equippable here; locked ones live in the Cabinet.
+  const owned = loadOwned();
+  const completed = loadProgress().completed;
+  const styles = CAP_STYLES.filter((s) => isStyleEquippable("cap", s.id, owned, completed));
   const choose = (id: string) => {
     setSelected(id);
     saveCapStyleId(id);
@@ -52,7 +59,7 @@ function CapsPage() {
       </p>
 
       <div className="mt-7 grid w-full max-w-md grid-cols-4 gap-3">
-        {CAP_STYLES.map((s) => (
+        {styles.map((s) => (
           <button
             key={s.id}
             onClick={() => choose(s.id)}

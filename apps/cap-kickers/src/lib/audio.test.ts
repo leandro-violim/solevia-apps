@@ -54,7 +54,7 @@ describe("GameAudio", () => {
   it("plays no SFX when sound is off", async () => {
     const { ctx, audio } = make();
     await audio.unlock(); // builds the graph
-    audio.setSettings({ sound: false, music: false });
+    audio.setSettings({ sound: false, music: false, ambience: false });
     const before = ctx.counts.osc;
     audio.sfx("horn");
     expect(ctx.counts.osc).toBe(before); // muted -> no oscillators created
@@ -63,7 +63,7 @@ describe("GameAudio", () => {
   it("plays an SFX when sound is on", async () => {
     const { ctx, audio } = make();
     await audio.unlock();
-    audio.setSettings({ sound: true, music: true });
+    audio.setSettings({ sound: true, music: true, ambience: true });
     const before = ctx.counts.osc;
     audio.sfx("horn"); // horn uses two oscillators
     expect(ctx.counts.osc).toBeGreaterThan(before);
@@ -92,7 +92,7 @@ describe("GameAudio", () => {
   it("starts music only on a menu scene and stops it in-game", async () => {
     const { ctx, audio } = make();
     await audio.unlock();
-    audio.setSettings({ sound: true, music: true });
+    audio.setSettings({ sound: true, music: true, ambience: true });
     audio.enterGame(); // wantMusic=false
     const inGame = ctx.counts.osc;
     audio.startMusic();
@@ -108,7 +108,7 @@ describe("GameAudio", () => {
     await audio.unlock();
     audio.enterMenu();
     const playing = ctx.counts.osc;
-    audio.setSettings({ sound: true, music: false });
+    audio.setSettings({ sound: true, music: false, ambience: false });
     vi.advanceTimersByTime(1000); // the loop must be stopped, so no new notes
     expect(ctx.counts.osc).toBe(playing);
   });

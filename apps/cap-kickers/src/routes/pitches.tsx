@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { PITCH_STYLES, pitchStyleById } from "../game/pitches/styles";
 import { loadPitchStyleId, savePitchStyleId } from "../game/pitches/storage";
+import { loadOwned } from "../game/economy/inventory";
+import { loadProgress } from "../game/campaign/storage";
+import { isStyleEquippable } from "../game/economy/catalog";
 import { trackPitchSelected } from "../lib/analytics";
 import { drawPitch } from "../game/render/draw";
 import { useT } from "../lib/i18n";
@@ -33,6 +36,10 @@ export const Route = createFileRoute("/pitches")({
 function PitchesPage() {
   const t = useT();
   const [selected, setSelected] = useState(() => loadPitchStyleId());
+  // Only base + unlocked pitches are equippable here; locked ones live in the Cabinet.
+  const owned = loadOwned();
+  const completed = loadProgress().completed;
+  const styles = PITCH_STYLES.filter((s) => isStyleEquippable("pitch", s.id, owned, completed));
   const choose = (id: string) => {
     setSelected(id);
     savePitchStyleId(id);
@@ -52,7 +59,7 @@ function PitchesPage() {
       </p>
 
       <div className="mt-7 grid w-full max-w-md grid-cols-2 gap-4">
-        {PITCH_STYLES.map((s) => (
+        {styles.map((s) => (
           <button
             key={s.id}
             onClick={() => choose(s.id)}

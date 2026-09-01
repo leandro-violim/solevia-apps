@@ -69,7 +69,17 @@ export type EventName =
   | "rewarded_offered"
   | "rewarded_watched"
   | "rewarded_skipped"
-  | "ad_interstitial_shown";
+  | "ad_interstitial_shown"
+  // ── Trophy Cabinet / reward loop (REWARDS-AND-AUDIO-PLAN.md §4) ──
+  | "cabinet_opened"
+  | "locked_item_tapped"
+  | "item_unlocked"
+  | "item_equipped"
+  | "currency_earned"
+  | "currency_spent"
+  | "audio_previewed"
+  | "rewarded_unlock_offered"
+  | "rewarded_unlock_taken";
 
 export type EventParams = Record<string, string | number | boolean>;
 
@@ -173,6 +183,29 @@ export const trackRewardedWatched = (): void => send("rewarded_watched");
 export const trackRewardedSkipped = (): void => send("rewarded_skipped");
 
 export const trackInterstitialShown = (): void => send("ad_interstitial_shown");
+
+// ── Trophy Cabinet / reward loop (§4). Every param is an enum, id, or number. ──
+
+export type ItemType = "pitch" | "cap" | "audio";
+export type UnlockMethod = "progress" | "coins" | "rewarded";
+
+export const trackCabinetOpened = (from: string): void => send("cabinet_opened", { from });
+/** The intent signal: what players want but can't afford yet. */
+export const trackLockedItemTapped = (itemId: string, itemType: ItemType, affordable: boolean): void =>
+  send("locked_item_tapped", { item_id: itemId, item_type: itemType, affordable });
+export const trackItemUnlocked = (itemId: string, itemType: ItemType, method: UnlockMethod): void =>
+  send("item_unlocked", { item_id: itemId, item_type: itemType, method });
+export const trackItemEquipped = (itemId: string, itemType: ItemType): void =>
+  send("item_equipped", { item_id: itemId, item_type: itemType });
+export const trackCurrencyEarned = (source: string, amount: number): void =>
+  send("currency_earned", { source, amount });
+export const trackCurrencySpent = (itemId: string, amount: number): void =>
+  send("currency_spent", { item_id: itemId, amount });
+export const trackAudioPreviewed = (packId: string): void => send("audio_previewed", { pack_id: packId });
+export const trackRewardedUnlockOffered = (itemId: string): void =>
+  send("rewarded_unlock_offered", { item_id: itemId });
+export const trackRewardedUnlockTaken = (itemId: string): void =>
+  send("rewarded_unlock_taken", { item_id: itemId });
 
 /** Test seam: reset module state between unit tests. */
 export const __resetAnalyticsForTests = (): void => {
