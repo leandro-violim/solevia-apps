@@ -292,7 +292,7 @@ function CabinetPage() {
 
   return (
     <div
-      className="flex min-h-dvh flex-col items-center px-5 pb-10"
+      className="flex screen flex-col items-center px-5 pb-10"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}
     >
       <div className="flex w-full max-w-md items-center justify-between">

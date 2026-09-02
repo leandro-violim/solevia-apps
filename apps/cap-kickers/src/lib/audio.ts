@@ -150,10 +150,17 @@ export class GameAudio {
     }
   }
 
-  /** Resume a context that an interruption (ad / call) left suspended. The #13 fix. */
+  /**
+   * Resume a context an interruption (ad / call) left non-running. The #13 fix.
+   * iOS can leave a WKWebView AudioContext in "suspended" OR "interrupted" after a
+   * full-screen ad, so resume on any non-running state, and restart the ambience
+   * if we're mid-match. Safe to call repeatedly.
+   */
   resumeIfSuspended(): void {
-    if (this.ctx && this.ctx.state === "suspended") {
-      this.ctx.resume().catch(() => {});
+    if (this.ctx && this.ctx.state !== "running") {
+      this.ctx.resume().then(() => {
+        if (this.inGame) this.startAmbience();
+      }).catch(() => {});
     }
   }
 
@@ -177,8 +184,8 @@ export class GameAudio {
   sfx(name: SfxName): void {
     if (!this.settings.sound) return;
     if (!this.ensure() || !this.ctx || !this.sfxGain) return;
-    // A suspended context (post-interruption) would swallow the sound — nudge it.
-    if (this.ctx.state === "suspended") this.ctx.resume().catch(() => {});
+    // A non-running context (post-interruption) would swallow the sound — nudge it.
+    if (this.ctx.state !== "running") this.ctx.resume().catch(() => {});
     try {
       // Sample layer IN FRONT of the synth: a real crowd recording when the pack is
       // unlocked and the buffer is already decoded, else the synth baseline. flick/

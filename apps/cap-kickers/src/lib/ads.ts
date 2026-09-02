@@ -14,6 +14,7 @@
  */
 import { Capacitor } from "@capacitor/core";
 import { trackInterstitialShown } from "./analytics";
+import { gameAudio } from "./audio";
 import type { PluginListenerHandle } from "@capacitor/core";
 import {
   AdMob,
@@ -215,6 +216,9 @@ async function showInterstitial(): Promise<void> {
       if (timer) clearTimeout(timer);
       interstitialReady = false;
       handles.forEach((h) => h.remove());
+      // The ad suspended the WebAudio context; bring game sound back now that the
+      // ad is gone (a native ad overlay may not fire the page-visibility resume).
+      gameAudio.resumeIfSuspended();
       resolve();
       void preloadInterstitial();
     };
@@ -299,6 +303,8 @@ export async function showRewarded(): Promise<boolean> {
       if (timer) clearTimeout(timer);
       rewardedReady = false;
       handles.forEach((h) => h.remove());
+      // Bring game sound back after the rewarded ad (see the interstitial note).
+      gameAudio.resumeIfSuspended();
       resolve(earned);
       void preloadRewarded();
     };

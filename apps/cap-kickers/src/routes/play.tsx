@@ -84,8 +84,9 @@ const AI_THINK_SECONDS = 0.5;
 // becomes near-impossible to grab.
 const MIN_GRAB_PX = 24;
 
-const GOAL_HOLD_MS = 850; // roar on the goal before the next team appears
-const GOAL_ARRIVE_MS = 650; // the pop-in of the next formation
+const GOAL_HOLD_MS = 1150; // roar on the goal (big score card) before the next team appears
+const GOAL_ARRIVE_MS = 750; // the pop-in of the next formation
+const GOAL_CARD_MS = GOAL_HOLD_MS + GOAL_ARRIVE_MS; // total celebration length
 /** Ease with a little overshoot, for the formation "arrival" pop. */
 const easeOutBack = (p: number): number => {
   const c1 = 1.70158;
@@ -167,6 +168,8 @@ function PlayPage() {
   // so scoring feels like a moment, not an instant scene-swap.
   const goalAtRef = useRef<number | null>(null);
   const goalFrozenRef = useRef(false);
+  const [goalCard, setGoalCard] = useState<[number, number] | null>(null);
+  const goalCardTimerRef = useRef<number | null>(null);
 
   const [match, setMatch] = useState<MatchState>(() => sessionRef.current!.match);
   const [banner, setBanner] = useState<Banner | null>(null);
@@ -443,18 +446,20 @@ function PlayPage() {
         if (report) {
           setMatch(report.match);
           if (report.result === "goal" || report.result === "win") {
-            showBanner(
-              report.result === "win"
-                ? tRaw("play.playerWins", { n: report.match.winner! + 1 })
-                : tRaw("play.goal"),
-            );
             goalCelebration(fxRef.current, sizeRef.current.cssW, sizeRef.current.cssH);
             gameAudio.sfx("horn");
             gameAudio.sfx("cheer");
-            // A scored goal (not a match win) holds on the celebration, then pops
-            // the next team's caps in. A win goes straight to its own overlay.
-            if (report.result === "goal") goalAtRef.current = t;
-            if (report.result === "win") void notifyMatchEnded(); // a match finished -> maybe an interstitial
+            if (report.result === "win") {
+              showBanner(tRaw("play.playerWins", { n: report.match.winner! + 1 }));
+              void notifyMatchEnded(); // a match finished -> maybe an interstitial
+            } else {
+              // A scored goal holds on a big centre score card, then pops the next
+              // team's caps in. Freeze runs off goalAtRef; the card off goalCard.
+              goalAtRef.current = t;
+              setGoalCard([report.match.scores[0], report.match.scores[1]]);
+              if (goalCardTimerRef.current !== null) window.clearTimeout(goalCardTimerRef.current);
+              goalCardTimerRef.current = window.setTimeout(() => setGoalCard(null), GOAL_CARD_MS);
+            }
           } else if (report.result === "turnover") {
             if (wasShot) gameAudio.sfx("ohh"); // missed shot -> crowd groans
             gameAudio.sfx("whistle");
@@ -867,6 +872,23 @@ function PlayPage() {
           );
         })()}
 
+      {/* Goal score card: big centre score that pops in, holds, then fades while
+          the next formation arrives. Shown only for a scored goal (not a win). */}
+      {goalCard && !won && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <div className="goal-score-card flex flex-col items-center">
+            <div className="font-display text-4xl uppercase tracking-[0.2em] text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.45)]">
+              {t("play.goal")}
+            </div>
+            <div className="font-display mt-1 flex items-end gap-5 leading-none drop-shadow-[0_5px_0_rgba(0,0,0,0.4)]">
+              <span className="text-8xl" style={{ color: teamColors[0] }}>{goalCard[0]}</span>
+              <span className="pb-1 text-6xl text-white/40">–</span>
+              <span className="text-8xl" style={{ color: teamColors[1] }}>{goalCard[1]}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pass-the-phone handoff (2p only). Covers the canvas so no flick
           input reaches the game while the phone is changing hands. The win
           overlay below takes priority when both would otherwise apply. */}
@@ -897,7 +919,7 @@ function PlayPage() {
           </p>
           <button
             onClick={handleWatchAd}
-            className="arcade-btn arcade-btn--gold mt-1 animate-pulse px-10 py-5 text-2xl shadow-[0_0_0_4px_rgba(255,207,51,0.35),0_8px_0_#d8a400]"
+            className="arcade-btn arcade-btn--gold mt-1 px-10 py-5 text-2xl shadow-[0_8px_0_#d8a400]"
           >
             {t("play.watchShoot")}
           </button>

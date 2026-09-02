@@ -25,7 +25,7 @@ function CampaignPage() {
 
   return (
     <div
-      className="relative flex h-dvh flex-col items-center px-6 pb-8"
+      className="relative flex screen flex-col items-center px-6 pb-8"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 32px)" }}
     >
       <h1 className="font-display text-5xl uppercase tracking-tight text-foreground drop-shadow-[0_3px_0_rgba(18,40,28,0.12)]">

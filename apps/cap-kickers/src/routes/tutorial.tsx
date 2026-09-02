@@ -42,7 +42,7 @@ function TutorialPage() {
 
   return (
     <div
-      className="relative flex min-h-dvh flex-col items-center px-6 pb-8 text-center"
+      className="relative flex screen flex-col items-center px-6 pb-8 text-center"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 32px)" }}
     >
       <button

@@ -39,10 +39,11 @@ function Home() {
   }, []);
 
   return (
-    <div
-      className="relative flex min-h-dvh flex-col items-center justify-center px-6 pt-14 text-center"
-      style={{ paddingTop: "calc(env(safe-area-inset-top) + 40px)" }}
-    >
+    <div className="screen relative flex flex-col items-center px-6 text-center">
+      <div
+        className="my-auto flex w-full flex-col items-center py-6"
+        style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
       <h1 className="font-display text-6xl uppercase leading-[0.9] tracking-tight text-foreground drop-shadow-[0_3px_0_rgba(18,40,28,0.12)]">
         Cap<br />
         <span className="text-primary">Kickers</span>
@@ -110,6 +111,7 @@ function Home() {
             {t("home.howToPlay")}
           </Link>
         </div>
+      </div>
       </div>
     </div>
   );

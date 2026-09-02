@@ -85,7 +85,7 @@ function SettingsPage() {
 
   return (
     <div
-      className="flex min-h-dvh flex-col items-center px-6 py-8"
+      className="flex screen flex-col items-center px-6 py-8"
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 20px)" }}
     >
       <h1 className="font-display text-5xl uppercase tracking-tight text-foreground">
