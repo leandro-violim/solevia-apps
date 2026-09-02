@@ -11,6 +11,7 @@ import { loadCapStyleId, saveCapStyleId } from "../game/caps/storage";
 import { pitchStyleById } from "../game/pitches/styles";
 import { styleById } from "../game/caps/styles";
 import { drawPitch, drawCap } from "../game/render/draw";
+import { capSpriteReady, capSpriteImage } from "../lib/cap-sprites";
 import { gameAudio } from "../lib/audio";
 import { packPreviewFile } from "../lib/samples";
 import { rewardedAvailable, showRewarded } from "../lib/ads";
@@ -92,12 +93,23 @@ function Preview({ item, dim }: { item: Item; dim: boolean }) {
     const H = 64;
     c.width = W * S;
     c.height = H * S;
-    ctx.setTransform(S, 0, 0, S, 0, 0);
-    ctx.clearRect(0, 0, W, H);
-    if (item.type === "pitch") {
-      drawPitch(ctx, { x: 3, y: 3, w: W - 6, h: H - 6 }, 0.32, pitchStyleById(item.styleId));
-    } else {
-      drawCap(ctx, W / 2, H / 2, 22, styleById(item.styleId), {});
+    const draw = () => {
+      ctx.setTransform(S, 0, 0, S, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      if (item.type === "pitch") {
+        drawPitch(ctx, { x: 3, y: 3, w: W - 6, h: H - 6 }, 0.32, pitchStyleById(item.styleId));
+      } else {
+        // Realistic sprite when it's decoded; vector cap until then.
+        drawCap(ctx, W / 2, H / 2, 22, styleById(item.styleId), { sprite: capSpriteReady(item.styleId) });
+      }
+    };
+    draw();
+    if (item.type === "cap") {
+      const img = capSpriteImage(item.styleId);
+      if (img && !(img.complete && img.naturalWidth > 0)) {
+        img.addEventListener("load", draw, { once: true });
+        return () => img.removeEventListener("load", draw);
+      }
     }
   }, [item]);
 

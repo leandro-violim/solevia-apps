@@ -8,6 +8,7 @@ import { loadProgress } from "../game/campaign/storage";
 import { isStyleEquippable } from "../game/economy/catalog";
 import { trackCapSelected } from "../lib/analytics";
 import { drawCap } from "../game/render/draw";
+import { capSpriteReady, capSpriteImage } from "../lib/cap-sprites";
 import { useT } from "../lib/i18n";
 
 /** A tiny canvas that draws one cap style as a preview. */
@@ -21,9 +22,19 @@ function Swatch({ styleId, size }: { styleId: string; size: number }) {
     const dpr = window.devicePixelRatio || 1;
     c.width = Math.round(size * dpr);
     c.height = Math.round(size * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, size, size);
-    drawCap(ctx, size / 2, size / 2 - size * 0.04, size * 0.38, styleById(styleId));
+    const draw = () => {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, size, size);
+      drawCap(ctx, size / 2, size / 2 - size * 0.04, size * 0.38, styleById(styleId), {
+        sprite: capSpriteReady(styleId),
+      });
+    };
+    draw();
+    const img = capSpriteImage(styleId);
+    if (img && !(img.complete && img.naturalWidth > 0)) {
+      img.addEventListener("load", draw, { once: true });
+      return () => img.removeEventListener("load", draw);
+    }
   }, [styleId, size]);
   return <canvas ref={ref} style={{ width: size, height: size }} />;
 }

@@ -9,6 +9,7 @@ import { capAtPoint, flickToVelocity, type FlickSample } from "../game/input-map
 import { chooseAiFlick } from "../game/ai/policy";
 import { drawPitch, drawGoal, drawCap, drawKeeper } from "../game/render/draw";
 import { styleById, opponentFor } from "../game/caps/styles";
+import { capSpriteReady } from "../lib/cap-sprites";
 import { loadCapStyleId } from "../game/caps/storage";
 import { pitchStyleById } from "../game/pitches/styles";
 import { loadPitchStyleId } from "../game/pitches/storage";
@@ -346,6 +347,7 @@ function PlayPage() {
           selected: session.selectedCapId === cap.id,
           pulse,
           angle,
+          sprite: capSpriteReady(capStyle.id),
         });
       }
       // Impact dust puffs sit on top of the caps (base-screen space).

@@ -275,9 +275,37 @@ export const drawCap = (
   y: number,
   radius: number,
   style: CapStyle,
-  opts: { selected?: boolean; pulse?: number; angle?: number } = {},
+  opts: { selected?: boolean; pulse?: number; angle?: number; sprite?: CanvasImageSource } = {},
 ) => {
   const r = radius;
+
+  // Sprite path (Option A): a pre-baked realistic cap image drawn IN FRONT of the
+  // vector renderer. The ground shadow stays unrotated; only the cap image spins.
+  // Falls through to the vector cap below when no sprite is supplied.
+  if (opts.sprite) {
+    ctx.save();
+    ctx.fillStyle = ARCADE.shadow;
+    ctx.beginPath();
+    ctx.ellipse(x, y + r * 0.5, r * 1.02, r * 0.72, 0, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.translate(x, y);
+    if (opts.angle) ctx.rotate(opts.angle);
+    const s = r * 2.2; // the sprite frame is ~1.1x the crown radius
+    ctx.drawImage(opts.sprite, -s / 2, -s / 2, s, s);
+    ctx.restore();
+    if (opts.selected) {
+      const p = opts.pulse ?? 0;
+      ctx.strokeStyle = ARCADE.gold;
+      ctx.lineWidth = Math.max(2.5, r * 0.2);
+      ctx.beginPath();
+      ctx.arc(x, y, r + r * (0.24 + 0.09 * p), 0, TAU);
+      ctx.stroke();
+    }
+    return;
+  }
+
   const crown = style.pattern === "crown";
   const bumps = crown ? 21 : 30;
   const amp = r * (crown ? 0.075 : 0.05);
