@@ -117,7 +117,7 @@ function Preview({ item, dim }: { item: Item; dim: boolean }) {
     return (
       <div
         className="flex h-16 w-full items-center justify-center rounded-xl"
-        style={{ background: "#123", opacity: dim ? 0.4 : 1 }}
+        style={{ background: "#123", opacity: dim ? 0.55 : 1 }}
       >
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M9 18V6l10-2v12" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -127,7 +127,7 @@ function Preview({ item, dim }: { item: Item; dim: boolean }) {
       </div>
     );
   }
-  return <canvas ref={ref} className="h-16 w-full rounded-xl" style={{ opacity: dim ? 0.35 : 1 }} />;
+  return <canvas ref={ref} className="h-16 w-full rounded-xl" style={{ opacity: dim ? 0.55 : 1 }} />;
 }
 
 function CabinetPage() {
