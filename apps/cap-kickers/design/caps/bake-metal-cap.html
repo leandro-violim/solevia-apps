@@ -1,0 +1,65 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  body{margin:0;background:#2b2b2b}
+  canvas{background:repeating-conic-gradient(#3a3a3a 0% 25%, #444 0% 50%) 0/32px 32px}
+</style></head><body>
+<canvas id="c" width="512" height="512"></canvas>
+<script>
+const TAU = Math.PI * 2;
+const grad = (c,x0,y0,x1,y1,s)=>{const g=c.createLinearGradient(x0,y0,x1,y1);s.forEach(o=>g.addColorStop(o[0],o[1]));return g;};
+const rgrad = (c,x,y,r,s)=>{const g=c.createRadialGradient(x,y,0,x,y,r);s.forEach(o=>g.addColorStop(o[0],o[1]));return g;};
+function noiseCanvas(n){const cv=document.createElement("canvas");cv.width=cv.height=n;const x=cv.getContext("2d");const id=x.createImageData(n,n);for(let i=0;i<id.data.length;i+=4){const v=Math.random()*255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=255;}x.putImageData(id,0,0);return cv;}
+const NOISE = noiseCanvas(256);
+const SCR = [[0.9,32,0.85],[2.1,-14,0.7],[3.7,50,0.6],[5.0,10,0.8],[1.3,-40,0.5]];
+function scallop(c,x,y,base,amp,b){const st=b*12;c.beginPath();for(let i=0;i<=st;i++){const a=i/st*TAU;const rr=base+amp*Math.cos(b*a);const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr;i?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
+
+// Palettes: hi (top-lit metal), mid (body), lo (shadowed metal), dark (deep grooves)
+const PALS = {
+  "metal-silver": { hi:"#f4f7f9", mid:"#c2cace", lo:"#7d868c", dark:"#3c4145" },
+  "metal-red":    { hi:"#ffd9cf", mid:"#d24a38", lo:"#8f2c1e", dark:"#4a140c" },
+  "metal-blue":   { hi:"#dbe7ff", mid:"#3f74d6", lo:"#22417f", dark:"#0f1f42" },
+  "metal-green":  { hi:"#d6ffe6", mid:"#25a866", lo:"#116b3c", dark:"#062616" },
+  "metal-orange": { hi:"#ffe3c9", mid:"#d67f30", lo:"#8a4a16", dark:"#40200a" },
+  "metal-purple": { hi:"#efe0fb", mid:"#8a4cc0", lo:"#522877", dark:"#241038" },
+};
+
+function metalCap(c, x, y, r, P){
+  const b=21, amp=r*0.06, inR=r*0.80;
+  // NOTE: no contact shadow baked in — the cap sprite is drawn rotated in-engine,
+  // and drawCap() adds an unrotated ground shadow so it doesn't spin with the cap.
+  // crimped crown, metal radial
+  scallop(c,x,y,r-amp,amp,b);
+  c.fillStyle=rgrad(c,x-r*0.32,y-r*0.36,r*1.25,[[0,P.hi],[0.5,P.mid],[1,P.lo]]);
+  c.fill();
+  // conic anisotropic sheen (the metal "X")
+  c.save();scallop(c,x,y,r-amp,amp,b);c.clip();
+  try{const cg=c.createConicGradient(-Math.PI/2,x,y);const L="rgba(255,255,255,.5)",D="rgba(0,0,0,.34)";for(let k=0;k<=8;k++)cg.addColorStop(k/8,k%2?D:L);c.fillStyle=cg;c.fillRect(x-r,y-r,r*2,r*2);}catch(e){}
+  c.restore();
+  // flute grooves (dark) + ridge highlights (light)
+  for(let i=0;i<b;i++){const a=((i+0.5)/b)*TAU;c.strokeStyle="rgba(0,0,0,.4)";c.lineWidth=Math.max(1,r*0.02);c.beginPath();c.moveTo(x+Math.cos(a)*inR,y+Math.sin(a)*inR);c.lineTo(x+Math.cos(a)*(r+amp*0.2),y+Math.sin(a)*(r+amp*0.2));c.stroke();}
+  for(let i=0;i<b;i++){const a=(i/b)*TAU;c.strokeStyle="rgba(255,255,255,.42)";c.lineWidth=Math.max(0.6,r*0.008);c.beginPath();c.moveTo(x+Math.cos(a)*inR,y+Math.sin(a)*inR);c.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);c.stroke();}
+  scallop(c,x,y,r-amp,amp,b);c.strokeStyle=P.dark;c.lineWidth=Math.max(1.5,r*0.016);c.stroke();
+  // domed top
+  c.save();c.beginPath();c.arc(x,y,inR,0,TAU);c.clip();
+  c.fillStyle=rgrad(c,x-inR*0.34,y-inR*0.4,inR*1.3,[[0,P.hi],[0.45,P.mid],[1,P.lo]]);c.fillRect(x-inR,y-inR,inR*2,inR*2);
+  c.fillStyle=grad(c,x,y-inR,x,y+inR,[[0,"rgba(255,255,255,.42)"],[0.5,"rgba(255,255,255,0)"],[1,"rgba(0,0,0,.42)"]]);c.fillRect(x-inR,y-inR,inR*2,inR*2);
+  c.strokeStyle="rgba(0,0,0,.22)";c.lineWidth=r*0.02;c.beginPath();c.arc(x,y,inR*0.6,0,TAU);c.stroke();
+  c.strokeStyle="rgba(255,255,255,.22)";c.lineWidth=r*0.01;c.beginPath();c.arc(x,y-r*0.01,inR*0.6,0,TAU);c.stroke();
+  c.globalAlpha=0.05;c.globalCompositeOperation="overlay";c.drawImage(NOISE,x-inR,y-inR,inR*2,inR*2);c.globalAlpha=1;c.globalCompositeOperation="source-over";
+  for(const s of SCR){const a=s[0],off=s[1],ln=s[2];c.strokeStyle="rgba(255,255,255,.16)";c.lineWidth=r*0.006;const cx0=x+Math.cos(a+1.5)*off,cy0=y+Math.sin(a+1.5)*off;c.beginPath();c.moveTo(cx0-Math.cos(a)*inR*ln*0.5,cy0-Math.sin(a)*inR*ln*0.5);c.lineTo(cx0+Math.cos(a)*inR*ln*0.5,cy0+Math.sin(a)*inR*ln*0.5);c.stroke();}
+  c.restore();
+  // liner ring + specular
+  c.beginPath();c.arc(x,y,inR,0,TAU);c.strokeStyle="rgba(0,0,0,.4)";c.lineWidth=r*0.03;c.stroke();
+  c.save();c.beginPath();c.arc(x,y,inR,0,TAU);c.clip();
+  c.fillStyle="rgba(255,255,255,.5)";c.beginPath();c.ellipse(x-inR*0.32,y-inR*0.36,inR*0.42,inR*0.22,-0.6,0,TAU);c.fill();
+  c.fillStyle="rgba(255,255,255,.95)";c.beginPath();c.ellipse(x-inR*0.42,y-inR*0.44,inR*0.13,inR*0.07,-0.6,0,TAU);c.fill();
+  c.restore();
+}
+
+const params = new URLSearchParams(location.search);
+const id = params.get("id") || "metal-silver";
+const c = document.getElementById("c").getContext("2d");
+c.clearRect(0,0,512,512);
+metalCap(c, 256, 256, 232, PALS[id] || PALS["metal-silver"]);
+window.pngData = () => document.getElementById("c").toDataURL("image/png");
+window.__ready = true;
+</script></body></html>
