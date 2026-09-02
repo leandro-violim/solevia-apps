@@ -1,16 +1,24 @@
 # Firebase Analytics — Cap Kickers
 
-Status as of 2026-09-01: **everything is done except three commands on the Mac and
-one follow-up that has to wait for real data.** See "Still to do" below.
+Status as of 2026-09-02: **everything is done except three commands on the Mac,
+one follow-up that has to wait for real data, and one deletion only Leandro can do.**
+See "Still to do" below.
 
-### ✅ Done in the console (2026-09-01, via Cowork)
+> **2026-09-02 — the project was rebuilt.** The first project was called
+> *Solevia Games* (`solevia-games`), which named the *company*, not the game. Since
+> nothing was in production yet it was recreated as one-project-per-game. Every id
+> below is new; anything quoting `solevia-games` or `137916049902` is stale.
+
+### ✅ Done in the console (2026-09-01, redone 2026-09-02, via Cowork)
 
 | Item | Result |
 |---|---|
-| Firebase project | **Solevia Games** — project id `solevia-games`, number `137916049902` |
-| Google Analytics | Enabled, on the existing **"Default Account for Firebase"** account, with its **own new GA4 property** (`solevia-games`) so Cap Kickers data never mixes with Zen Bubbles' |
-| Android app | `app.solevia.capkickers` — app id `1:137916049902:android:fb8c4cb0e44c8f479346ff` |
-| iOS app | `app.solevia.capkickers`, App Store ID `6805625628` — app id `1:137916049902:ios:55cc3167ca9a243f9346ff` |
+| Firebase project | **Cap Kickers** — project id `cap-kickers`, number `84399764334` |
+| Google Analytics | Enabled, with its **own new GA4 property** — *Cap Kickers*, property id `552486617` |
+| Reporting time zone | **United States — New York Time**, set on both properties before any data arrived (Google's default was "United Kingdom GMT-04:00") |
+| GA account | `406365671`, renamed **"Sole Via Entertainment"** (was "Default Account for Firebase"). One account = the company; one property per game: *Cap Kickers* (`552486617`), *Zen Bubbles* (`552089130`) |
+| Android app | `app.solevia.capkickers` — app id `1:84399764334:android:19fd4b460b1a4b8ae7877f` |
+| iOS app | `app.solevia.capkickers`, App Store ID `6805625628` — app id `1:84399764334:ios:7fb32ff2c908e9fae7877f` |
 | `google-services.json` | downloaded, verified, committed to `android/app/` |
 | `GoogleService-Info.plist` | downloaded, verified, committed to `ios/App/App/` |
 | AdMob → Firebase | **both apps linked** |
@@ -23,7 +31,7 @@ one follow-up that has to wait for real data.** See "Still to do" below.
 
 | Item | Result |
 |---|---|
-| Firebase → Google Ads | **Linked** to *Solve Via Entertainment* (`625-425-0746`) |
+| Firebase → Google Ads | **Linked** to *Solve Via Entertainment* (`625-425-0746`) — recreated on the new property 2026-09-02 |
 | Personalized Advertising on that link | **Disabled** — see below |
 | `GoogleService-Info.plist` in the Xcode **App target** | **Done by editing `project.pbxproj` directly** — file reference, build file, App group membership and Resources build phase, mirroring how `PrivacyInfo.xcprivacy` was already wired. Backup at `App.xcodeproj/project.pbxproj.bak-before-firebase`. |
 | `FirebaseApp.configure()` in `AppDelegate.swift` | Already present, guarded on the plist existing |
@@ -53,6 +61,13 @@ Claude Code has since run `bun install` and `bunx cap sync ios` — verified:
    `level_complete` and `campaign_complete`** → then import them in
    **Google Ads ▸ Tools ▸ Conversions**. Optimise toward those, not `first_open`.
 3. **Verify in DebugView** (§5) before shipping.
+4. **Leandro only — delete the old `solevia-games` Firebase project.** It is orphaned:
+   its apps are unlinked from AdMob and nothing in the repo points at it. Deleting a
+   project is irreversible, so Cowork deliberately did not do it.
+   → <https://console.firebase.google.com/u/1/project/solevia-games/settings/general>
+   ▸ scroll to the bottom ▸ **Delete project** ▸ type `solevia-games` to confirm.
+   Its GA4 property `solevia-games` (`552448669`) goes with it; if it lingers, bin it
+   from GA Admin ▸ Property details ▸ **Move to Trash Can**.
 
 Housekeeping: `project.pbxproj.bak-before-firebase` is the pre-edit backup — keep it
 until a build succeeds, then delete. `AppDelegate.swift.bak-before-firebase` is an

@@ -35,6 +35,94 @@ Do not log routine reads or one-line tweaks.
 
 ---
 
+## 2026-09-02 · CODE · Committed the rebuilt-project config files; re-synced native
+
+**Did:**
+- Verified the replaced config files carry the **new** `cap-kickers` / `84399764334` ids —
+  Android app `…android:19fd4b460b1a4b8ae7877f`, iOS `…ios:7fb32ff2c908e9fae7877f`,
+  sender `84399764334`, project `cap-kickers`, bundle/package `app.solevia.capkickers`.
+  `grep` confirms **no** stale `solevia-games` / `137916049902` in either config file.
+- `bun test` green — **157 pass**.
+- Ran `bunx cap sync ios/android` (produced no pbxproj/Gradle diff — paths didn't move).
+  Did **not** touch the plist pbxproj wiring, as instructed.
+- Committed the two config files + `HANDOFF.md` + `FIREBASE-SETUP.md` and pushed.
+
+**Left for Cowork:** nothing new. DebugView + the Google Ads conversion import now target the
+**`cap-kickers`** GA4 property (`552486617`). The orphaned `solevia-games` project is still
+Leandro's to delete (FIREBASE-SETUP.md "Still to do" §4).
+
+**Uncommitted:** no — committed + pushed.
+
+---
+
+## 2026-09-02 · COWORK · Firebase project rebuilt as `cap-kickers`; GA renamed to one-account-per-company
+
+**Did — console (all under `leandroviolim7@gmail.com`):**
+- **The Firebase project was recreated.** The old one was named after the *company*
+  (*Solevia Games* / `solevia-games`), which does not scale to several games. Nothing was in
+  production, so it was rebuilt as **one project per game**. New ids — treat every
+  `solevia-games` / `137916049902` value as stale:
+
+  | | old (dead) | new |
+  |---|---|---|
+  | project | `solevia-games` · `137916049902` | **`cap-kickers`** · **`84399764334`** |
+  | Android app | `1:137916049902:android:fb8c4cb0e44c8f479346ff` | **`1:84399764334:android:19fd4b460b1a4b8ae7877f`** |
+  | iOS app | `1:137916049902:ios:55cc3167ca9a243f9346ff` | **`1:84399764334:ios:7fb32ff2c908e9fae7877f`** |
+  | GA4 property | `552448669` | **`552486617`** |
+
+- Re-registered both apps (`app.solevia.capkickers`; iOS App Store ID `6805625628`) and
+  **replaced both config files in the working tree** — see below.
+- **AdMob:** both apps *unlinked* from `solevia-games` and *relinked* to `cap-kickers`.
+  Verified from the Firebase side: Integrations shows AdMob "2 linked apps".
+  Impression-level ad revenue is account-wide and was untouched — still ON.
+- **Google Ads link recreated** on property `552486617` → *Solve Via Entertainment*
+  (`625-425-0746`), with **Enable Personalized Advertising OFF** again (it would flip
+  Product Interaction to *Used for Tracking* on the Apple label — see FIREBASE-SETUP.md).
+- **GA naming now matches the company structure Leandro wants** — account = company,
+  property = game:
+  - account `406365671`: "Default Account for Firebase" → **"Sole Via Entertainment"**
+  - property `552486617`: `cap-kickers` → **"Cap Kickers"**
+  - property `552089130`: `zen-bubbles-a0a14` → **"Zen Bubbles"** *(this is Pop Zen's live
+    property — display name only, no data or stream touched)*
+  - GA4 requires Business details to save a rename; all three were set to
+    Games / Small 1–10 / "Understand app traffic" + "View user engagement & retention".
+    Cosmetic reporting metadata only.
+
+**Did — working tree (via the bridge, no git):**
+- `apps/cap-kickers/android/app/google-services.json` — **replaced**; verified project
+  `cap-kickers`, number `84399764334`, package `app.solevia.capkickers`.
+- `apps/cap-kickers/ios/App/App/GoogleService-Info.plist` — **replaced**; verified bundle
+  `app.solevia.capkickers`, App Store ID `6805625628`, sender `84399764334`.
+- `grep` across the repo for `solevia-games` / `137916049902`: clean apart from the historical
+  notes in this file and the changelog line in FIREBASE-SETUP.md.
+- `apps/cap-kickers/FIREBASE-SETUP.md` — rewritten header table + a "Still to do" item 4.
+
+**Left for Code:**
+1. `bun test`, then commit. The two config files changed content but not path, so no Xcode or
+   Gradle change is needed — the pbxproj wiring from 2026-09-01 still applies. Do **not**
+   re-run the plist pbxproj edit.
+2. Worth a `bunx cap sync` before the next device build so the native projects pick the new
+   config files up.
+3. DebugView verification now has to happen against the **`cap-kickers`** project, not the old one.
+
+**Gotchas:**
+- The Google Ads *account* is spelled "Sol**ve** Via Entertainment" (`625-425-0746`) — that typo
+  is Google's, in Leandro's Ads account, and is unrelated to the GA account we just named
+  "Sole Via Entertainment". Don't "fix" one to match the other.
+- The conversion import is still blocked on real data (unchanged), and it must now be done from
+  the **new** property.
+- Reporting time zone on both properties was Google's default, "United Kingdom (GMT-04:00)".
+  **Fixed the same day**, before any data arrived, to **United States — (GMT-04:00) New York
+  Time** on *both* Cap Kickers (`552486617`) and Zen Bubbles (`552089130`). GA warns the change
+  only affects data going forward; there was none, so there is no seam. Report days now break at
+  US Eastern midnight — that is the boundary any day-over-day retention or ARPDAU number uses.
+- The old `solevia-games` project is **still alive and orphaned** — deleting a project is
+  irreversible, so Cowork left it for Leandro. Instructions in FIREBASE-SETUP.md "Still to do" §4.
+
+**Uncommitted:** yes — the two config files and the two docs. Safe to commit.
+
+---
+
 ## 2026-09-01 · CODE · Committed the Firebase checkpoint; verified the plist wiring + tests
 
 **Did:**
