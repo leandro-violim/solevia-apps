@@ -19,9 +19,12 @@ export const CONFIG = {
   /** §2/§3 Ads (test IDs are chosen in ads.ts; this is only cadence/behavior) */
   ads: {
     interstitial: {
-      minRunsBetween: 3, // ≤ 1 interstitial per this many completed runs
-      cooldownMs: 75_000, // …AND at least this long since the last one
-      skipFirstRunOfSession: true, // never on the first run of a session
+      // Pop Challenge: show an interstitial at a phase-complete break every Nth
+      // phase — i.e. the world MIDPOINT (phase 4) and the WORLD CHANGE (phase 8):
+      // stages 4, 8, 12, 16, 20, 24, 28 — plus one at run end.
+      everyPhases: 4,
+      cooldownMs: 20_000, // safety floor: never two interstitials within this window
+      maxPerRun: 8, // hard cap per run (7 phase-breaks + run end)
     },
     rewarded: {
       maxRevivesPerRun: 1, // Time Attack revive cap (tunable to 2)

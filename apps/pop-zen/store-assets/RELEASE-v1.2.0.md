@@ -130,7 +130,17 @@ Google ads/analytics), no PII in local storage, **no dev/cheat helpers in produc
 memoization holds under dense phases, no timer/listener/rAF leaks, audio hard-stops on
 minimize. Correctness review found **no launch blockers**; the handful of low-severity
 edge cases it surfaced were fixed in this release (double-tap finish guard, timeup race,
-world-ad cap) or are noted in Decisions.
+per-run interstitial cap) or are noted in Decisions.
+
+**Interstitial cadence (heads-up for the compliance pass).** Per Leandro's revenue
+call, interstitials now fire at a phase-complete break every 4th phase in Pop Challenge —
+the world midpoint (phase 4) and world change (phase 8), i.e. stages 4/8/12/16/20/24/28 —
+plus one at run end, capped at `maxPerRun` (8) with a 20 s safety-floor cooldown
+(`CONFIG.ads.interstitial`). All are genuine level-complete transitions (never app-open,
+never mid-play, none in Pop for Fun). This is more aggressive than before, so **Cowork:
+confirm it against AdMob's current interstitial frequency guidance** during the final
+review; the three knobs (`everyPhases`, `cooldownMs`, `maxPerRun`) make it a one-line dial
+if it needs easing.
 
 ---
 

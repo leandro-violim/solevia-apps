@@ -298,50 +298,22 @@ export async function showInterstitial(): Promise<boolean> {
 // ── §2 Interstitial cadence gate (Better Ads Experiences) ─────────────────
 // Interstitials only at natural breaks, and rate-limited: ≤1 per N completed
 // runs AND a cooldown, with the first run of a session always free. All numbers
-// live in CONFIG.ads.interstitial. Session-scoped counters (reset each launch).
-let runsThisSession = 0;
-let runsSinceInterstitial = 0;
+// live in CONFIG.ads.interstitial. Session-scoped timestamp (reset each launch).
 let lastInterstitialAt = 0;
 
-/** Call once when a run (a full play session) completes. */
-export function noteRunCompleted(): void {
-  runsThisSession += 1;
-  runsSinceInterstitial += 1;
-}
-
 /**
- * Show an interstitial at a natural break IF the cadence allows it. Returns
- * whether one was shown. Never called mid-play / at app-open / at run-start.
+ * Show an interstitial at a natural phase-complete break IF the cooldown allows.
+ * The CADENCE (which breaks qualify — the world midpoint + world change + run
+ * end, and the per-run cap) is decided by the caller in play.tsx; here we only
+ * enforce the safety-floor cooldown so two never fire back-to-back. Never called
+ * mid-play / at app-open / at run-start. Shows only if one is already preloaded.
  */
 export async function maybeShowInterstitial(placement: string): Promise<boolean> {
   if (!IS_NATIVE) return false;
-  const cfg = CONFIG.ads.interstitial;
-  if (cfg.skipFirstRunOfSession && runsThisSession <= 1) return false; // first run free
-  if (Date.now() - lastInterstitialAt < cfg.cooldownMs) return false; // cooldown
-  if (runsSinceInterstitial < cfg.minRunsBetween) return false; // frequency cap
+  if (Date.now() - lastInterstitialAt < CONFIG.ads.interstitial.cooldownMs) return false;
   const shown = await showInterstitial();
   if (shown) {
     lastInterstitialAt = Date.now();
-    runsSinceInterstitial = 0;
-    track("ad_interstitial_shown", { placement });
-  }
-  return shown;
-}
-
-/**
- * Interstitial at a WORLD change (crossing into a new round, ~3× per full Pop
- * Challenge run). Unlike `maybeShowInterstitial`, this isn't gated by the
- * per-run frequency counter (world crossings ARE the intended breaks), but it
- * shares the same cooldown so it never stacks on top of the run-end ad.
- */
-export async function maybeShowWorldInterstitial(placement: string): Promise<boolean> {
-  if (!IS_NATIVE) return false;
-  const cfg = CONFIG.ads.interstitial;
-  if (Date.now() - lastInterstitialAt < cfg.cooldownMs) return false; // shared cooldown
-  const shown = await showInterstitial();
-  if (shown) {
-    lastInterstitialAt = Date.now();
-    runsSinceInterstitial = 0;
     track("ad_interstitial_shown", { placement });
   }
   return shown;

@@ -5,8 +5,6 @@ import { z } from "zod";
 import { AdBanner } from "../components/AdBanner";
 import {
   maybeShowInterstitial,
-  maybeShowWorldInterstitial,
-  noteRunCompleted,
   preloadInterstitial,
   refreshBanner,
   showRewarded,
@@ -459,7 +457,7 @@ function PlayPage() {
       setObjVersion((v) => v + 1);
       runStartAtRef.current = Date.now();
       coinAdsUsedRef.current = 0; // reset the per-run rewarded-coins cap
-      worldAdsRef.current = 0; // reset the per-run world-interstitial cap
+      interAdsRef.current = 0; // reset the per-run interstitial cap
       track("run_start", { mode, difficulty, phase_start: phase }); // P1-T6
     }
     // Warm up the interstitial now so it's ready (if online) by phase end.
@@ -747,8 +745,8 @@ function PlayPage() {
   // coins/stats or fire the ad twice. Reset when a fresh phase builds (below).
   const advancingRef = useRef(false);
   const [advancing, setAdvancing] = useState(false);
-  // Cap world-change interstitials to one per run (on top of the 75s cooldown).
-  const worldAdsRef = useRef(0);
+  // Count interstitials shown this run (phase-break + run-end), capped by config.
+  const interAdsRef = useRef(0);
   // Live count of un-popped bubbles, so the countdown-expiry handler can tell a
   // last-frame clear from a real time-up (avoids "Time up" on a cleared field).
   const remainingRef = useRef(0);
@@ -758,11 +756,17 @@ function PlayPage() {
     advancingRef.current = true;
     setAdvancing(true);
     const next = Math.min(phase + 1, TOTAL_STAGES);
-    // Interstitial on a WORLD change (crossing into a new round) — a natural
-    // "level complete" break, cooldown-gated (ads.ts) AND ≤1 per run.
-    if (!isZen && roundOf(next) > roundOf(phase) && worldAdsRef.current < 1) {
-      worldAdsRef.current += 1;
-      await maybeShowWorldInterstitial("world_change");
+    // Interstitial at a phase-complete break (Pop Challenge): every Nth phase —
+    // i.e. the world MIDPOINT (phase 4) and the WORLD CHANGE (phase 8). A natural
+    // "level complete" moment; cooldown-gated in ads.ts + a per-run cap here.
+    const cfgi = CONFIG.ads.interstitial;
+    if (
+      !isZen &&
+      phaseInRound(phase) % cfgi.everyPhases === 0 &&
+      interAdsRef.current < cfgi.maxPerRun
+    ) {
+      interAdsRef.current += 1;
+      await maybeShowInterstitial("phase_break");
     }
     navigate({ to: "/play", search: { phase: next, mode, difficulty, daily } });
   }, [navigate, phase, mode, difficulty, daily, isZen]);
@@ -792,8 +796,10 @@ function PlayPage() {
         duration_s: Math.round((Date.now() - runStartAtRef.current) / 1000),
         ended_by: endedBy,
       }); // P1-T6
-      noteRunCompleted();
-      await maybeShowInterstitial("run_end");
+      if (interAdsRef.current < CONFIG.ads.interstitial.maxPerRun) {
+        interAdsRef.current += 1;
+        await maybeShowInterstitial("run_end");
+      }
       navigate({ to: "/finish", search: { total, prevBest, beat: beat ? 1 : 0, coins } });
     },
     [navigate, isDaily, mode, difficulty, phase],
