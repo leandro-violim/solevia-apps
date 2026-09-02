@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "137916049902",
+    "project_id": "solevia-games",
+    "storage_bucket": "solevia-games.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:137916049902:android:fb8c4cb0e44c8f479346ff",
+        "android_client_info": {
+          "package_name": "app.solevia.capkickers"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXeHrn9VDCVsK7WBl2ZwisMZE3oL71ZN0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

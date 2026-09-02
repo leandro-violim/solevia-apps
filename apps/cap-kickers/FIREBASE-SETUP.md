@@ -1,8 +1,67 @@
 # Firebase Analytics — Cap Kickers
 
-Status as of 2026-09-01: **all the app code is written and in the tree. Nothing
-is live yet** — the console project, the two config files, and the iOS native
-wiring are still to do. Follow this file top to bottom.
+Status as of 2026-09-01: **everything is done except three commands on the Mac and
+one follow-up that has to wait for real data.** See "Still to do" below.
+
+### ✅ Done in the console (2026-09-01, via Cowork)
+
+| Item | Result |
+|---|---|
+| Firebase project | **Solevia Games** — project id `solevia-games`, number `137916049902` |
+| Google Analytics | Enabled, on the existing **"Default Account for Firebase"** account, with its **own new GA4 property** (`solevia-games`) so Cap Kickers data never mixes with Zen Bubbles' |
+| Android app | `app.solevia.capkickers` — app id `1:137916049902:android:fb8c4cb0e44c8f479346ff` |
+| iOS app | `app.solevia.capkickers`, App Store ID `6805625628` — app id `1:137916049902:ios:55cc3167ca9a243f9346ff` |
+| `google-services.json` | downloaded, verified, committed to `android/app/` |
+| `GoogleService-Info.plist` | downloaded, verified, committed to `ios/App/App/` |
+| AdMob → Firebase | **both apps linked** |
+| Impression-level ad revenue | **turned on** (account-wide) — this is what produces revenue-per-country |
+| Google Signals | **left off**, deliberately — see §6 |
+| Gemini in Firebase | left **off** (its terms allow prompts to be used for model training) |
+| Google Developer Program | left **off** (unrelated enrollment, opt-in by default) |
+
+### ✅ Also done (2026-09-01)
+
+| Item | Result |
+|---|---|
+| Firebase → Google Ads | **Linked** to *Solve Via Entertainment* (`625-425-0746`) |
+| Personalized Advertising on that link | **Disabled** — see below |
+| `GoogleService-Info.plist` in the Xcode **App target** | **Done by editing `project.pbxproj` directly** — file reference, build file, App group membership and Resources build phase, mirroring how `PrivacyInfo.xcprivacy` was already wired. Backup at `App.xcodeproj/project.pbxproj.bak-before-firebase`. |
+| `FirebaseApp.configure()` in `AppDelegate.swift` | Already present, guarded on the plist existing |
+| Spanish (`es`) iOS localization | Already fully wired — `es` is in `knownRegions` and in the `InfoPlist.strings` variant group |
+
+**Why Personalized Advertising was switched off.** The GA4↔Google Ads link offers it
+on by default. It publishes Analytics audience lists and event parameters to Google
+Ads *for personalisation* — which is the same effect the "don't enable Google Signals"
+rule exists to prevent: it would move **Product Interaction** from *Not Used for
+Tracking* to *Used for Tracking* on the Apple label and force a store re-declaration
+(`ANALYTICS-LATAM-DISCLOSURE-PLAN.md` §2). Conversion import does **not** need it.
+Turn it on only as a deliberate decision, with the re-declaration done first.
+
+### ⬜ Still to do
+
+Claude Code has since run `bun install` and `bunx cap sync ios` — verified:
+`package.json` + `bun.lock` carry `@capacitor-firebase/analytics ^8.5.0` and
+`firebase ^12.6.0`, and `ios/App/CapApp-SPM/Package.swift` now declares the
+`CapacitorFirebaseAnalytics` package and product. So the native side is wired.
+
+1. **`bun test`** on the Mac — the only build step not yet confirmed green here.
+2. **Import the conversions in Google Ads — only after first data.** GA4 will not let
+   an event be marked a key event until it has actually received it ("To mark an event
+   as a key event, select the star next to the event name"), and Google Ads only lists
+   key events GA4 has recorded. So the order is: ship the build → play a campaign level
+   on a real device → wait up to 24 h → **GA4 Admin ▸ Data display ▸ Events ▸ star
+   `level_complete` and `campaign_complete`** → then import them in
+   **Google Ads ▸ Tools ▸ Conversions**. Optimise toward those, not `first_open`.
+3. **Verify in DebugView** (§5) before shipping.
+
+Housekeeping: `project.pbxproj.bak-before-firebase` is the pre-edit backup — keep it
+until a build succeeds, then delete. `AppDelegate.swift.bak-before-firebase` is an
+identical copy (no edit was needed) and can be deleted now.
+
+> **Note on `IS_ANALYTICS_ENABLED: false`** inside `GoogleService-Info.plist`: that
+> is what the console emits and it is a legacy key the modern SDK ignores. Our code
+> calls `setEnabled({enabled: true})` at startup anyway, so collection is switched on
+> explicitly. Do not hand-edit the plist.
 
 **Prior art:** Zen Bubbles already does all of this. See
 `~/Downloads/zen-pop-analytics-privacy-reference.md` and
@@ -58,7 +117,7 @@ bun test             # i18n parity test now covers all three locales
 
 ---
 
-## 2. Firebase console (do this once)
+## 2. Firebase console (DONE — kept as reference)
 
 1. <https://console.firebase.google.com> — sign in as **leandroviolim7@gmail.com**
    (the account that owns Play and AdMob; using the other account makes the
@@ -87,7 +146,7 @@ bun test             # i18n parity test now covers all three locales
 
 ---
 
-## 3. Native wiring
+## 3. Native wiring (DONE except `cap sync` — kept as reference)
 
 ### Android — nothing to do
 
@@ -125,7 +184,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
    it must be in "Copy Bundle Resources" or Firebase crashes at launch with
    *"Could not locate configuration file"*.
 
-### Also for iOS: the new Spanish localization
+### Also for iOS: the Spanish localization (DONE — already in the project)
 
 `ios/App/App/es.lproj/InfoPlist.strings` has been created with the Spanish app
 name (`Fútbol de Tapitas`). In Xcode, select the project → **Info → Localizations
@@ -133,7 +192,7 @@ name (`Fútbol de Tapitas`). In Xcode, select the project → **Info → Localiz
 
 ---
 
-## 4. Link AdMob → Firebase (this is what gives you ad revenue per country)
+## 4. Link AdMob → Firebase (DONE — kept as reference)
 
 In **AdMob** (`pub-9628521678374705`) → Apps → Cap Kickers (Android) → **App
 settings → Link to Firebase**, pick the `Solevia Games` project and the matching
@@ -146,7 +205,7 @@ and poison the ARPDAU numbers.
 
 ---
 
-## 4b. Link Firebase → Google Ads (completes "Core + ad revenue")
+## 4b. Link Firebase → Google Ads (link DONE; conversion import pending first data)
 
 You have two live App campaigns — **Cap Kickers Brazil** (`24203160719`, $8/day) and
 **Cap Kickers India** (`24197362737`, $7/day). Linking Firebase to Google Ads is what

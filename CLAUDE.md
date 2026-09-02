@@ -1,5 +1,11 @@
 # CLAUDE.md — project context & handoff for Claude Code
 
+> **📋 Read `HANDOFF.md` at the repo root FIRST.** Two Claudes work on this repo — Claude Code
+> (terminal) and Cowork (Claude app, drives browsers + consoles). They cannot see each other's
+> conversations, so `HANDOFF.md` is the rolling log of who did what and what is waiting for you.
+> Append an entry there before you stop. The Zen Bubbles notes below are from Aug 2026 and are
+> historical; anything about **Cap Kickers** is in `HANDOFF.md` and the docs it points to.
+
 Monorepo (bun) for Sole Via Entertainment LLC. App under `apps/pop-zen` = **Zen Bubbles**
 (bundle `app.solevia.zenbubbles`), a calm bubble-popping game. React 19 + TanStack Start +
 Vite + Tailwind v4 + Capacitor (WKWebView → native iOS). Ads via Google AdMob
