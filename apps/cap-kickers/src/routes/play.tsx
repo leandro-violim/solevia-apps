@@ -84,11 +84,34 @@ const AI_THINK_SECONDS = 0.5;
 // becomes near-impossible to grab.
 const MIN_GRAB_PX = 24;
 
+const GOAL_HOLD_MS = 850; // roar on the goal before the next team appears
+const GOAL_ARRIVE_MS = 650; // the pop-in of the next formation
+/** Ease with a little overshoot, for the formation "arrival" pop. */
+const easeOutBack = (p: number): number => {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+};
+
 /** Local (not UTC) YYYY-MM-DD — the day boundary the daily Caps bonus uses. */
 const localToday = (): string => {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+// Count matches started, so the "start with the middle cap" tip shows only for a
+// new player's first few games. Returns a big number if storage is blocked (→ no tip).
+const GAMES_KEY = "capkickers.games.v1";
+const HINT_GAMES = 3;
+const bumpGamesPlayed = (): number => {
+  try {
+    const n = Number(localStorage.getItem(GAMES_KEY) ?? "0") + 1;
+    localStorage.setItem(GAMES_KEY, String(n));
+    return Number.isFinite(n) ? n : 99;
+  } catch {
+    return 99;
+  }
 };
 
 function PlayPage() {
@@ -139,6 +162,11 @@ function PlayPage() {
   // change while the win overlay is up.
   const matchStartedAtRef = useRef(Date.now());
   const endLoggedRef = useRef(false);
+  // Goal celebration: timestamp of the last goal. For a short beat after a goal
+  // the game freezes on the roar (caps hidden), then the next formation pops in —
+  // so scoring feels like a moment, not an instant scene-swap.
+  const goalAtRef = useRef<number | null>(null);
+  const goalFrozenRef = useRef(false);
 
   const [match, setMatch] = useState<MatchState>(() => sessionRef.current!.match);
   const [banner, setBanner] = useState<Banner | null>(null);
@@ -154,6 +182,14 @@ function PlayPage() {
   // True while the "one more shot?" rewarded-ad overlay is up after the human
   // missed a shot in vs-AI. Gates the AI + input until resolved. Mirrored to a
   // ref for the rAF loop's AI driver.
+  const [showStartHint, setShowStartHint] = useState(false);
+  const hintTimerRef = useRef<number | null>(null);
+  const revealStartHint = useCallback(() => {
+    if (bumpGamesPlayed() > HINT_GAMES) return;
+    setShowStartHint(true);
+    if (hintTimerRef.current !== null) window.clearTimeout(hintTimerRef.current);
+    hintTimerRef.current = window.setTimeout(() => setShowStartHint(false), 5000);
+  }, []);
   const [retryOffer, setRetryOffer] = useState(false);
   const retryOfferRef = useRef(false);
   const setRetry = (v: boolean) => {
@@ -205,7 +241,8 @@ function PlayPage() {
     matchStartedAtRef.current = Date.now();
     endLoggedRef.current = false;
     trackMatchStart(analyticsMode, mode === "ai" ? difficulty : undefined);
-  }, [mode, difficulty, goals, analyticsMode]);
+    revealStartHint();
+  }, [mode, difficulty, goals, analyticsMode, revealStartHint]);
 
   // rAF render/tick loop. Owns the canvas backing-store sizing and never
   // touches React state except to publish HUD-relevant snapshots.
@@ -334,6 +371,18 @@ function PlayPage() {
         drawGoal(ctx, { x: gx, y: gy, w: gw, h: gh }, side, scale);
       }
 
+      // Goal celebration: hold on the roar with the caps hidden, then pop the
+      // next formation in (easeOutBack). While active it also freezes input + AI.
+      let capScale = 1;
+      if (goalAtRef.current !== null) {
+        const el = performance.now() - goalAtRef.current;
+        if (el < GOAL_HOLD_MS) capScale = 0;
+        else if (el < GOAL_HOLD_MS + GOAL_ARRIVE_MS)
+          capScale = Math.max(0, easeOutBack((el - GOAL_HOLD_MS) / GOAL_ARRIVE_MS));
+        else goalAtRef.current = null;
+      }
+      goalFrozenRef.current = goalAtRef.current !== null;
+
       // Caps (all belong to the current attacker → their chosen cap style).
       const attacker = (session.match.attacker % 2) as 0 | 1;
       const capStyle = attacker === 0 ? playerStyle : oppStyle;
@@ -341,6 +390,13 @@ function PlayPage() {
       for (const cap of session.caps()) {
         const c = pitchToScreen(cap.position, pres);
         const r = cap.radius * scale;
+        if (goalFrozenRef.current) {
+          // Arriving formation: pop in cleanly (no spin / trail / selection).
+          if (capScale > 0) {
+            drawCap(ctx, c.x, c.y, r * capScale, capStyle, { sprite: capSpriteReady(capStyle.id) });
+          }
+          continue;
+        }
         const angle = updateCapFx(fx, cap.id, c.x, c.y, r, dt);
         drawTrail(ctx, fx, cap.id, r, capStyle.base);
         drawCap(ctx, c.x, c.y, r, capStyle, {
@@ -395,6 +451,9 @@ function PlayPage() {
             goalCelebration(fxRef.current, sizeRef.current.cssW, sizeRef.current.cssH);
             gameAudio.sfx("horn");
             gameAudio.sfx("cheer");
+            // A scored goal (not a match win) holds on the celebration, then pops
+            // the next team's caps in. A win goes straight to its own overlay.
+            if (report.result === "goal") goalAtRef.current = t;
             if (report.result === "win") void notifyMatchEnded(); // a match finished -> maybe an interstitial
           } else if (report.result === "turnover") {
             if (wasShot) gameAudio.sfx("ohh"); // missed shot -> crowd groans
@@ -436,7 +495,8 @@ function PlayPage() {
           session.phase === "aiming" &&
           session.match.phase !== "won" &&
           session.match.attacker === AI_SIDE &&
-          !retryOfferRef.current // pause the AI while the "one more shot?" offer is up
+          !retryOfferRef.current && // pause the AI while the "one more shot?" offer is up
+          !goalFrozenRef.current // and during the goal celebration
         ) {
           aiThinkRef.current += dt;
           if (aiThinkRef.current >= AI_THINK_SECONDS) {
@@ -500,6 +560,7 @@ function PlayPage() {
     matchStartedAtRef.current = Date.now();
     endLoggedRef.current = false;
     trackMatchStart(analyticsMode, mode === "ai" ? difficulty : undefined);
+    revealStartHint();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -603,6 +664,7 @@ function PlayPage() {
       session.match.phase === "won" ||
       handoffTo !== null ||
       retryOffer ||
+      goalFrozenRef.current || // no flicking during the goal celebration
       (mode === "ai" && session.match.attacker === AI_SIDE)
     )
       return;
@@ -731,19 +793,36 @@ function PlayPage() {
                 : t("play.playerTouch", { n: match.attacker + 1, t: match.touch, shot: MATCH.shotTouch })}
           </div>
           <div className="flex gap-1.5 rounded-full bg-white/90 px-3 py-1.5 shadow-md">
-            {Array.from({ length: MATCH.shotTouch }, (_, i) => i + 1).map((n) => (
-              <span
-                key={n}
-                className="h-3 w-3 rounded-full border-2"
-                style={{
-                  backgroundColor: !won && n <= match.touch ? SELECT_RING : "transparent",
-                  borderColor: !won && n <= match.touch ? "#d8a400" : "#cbd8cf",
-                }}
-              />
-            ))}
+            {Array.from({ length: MATCH.shotTouch }, (_, i) => i + 1).map((n) => {
+              // Paint a pip only after a flick is completed: touch 1 = 0 pips,
+              // then +1 per flick taken (n < match.touch = flicks already made).
+              const filled = !won && n < match.touch;
+              return (
+                <span
+                  key={n}
+                  className="h-3 w-3 rounded-full border-2"
+                  style={{
+                    backgroundColor: filled ? SELECT_RING : "transparent",
+                    borderColor: filled ? "#d8a400" : "#cbd8cf",
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
+
+      {/* First-games tip: nudge new players to open with the middle cap. */}
+      {showStartHint && !won && handoffTo === null && !retryOffer && (
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-16 flex justify-center px-6"
+          style={{ marginBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <div className="goal-pop font-display max-w-xs rounded-full bg-black/70 px-5 py-2.5 text-center text-sm font-semibold uppercase tracking-wide text-white shadow-lg">
+            👆 {t("play.middleHint")}
+          </div>
+        </div>
+      )}
 
       {/* Bottom bar: leave to the main menu, or restart the current match. */}
       <div
@@ -809,19 +888,22 @@ function PlayPage() {
       )}
 
       {retryOffer && !won && (
-        <div className="pointer-events-auto absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black/75 px-8 text-center">
-          <h2 className="goal-pop font-display text-5xl uppercase tracking-wide text-[#ffcf33]">
+        <div className="pointer-events-auto absolute inset-0 z-20 flex flex-col items-center justify-center gap-5 bg-black/80 px-8 text-center">
+          <h2 className="goal-pop font-display text-6xl uppercase tracking-wide text-[#ffcf33] drop-shadow-[0_3px_0_rgba(0,0,0,0.35)]">
             {t("play.soClose")}
           </h2>
-          <p className="max-w-xs text-base font-medium text-white/90">
+          <p className="max-w-xs text-lg font-semibold leading-snug text-white">
             {t("play.watchPrompt")}
           </p>
-          <button onClick={handleWatchAd} className="arcade-btn arcade-btn--gold mt-1 px-8 py-4 text-lg">
+          <button
+            onClick={handleWatchAd}
+            className="arcade-btn arcade-btn--gold mt-1 animate-pulse px-10 py-5 text-2xl shadow-[0_0_0_4px_rgba(255,207,51,0.35),0_8px_0_#d8a400]"
+          >
             {t("play.watchShoot")}
           </button>
           <button
             onClick={handleDeclineRetry}
-            className="font-display text-sm uppercase tracking-wide text-white/70 underline underline-offset-4"
+            className="font-display rounded-full border-2 border-white/60 px-8 py-2.5 text-base uppercase tracking-wide text-white/90 active:scale-95"
           >
             {t("play.noThanks")}
           </button>
