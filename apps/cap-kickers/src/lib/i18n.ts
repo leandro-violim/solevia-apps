@@ -179,7 +179,7 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "tutorial.advance.title": "Advance up the pitch",
     "tutorial.advance.body": "You get five touches per turn. Keep threading the gap to work the caps toward the goal.",
     "tutorial.shoot.title": "Shoot!",
-    "tutorial.shoot.body": "On your fifth touch the gate opens — fire at the goal and beat the keeper. First to the goal target wins the match.",
+    "tutorial.shoot.body": "Your 4th touch can gamble a shot — the keeper is nearly unbeatable, but a rebound in play keeps the ball. On the 5th, thread the shot between your two caps to beat the keeper. First to the goal target wins.",
 
     // Legal (About / Privacy / Terms)
     "legal.about": "About",
@@ -339,7 +339,7 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "tutorial.advance.title": "Avance pelo campo",
     "tutorial.advance.body": "Você tem cinco toques por vez. Continue passando pelo meio para levar as tampinhas até o gol.",
     "tutorial.shoot.title": "Chute!",
-    "tutorial.shoot.body": "No quinto toque o caminho abre — chute no gol e vença o goleiro. Quem atingir a meta de gols primeiro vence a partida.",
+    "tutorial.shoot.body": "No 4º toque você pode arriscar um chute — o goleiro é quase imbatível, mas um rebote em jogo mantém a bola. No 5º, passe o chute entre suas duas tampinhas para vencer o goleiro. Quem atingir a meta primeiro vence.",
 
     // Legal (Sobre / Privacidade / Termos)
     "legal.about": "Sobre",
@@ -498,7 +498,7 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "tutorial.advance.title": "Avanza por la cancha",
     "tutorial.advance.body": "Tienes cinco toques por turno. Sigue pasando por el hueco para llevar las tapitas hasta la portería.",
     "tutorial.shoot.title": "¡Dispara!",
-    "tutorial.shoot.body": "En el quinto toque se abre el camino: dispara a la portería y vence al portero. El primero en llegar a la meta de goles gana el partido.",
+    "tutorial.shoot.body": "En el 4º toque puedes arriesgar un tiro — el portero es casi imbatible, pero un rebote en juego conserva la bola. En el 5º, pasa el tiro entre tus dos tapitas para vencer al portero. El primero en llegar a la meta gana.",
 
     // Legal (Acerca de / Privacidad / Términos)
     "legal.about": "Acerca de",

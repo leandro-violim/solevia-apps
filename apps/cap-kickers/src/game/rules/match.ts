@@ -1,9 +1,9 @@
 import { type PlayerSide, attackingGoal, goalZone } from "./pitch";
 import { type FlickResult } from "./flick";
 
-// shotTouch: which touch number is the free SHOT (the goal-scoring touch).
-// Touches 1..shotTouch-1 are build-up (must thread the gate). Default 5 → four
-// build-up threads then a shot.
+// shotTouch: the FINAL shot touch (default 5). The touch before it
+// (earlyShotTouch = shotTouch - 1, default 4) is an OPTIONAL early shot against a
+// near-perfect keeper. Touches 1..earlyShotTouch-1 are build-up (thread the gate).
 export type MatchConfig = { goalsToWin: number; shotTouch: number };
 export type MatchPhase = "playing" | "won";
 
@@ -31,13 +31,16 @@ const other = (s: PlayerSide): PlayerSide => (s === 0 ? 1 : 0);
 /**
  * Advance the match by one resolved flick. Pure reducer.
  *
- * Build-up touches (1..shotTouch-1): legal iff the flick crossed the gate AND
- * every cap stayed in the pitch (flickedEnding === "rest" and no cap left the
- * pitch). Legal → advance (touch+1, same attacker); illegal → turnover.
+ * Build-up (touches 1..earlyShotTouch-1, default 1-3): legal iff the flick crossed
+ * the gate AND every cap stayed in the pitch. Legal → advance; illegal → turnover.
  *
- * The shot (touch === shotTouch): the gate does not apply. If the flicked cap
- * entered the attacker's target goal → goal (score, then kickoff to the other
- * side, or win at goalsToWin). Otherwise → turnover. Only the shot can score.
+ * Early shot (touch === earlyShotTouch, default 4): an OPTIONAL shot against a
+ * near-perfect keeper. Into the goal → goal (no gate needed). Otherwise, keep every
+ * cap on the pitch → advance to the final shot (a rebound in play doesn't cost the
+ * turn); a cap off the pitch → turnover.
+ *
+ * Final shot (touch === shotTouch, default 5): must thread the gate AND enter the
+ * goal to score; otherwise turnover.
  *
  * On turnover/goal the caller repositions caps for the new attacker (makeTriangle).
  */
@@ -54,34 +57,34 @@ export const applyFlick = (
     state: { ...state, attacker: other(state.attacker), touch: 1 },
     result: "turnover",
   });
-
-  if (state.touch < config.shotTouch) {
-    const legal = flick.crossedGate && flick.flickedEnding === "rest" && !flick.anyCapLeftPitch;
-    if (legal) {
-      return { state: { ...state, touch: state.touch + 1 }, result: "advance" };
+  const advance = (): ApplyOutcome => ({
+    state: { ...state, touch: state.touch + 1 },
+    result: "advance",
+  });
+  const score = (): ApplyOutcome => {
+    const scores: [number, number] = [state.scores[0], state.scores[1]];
+    scores[state.attacker] += 1;
+    if (scores[state.attacker] >= config.goalsToWin) {
+      return { state: { ...state, scores, phase: "won", winner: state.attacker }, result: "win" };
     }
-    return turnover();
-  }
-
-  // touch === shotTouch: the shot.
-  const scored = flick.flickedEnding === goalZone(attackingGoal(state.attacker));
-  if (!scored) {
-    return turnover();
-  }
-
-  const scores: [number, number] = [state.scores[0], state.scores[1]];
-  scores[state.attacker] += 1;
-
-  if (scores[state.attacker] >= config.goalsToWin) {
-    return {
-      state: { ...state, scores, phase: "won", winner: state.attacker },
-      result: "win",
-    };
-  }
-
-  // Goal (not a win): the other side attacks next with a fresh triangle.
-  return {
-    state: { ...state, scores, attacker: other(state.attacker), touch: 1 },
-    result: "goal",
+    return { state: { ...state, scores, attacker: other(state.attacker), touch: 1 }, result: "goal" };
   };
+
+  const earlyShotTouch = config.shotTouch - 1;
+  const enteredGoal = flick.flickedEnding === goalZone(attackingGoal(state.attacker));
+
+  // Build-up.
+  if (state.touch < earlyShotTouch) {
+    const legal = flick.crossedGate && flick.flickedEnding === "rest" && !flick.anyCapLeftPitch;
+    return legal ? advance() : turnover();
+  }
+
+  // Early shot (optional). Score, or keep the ball for the final shot, or turnover.
+  if (state.touch === earlyShotTouch) {
+    if (enteredGoal) return score();
+    return flick.anyCapLeftPitch ? turnover() : advance();
+  }
+
+  // Final shot: gate + goal required.
+  return enteredGoal && flick.crossedGate ? score() : turnover();
 };

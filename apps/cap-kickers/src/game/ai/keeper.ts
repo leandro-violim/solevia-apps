@@ -9,6 +9,11 @@ export const KEEPER_DIFFS: Record<Difficulty, KeeperParams> = {
   hard: { maxSpeed: 920, reactionDelay: 0.06 },
 };
 
+// The near-perfect keeper on the OPTIONAL early shot (touch 4): reacts instantly
+// and moves faster than any shot can be aimed away from, so only a superb corner
+// gets past. This is what makes the early shot a real gamble (REWARDS/rules).
+export const ELITE_KEEPER: KeeperParams = { maxSpeed: 1600, reactionDelay: 0 };
+
 const TRACK_GAIN = 9; // proportional gain (1/s); high enough to reach maxSpeed quickly
 
 /** Velocity in y toward `toY`, clamped to ±maxSpeed; 0 when aligned. Pure. */

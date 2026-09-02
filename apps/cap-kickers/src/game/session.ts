@@ -11,7 +11,7 @@ import {
   type TurnResult,
 } from "./rules/match";
 import { PITCH, CAP_RADIUS, PHYSICS, MATCH, KEEPER } from "./constants";
-import { KEEPER_DIFFS, keeperTrackVelocityY } from "./ai/keeper";
+import { KEEPER_DIFFS, ELITE_KEEPER, keeperTrackVelocityY } from "./ai/keeper";
 import { type Difficulty } from "./ai/policy";
 
 export type SessionConfig = {
@@ -35,6 +35,7 @@ type KeeperState = {
   mouthMin: number;
   mouthMax: number;
   reactionElapsed: number;
+  elite: boolean; // near-perfect keeper (the optional early shot on touch 4)
 };
 
 const defaults = (): SessionConfig => ({
@@ -127,9 +128,13 @@ export class GameSession {
     this.world.getBody(capId)!.velocity = { x: velocity.x, y: velocity.y };
     this.phase = "resolving";
     this.selectedCapId = null;
-    if (this.match.touch === this.cfg.match.shotTouch) {
-      // Snapshot the shot setup (once per possession) so a miss can be retried.
-      if (!this.extraShotConsumed) {
+    const finalShot = this.match.touch === this.cfg.match.shotTouch;
+    const earlyShot = this.match.touch === this.cfg.match.shotTouch - 1;
+    if (finalShot || earlyShot) {
+      // Snapshot the FINAL shot setup (once per possession) so a miss can be retried
+      // via a rewarded ad. The early shot isn't retriable — a rebound already gives
+      // the final shot for free.
+      if (finalShot && !this.extraShotConsumed) {
         this.preShot = {
           attacker: this.match.attacker,
           positions: CAP_IDS.map((id) => {
@@ -138,7 +143,7 @@ export class GameSession {
           }),
         };
       }
-      this.spawnKeeper();
+      this.spawnKeeper(earlyShot); // near-perfect keeper on the optional early shot
     }
   }
 
@@ -150,12 +155,13 @@ export class GameSession {
    * the goal happens off-screen. Null on every other touch.
    */
   framedGoal(): GoalSide | null {
-    return this.match.touch === this.cfg.match.shotTouch && this.match.phase !== "won"
+    // Pre-frame the goal on the early shot too, so a touch-4 gamble is on-screen.
+    return this.match.touch >= this.cfg.match.shotTouch - 1 && this.match.phase !== "won"
       ? attackingGoal(this.match.attacker)
       : null;
   }
 
-  private spawnKeeper(): void {
+  private spawnKeeper(elite: boolean): void {
     const defended = attackingGoal(this.match.attacker); // goal being shot at
     const goalLineX = defended === "left" ? 0 : this.cfg.pitch.width;
     const inx = defended === "left" ? KEEPER.inset + KEEPER.radius : -(KEEPER.inset + KEEPER.radius);
@@ -168,6 +174,7 @@ export class GameSession {
       mouthMin: midY - half + KEEPER.radius,
       mouthMax: midY + half - KEEPER.radius,
       reactionElapsed: 0,
+      elite,
     };
     this.world.addBody({
       id: "keeper",
@@ -194,7 +201,7 @@ export class GameSession {
     const keeperBefore = ks ? this.world.getBody("keeper") : undefined;
     if (ks && keeperBefore) {
       ks.reactionElapsed += dt;
-      const params = KEEPER_DIFFS[this.cfg.keeperDifficulty];
+      const params = ks.elite ? ELITE_KEEPER : KEEPER_DIFFS[this.cfg.keeperDifficulty];
       if (ks.reactionElapsed >= params.reactionDelay) {
         const shot = this.shotCapId ? this.world.getBody(this.shotCapId) : undefined;
         // Anticipate where the shot will CROSS the goal line (not its current y),
