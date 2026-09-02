@@ -5,6 +5,8 @@ import { z } from "zod";
 import { AdBanner } from "../components/AdBanner";
 import {
   maybeShowInterstitial,
+  noteRunStarted,
+  isFirstRunOfSession,
   preloadInterstitial,
   refreshBanner,
   showRewarded,
@@ -458,6 +460,7 @@ function PlayPage() {
       runStartAtRef.current = Date.now();
       coinAdsUsedRef.current = 0; // reset the per-run rewarded-coins cap
       interAdsRef.current = 0; // reset the per-run interstitial cap
+      noteRunStarted(); // first run of a session gets the lighter ad cadence
       track("run_start", { mode, difficulty, phase_start: phase }); // P1-T6
     }
     // Warm up the interstitial now so it's ready (if online) by phase end.
@@ -757,14 +760,12 @@ function PlayPage() {
     setAdvancing(true);
     const next = Math.min(phase + 1, TOTAL_STAGES);
     // Interstitial at a phase-complete break (Pop Challenge): every Nth phase —
-    // i.e. the world MIDPOINT (phase 4) and the WORLD CHANGE (phase 8). A natural
-    // "level complete" moment; cooldown-gated in ads.ts + a per-run cap here.
+    // the world MIDPOINT (phase 4) and the WORLD CHANGE (phase 8). A natural
+    // "level complete" moment; cooldown-gated in ads.ts + a per-run cap here. The
+    // first run of a session uses the lighter cadence (world changes only).
     const cfgi = CONFIG.ads.interstitial;
-    if (
-      !isZen &&
-      phaseInRound(phase) % cfgi.everyPhases === 0 &&
-      interAdsRef.current < cfgi.maxPerRun
-    ) {
+    const everyPhases = isFirstRunOfSession() ? cfgi.firstRunEveryPhases : cfgi.everyPhases;
+    if (!isZen && phaseInRound(phase) % everyPhases === 0 && interAdsRef.current < cfgi.maxPerRun) {
       interAdsRef.current += 1;
       await maybeShowInterstitial("phase_break");
     }

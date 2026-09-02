@@ -136,7 +136,9 @@ per-run interstitial cap) or are noted in Decisions.
 call, interstitials now fire at a phase-complete break every 4th phase in Pop Challenge —
 the world midpoint (phase 4) and world change (phase 8), i.e. stages 4/8/12/16/20/24/28 —
 plus one at run end, capped at `maxPerRun` (8) with a 20 s safety-floor cooldown
-(`CONFIG.ads.interstitial`). All are genuine level-complete transitions (never app-open,
+(`CONFIG.ads.interstitial`). The **first run of each session is lighter** — world changes
+only (`firstRunEveryPhases: 8`), skipping the phase-4 midpoints — for new-player
+retention. All are genuine level-complete transitions (never app-open,
 never mid-play, none in Pop for Fun). This is more aggressive than before, so **Cowork:
 confirm it against AdMob's current interstitial frequency guidance** during the final
 review; the three knobs (`everyPhases`, `cooldownMs`, `maxPerRun`) make it a one-line dial

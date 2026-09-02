@@ -23,6 +23,9 @@ export const CONFIG = {
       // phase — i.e. the world MIDPOINT (phase 4) and the WORLD CHANGE (phase 8):
       // stages 4, 8, 12, 16, 20, 24, 28 — plus one at run end.
       everyPhases: 4,
+      // Retention grace: the FIRST run of a session is lighter — only the world
+      // changes (phase 8/16/24), not the phase-4 midpoints. Later runs use everyPhases.
+      firstRunEveryPhases: 8,
       cooldownMs: 20_000, // safety floor: never two interstitials within this window
       maxPerRun: 8, // hard cap per run (7 phase-breaks + run end)
     },

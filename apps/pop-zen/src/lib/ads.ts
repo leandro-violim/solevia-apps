@@ -298,8 +298,18 @@ export async function showInterstitial(): Promise<boolean> {
 // ── §2 Interstitial cadence gate (Better Ads Experiences) ─────────────────
 // Interstitials only at natural breaks, and rate-limited: ≤1 per N completed
 // runs AND a cooldown, with the first run of a session always free. All numbers
-// live in CONFIG.ads.interstitial. Session-scoped timestamp (reset each launch).
+// live in CONFIG.ads.interstitial. Session-scoped state (reset each launch).
 let lastInterstitialAt = 0;
+let sessionRuns = 0;
+
+/** Call once when a run starts, so the first run of a session can be lighter. */
+export function noteRunStarted(): void {
+  sessionRuns += 1;
+}
+/** True during the very first run after app launch (retention grace). */
+export function isFirstRunOfSession(): boolean {
+  return sessionRuns <= 1;
+}
 
 /**
  * Show an interstitial at a natural phase-complete break IF the cooldown allows.
