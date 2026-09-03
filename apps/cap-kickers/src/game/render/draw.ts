@@ -3,9 +3,21 @@
 
 import { type CapStyle } from "../caps/styles";
 import { type PitchStyle } from "../pitches/styles";
+import { pitchTextureReady } from "../../lib/pitch-textures";
 
 type Ctx = CanvasRenderingContext2D;
 type Rect = { x: number; y: number; w: number; h: number };
+
+/** Draw an image to COVER a rect (object-fit: cover), centre-cropped. */
+const drawImageCover = (ctx: Ctx, img: CanvasImageSource, r: Rect) => {
+  const iw = (img as HTMLImageElement).naturalWidth || (img as HTMLCanvasElement).width;
+  const ih = (img as HTMLImageElement).naturalHeight || (img as HTMLCanvasElement).height;
+  if (!iw || !ih || r.w <= 0 || r.h <= 0) return;
+  const s = Math.max(r.w / iw, r.h / ih);
+  const dw = iw * s;
+  const dh = ih * s;
+  ctx.drawImage(img, r.x + (r.w - dw) / 2, r.y + (r.h - dh) / 2, dw, dh);
+};
 
 // Deterministic pseudo-noise in [0,1) for texture placement (Math.sin is fine;
 // Math.random is banned in src/game so surfaces render identically every frame).
@@ -142,11 +154,18 @@ const fillSurface = (ctx: Ctx, r: Rect, style: PitchStyle) => {
  */
 export const drawPitch = (ctx: Ctx, r: Rect, scale: number, style: PitchStyle) => {
   const radius = 18 * Math.max(0.5, scale);
+  // A real surface photo (Project C) covers the rect; else the procedural fill.
+  // Undefined until decoded, so it falls back to procedural — never a blank frame.
+  const photo = pitchTextureReady(style.photo);
   ctx.save();
   roundRectPath(ctx, r, radius);
   ctx.clip();
-  fillSurface(ctx, r, style);
+  if (photo) drawImageCover(ctx, photo, r);
+  else fillSurface(ctx, r, style);
   ctx.restore();
+
+  // A photo that already carries the field lines needs no procedural markings.
+  if (photo && style.photoHasLines) return;
 
   // Markings (paint on grass/cement, chalk/pencil on wood via lineAlpha).
   const lw = Math.max(2, 3 * scale);
