@@ -195,7 +195,7 @@ function drawTutorialScene(
 
   // A real goal net on the right — this is a soccer game.
   const goal = { x: field.x + field.w - 2, y: cy - 20, w: 16, h: 40 };
-  drawGoal(ctx, goal, "right", scale, pitch.chalkLines);
+  drawGoal(ctx, goal, "right", scale);
 
   switch (stepId) {
     case "flick": {

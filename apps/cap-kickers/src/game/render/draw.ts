@@ -327,45 +327,12 @@ export const drawPitch = (ctx: Ctx, r: Rect, scale: number, style: PitchStyle) =
 };
 
 /**
- * A goal, drawn in the outward rect `g` (protruding beyond the pitch end line).
- * `side` picks which vertical edge is the mouth (open, goal-line side) vs the back.
- * `chalk` swaps the hatched net for a hand-drawn chalk goal that matches a chalk pitch.
+ * A goal: white/gold frame with posts and a hatched net, drawn in the outward
+ * rect `g` (protruding beyond the pitch end line). `side` picks which vertical
+ * edge is the mouth (open) vs the back of the net.
  */
-export const drawGoal = (ctx: Ctx, g: Rect, side: "left" | "right", scale: number, chalk = false) => {
+export const drawGoal = (ctx: Ctx, g: Rect, side: "left" | "right", scale: number) => {
   const lw = Math.max(3, 4 * scale);
-
-  if (chalk) {
-    // Improvised chalk goal: a 3-sided box (mouth open toward the field) + a couple
-    // of loose net hatches, in the same warm chalk as the field.
-    const backX = side === "left" ? g.x : g.x + g.w; // outer (back of net)
-    const mouthX = side === "left" ? g.x + g.w : g.x; // goal-line side (open)
-    const amp = Math.max(1.4, g.h * 0.02);
-    const over = lw * 1.3;
-    ctx.save();
-    ctx.strokeStyle = "#f4ede0";
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    for (const p of [
-      { w: lw * 2.1, a: 0.24 },
-      { w: lw * 1.05, a: 0.95 },
-    ]) {
-      ctx.globalAlpha = p.a;
-      ctx.lineWidth = p.w;
-      chalkLine(ctx, mouthX, g.y, backX, g.y, amp, 71, over); // top bar
-      chalkLine(ctx, mouthX, g.y + g.h, backX, g.y + g.h, amp, 83, over); // bottom bar
-      chalkLine(ctx, backX, g.y, backX, g.y + g.h, amp, 91, over * 0.5); // back line
-    }
-    // Loose net hatches (light).
-    ctx.globalAlpha = 0.3;
-    ctx.lineWidth = Math.max(1, lw * 0.5);
-    for (let k = 1; k <= 2; k++) {
-      const hx = mouthX + (backX - mouthX) * (k / 3);
-      chalkLine(ctx, hx, g.y + g.h * 0.08, hx, g.y + g.h * 0.92, amp * 0.8, 100 + k * 7, 0);
-    }
-    ctx.restore();
-    return;
-  }
-
   ctx.save();
   // Net backing.
   ctx.fillStyle = "rgba(255,255,255,0.14)";

@@ -378,7 +378,7 @@ function PlayPage() {
         const outX = pitchToScreen({ x: outwardX, y: midY }, pres).x;
         const side =
           Math.abs(outX - gx) < Math.abs(outX - (gx + gw)) ? "left" : "right";
-        drawGoal(ctx, { x: gx, y: gy, w: gw, h: gh }, side, scale, pitchStyle.chalkLines);
+        drawGoal(ctx, { x: gx, y: gy, w: gw, h: gh }, side, scale);
       }
 
       // Goal celebration: hold on the roar with the caps hidden, then pop the
