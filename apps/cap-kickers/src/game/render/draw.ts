@@ -147,6 +147,21 @@ const fillSurface = (ctx: Ctx, r: Rect, style: PitchStyle) => {
 };
 
 /**
+ * Fill a SCREEN-space rect (usually the whole canvas) with the pitch's surface so
+ * the out-of-field surround reads as the same table, not a green void. Slightly
+ * darkened so the playfield pops. No-op for procedural (photo-less) styles.
+ */
+export const drawSurfaceFill = (ctx: Ctx, style: PitchStyle, r: Rect) => {
+  const photo = pitchTextureReady(style.photo);
+  if (!photo) return;
+  drawImageCover(ctx, photo, r);
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.22)";
+  ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.restore();
+};
+
+/**
  * The pitch on a chosen surface (grass / school desk / table / cement) plus its
  * markings (border, halfway line, center circle/spot, penalty boxes + arcs), all
  * proportional to the screen rect so it's flip-agnostic (the rect is symmetric).
@@ -167,55 +182,65 @@ export const drawPitch = (ctx: Ctx, r: Rect, scale: number, style: PitchStyle) =
   // A photo that already carries the field lines needs no procedural markings.
   if (photo && style.photoHasLines) return;
 
-  // Markings (paint on grass/cement, chalk/pencil on wood via lineAlpha).
+  // Markings. On chalk surfaces (wood/desk) each mark is drawn as TWO passes — a
+  // wide soft "dust" bleed under a brighter core — for a hand-drawn chalk feel.
   const lw = Math.max(2, 3 * scale);
-  ctx.save();
-  ctx.globalAlpha = style.lineAlpha;
-  ctx.strokeStyle = style.line;
-  ctx.fillStyle = style.line;
-  ctx.lineWidth = lw;
-  ctx.lineJoin = "round";
   const inset = lw;
-  roundRectPath(
-    ctx,
-    { x: r.x + inset, y: r.y + inset, w: r.w - inset * 2, h: r.h - inset * 2 },
-    radius,
-  );
-  ctx.stroke();
-
   const cx = r.x + r.w / 2;
   const cy = r.y + r.h / 2;
-  // Halfway line + center circle + spot.
-  ctx.beginPath();
-  ctx.moveTo(cx, r.y + inset);
-  ctx.lineTo(cx, r.y + r.h - inset);
-  ctx.stroke();
   const cr = r.h * 0.17;
-  ctx.beginPath();
-  ctx.arc(cx, cy, cr, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(cx, cy, lw * 0.9, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Penalty boxes + arcs at each end.
   const boxW = r.w * 0.12;
   const boxH = r.h * 0.55;
-  for (const left of [true, false]) {
-    const bx = left ? r.x + inset : r.x + r.w - inset - boxW;
-    const by = cy - boxH / 2;
-    ctx.strokeRect(bx, by, boxW, boxH);
-    // penalty spot
-    const spotX = left ? r.x + r.w * 0.09 : r.x + r.w * 0.91;
-    ctx.beginPath();
-    ctx.arc(spotX, cy, lw * 0.8, 0, Math.PI * 2);
-    ctx.fill();
-    // arc
-    ctx.beginPath();
-    const a = r.h * 0.13;
-    if (left) ctx.arc(bx + boxW, cy, a, -Math.PI / 2.4, Math.PI / 2.4);
-    else ctx.arc(bx, cy, a, Math.PI - Math.PI / 2.4, Math.PI + Math.PI / 2.4);
+
+  // All marking geometry in one place so it can be replayed per chalk pass.
+  const paintMarks = () => {
+    roundRectPath(
+      ctx,
+      { x: r.x + inset, y: r.y + inset, w: r.w - inset * 2, h: r.h - inset * 2 },
+      radius,
+    );
     ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, r.y + inset);
+    ctx.lineTo(cx, r.y + r.h - inset);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, lw * 0.9, 0, Math.PI * 2);
+    ctx.fill();
+    for (const left of [true, false]) {
+      const bx = left ? r.x + inset : r.x + r.w - inset - boxW;
+      const by = cy - boxH / 2;
+      ctx.strokeRect(bx, by, boxW, boxH);
+      const spotX = left ? r.x + r.w * 0.09 : r.x + r.w * 0.91;
+      ctx.beginPath();
+      ctx.arc(spotX, cy, lw * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      const a = r.h * 0.13;
+      if (left) ctx.arc(bx + boxW, cy, a, -Math.PI / 2.4, Math.PI / 2.4);
+      else ctx.arc(bx, cy, a, Math.PI - Math.PI / 2.4, Math.PI + Math.PI / 2.4);
+      ctx.stroke();
+    }
+  };
+
+  ctx.save();
+  ctx.strokeStyle = style.line;
+  ctx.fillStyle = style.line;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  const passes = style.chalkLines
+    ? [
+        { w: lw * 2.4, a: style.lineAlpha * 0.28 }, // soft chalk dust
+        { w: lw * 1.15, a: style.lineAlpha }, // brighter core
+      ]
+    : [{ w: lw, a: style.lineAlpha }];
+  for (const p of passes) {
+    ctx.globalAlpha = p.a;
+    ctx.lineWidth = p.w;
+    paintMarks();
   }
   ctx.restore();
 };

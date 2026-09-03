@@ -7,7 +7,7 @@ import { PITCH, PHYSICS, CAP_RADIUS, SWIPE, FLICK, MATCH } from "../game/constan
 import { makePresentation, pitchToScreen, screenToPitch } from "../game/presentation";
 import { capAtPoint, flickToVelocity, type FlickSample } from "../game/input-mapping";
 import { chooseAiFlick } from "../game/ai/policy";
-import { drawPitch, drawGoal, drawCap, drawKeeper } from "../game/render/draw";
+import { drawPitch, drawGoal, drawCap, drawKeeper, drawSurfaceFill } from "../game/render/draw";
 import { styleById, opponentFor } from "../game/caps/styles";
 import { capSpriteReady } from "../lib/cap-sprites";
 import { loadCapStyleId } from "../game/caps/storage";
@@ -288,6 +288,10 @@ function PlayPage() {
       stepFx(fx, dt);
       const sh = shakeOffset(fx);
       ctx.translate(sh.x, sh.y);
+
+      // Full-screen surface fill (the table extends beyond the field) — screen space,
+      // oversized to cover the screen-shake offset. No-op for procedural pitches.
+      drawSurfaceFill(ctx, pitchStyle, { x: -40, y: -40, w: cssW + 80, h: cssH + 80 });
 
       const pres = makePresentation(PITCH, { width: cssW, height: cssH }, flippedRef.current);
       const topLeft = pitchToScreen({ x: 0, y: 0 }, pres);

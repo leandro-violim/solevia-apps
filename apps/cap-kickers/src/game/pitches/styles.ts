@@ -15,11 +15,12 @@ export type PitchStyle = {
   texture: PitchTexture;
   photo?: string; // optional real surface texture (in /pitch-textures/); overrides the procedural fill
   photoHasLines?: boolean; // the photo already has the field drawn → skip procedural markings
+  chalkLines?: boolean; // draw the field markings as hand-drawn chalk (for wood/desk surfaces)
 };
 
 export const PITCH_STYLES: PitchStyle[] = [
   { id: "grass", name: "Grass", base: "#46cf6d", base2: "#3cbb61", edge: "#0a2814", line: "#f6fff9", lineAlpha: 1, texture: "stripes" },
-  { id: "school", name: "School", base: "#e3b787", base2: "#d4a468", edge: "#7a4e22", line: "#fbf5ea", lineAlpha: 0.82, texture: "wood", photo: "school-desk.png", photoHasLines: true },
+  { id: "school", name: "School", base: "#e3b787", base2: "#d4a468", edge: "#3a2413", line: "#f4ede0", lineAlpha: 0.9, texture: "wood", photo: "wood-plain.png", chalkLines: true },
   { id: "table", name: "Table", base: "#7d5636", base2: "#6a4527", edge: "#2c1a0d", line: "#f3e7d5", lineAlpha: 0.78, texture: "wood" },
   { id: "cement", name: "Cement", base: "#b7bcbd", base2: "#a6acad", edge: "#4c5254", line: "#fdf6d8", lineAlpha: 0.7, texture: "concrete" },
   // Unlockable pitches (Trophy Cabinet). First-pass procedural palettes — refine
