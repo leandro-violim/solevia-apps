@@ -61,13 +61,10 @@ Claude Code has since run `bun install` and `bunx cap sync ios` — verified:
    `level_complete` and `campaign_complete`** → then import them in
    **Google Ads ▸ Tools ▸ Conversions**. Optimise toward those, not `first_open`.
 3. **Verify in DebugView** (§5) before shipping.
-4. **Leandro only — delete the old `solevia-games` Firebase project.** It is orphaned:
-   its apps are unlinked from AdMob and nothing in the repo points at it. Deleting a
-   project is irreversible, so Cowork deliberately did not do it.
-   → <https://console.firebase.google.com/u/1/project/solevia-games/settings/general>
-   ▸ scroll to the bottom ▸ **Delete project** ▸ type `solevia-games` to confirm.
-   Its GA4 property `solevia-games` (`552448669`) goes with it; if it lingers, bin it
-   from GA Admin ▸ Property details ▸ **Move to Trash Can**.
+4. ~~Delete the old `solevia-games` Firebase project.~~ **Done 2026-09-01 by Leandro.** The
+   project is gone (Firebase returns "recently deleted"; Google Cloud can restore it for 30 days),
+   and its GA4 property `552448669` sits in the GA Trash until **Oct 6, 2026**. `cap-kickers` was
+   re-verified afterwards: Analytics Enabled, AdMob 2 linked apps, Google Ads 1 linked account.
 
 Housekeeping: `project.pbxproj.bak-before-firebase` is the pre-edit backup — keep it
 until a build succeeds, then delete. `AppDelegate.swift.bak-before-firebase` is an

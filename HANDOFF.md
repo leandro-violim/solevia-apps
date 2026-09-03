@@ -116,8 +116,12 @@ Leandro's to delete (FIREBASE-SETUP.md "Still to do" §4).
   Time** on *both* Cap Kickers (`552486617`) and Zen Bubbles (`552089130`). GA warns the change
   only affects data going forward; there was none, so there is no seam. Report days now break at
   US Eastern midnight — that is the boundary any day-over-day retention or ARPDAU number uses.
-- The old `solevia-games` project is **still alive and orphaned** — deleting a project is
-  irreversible, so Cowork left it for Leandro. Instructions in FIREBASE-SETUP.md "Still to do" §4.
+- The old `solevia-games` project was **deleted by Leandro on 2026-09-01 (ET)**, after Cowork
+  set up the confirmation dialog for him. Firebase now returns "This project has been recently
+  deleted" for it, and its GA4 property (`552448669`) is in the GA Trash with final deletion
+  **Oct 6, 2026**. Google Cloud keeps the project restorable for 30 days if anything turns out
+  to have depended on it — nothing should. Verified afterwards that `cap-kickers` was unaffected:
+  Analytics **Enabled**, AdMob **2 linked apps**, Google Ads **1 linked account**.
 
 **Uncommitted:** yes — the two config files and the two docs. Safe to commit.
 
