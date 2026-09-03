@@ -8,9 +8,41 @@
 
 ---
 
+## ⭐ Update — ad reliability fix + rebuilt AAB (this session)
+Since the first 1.1 notes were written, we chased "rewarded ads never showing / zero
+impressions" and shipped a real fix. Summary of the delta:
+
+- **Fixed: rewarded/interstitial could stay stuck "not ready."** We now mark an ad
+  ready when its load **promise resolves**, not only via the plugin's `Loaded` event
+  (that event can fire before its async listener attaches on fast loads, and be
+  missed). This previously suppressed the "one more shot" offer and the Cabinet
+  "Watch for Caps" button. Applies to **both iOS and Android** (shared bundle).
+- **Watch button now loads-then-shows** a rewarded ad on demand instead of no-opping
+  if none was preloaded.
+- **Removed** the temporary "🎯 Test: final shot" home button and all test-only
+  scaffolding from the shipped build.
+- **Verified end-to-end on an Android emulator** with Google's test ad unit: request →
+  load → show → reward all work. (Root cause of the emulator failures was the emulator
+  being in **Airplane Mode**, not the app.)
+- **The AAB below was rebuilt** from a clean production build (live ad IDs, no test IDs,
+  no drill) with these fixes. iOS project re-synced to match — see the iOS note.
+
+**About the production zero-impressions:** it is **not a code bug.** The live rewarded
+unit is still in AdMob **"limited ad serving"** (normal for a freshly-linked app) and
+begins filling once the app gets real installs/traffic over a few days. Nothing to
+change in the app; just monitor AdMob once 1.1 is live.
+
+---
+
 ## Build artifacts (ready now)
 - **Android AAB:** `apps/cap-kickers/android/app/build/outputs/bundle/release/app-release.aab` — 9.1 MB, versionCode 2, signed with `~/keys/capkickers-upload.jks` (Play App Signing). This file is **not** in git; it's local on the Mac.
-- **iOS:** production (LIVE-ads) web build already synced into `ios/App/App`. To ship: open `apps/cap-kickers/ios/App/App.xcodeproj` (SPM project, no `.xcworkspace`) → Product ▸ Archive → Distribute ▸ App Store Connect ▸ Upload. The GoogleMobileAds "Upload Symbols Failed" dSYM warning is harmless.
+- **iOS:** production (LIVE-ads) web build re-synced into `ios/App/App` **with the ad
+  reliability fix**, so iOS and Android now run identical code. To ship: open
+  `apps/cap-kickers/ios/App/App.xcodeproj` (SPM project, no `.xcworkspace`) → Product ▸
+  Archive → Distribute ▸ App Store Connect ▸ Upload. The GoogleMobileAds "Upload
+  Symbols Failed" dSYM warning is harmless. **If an iOS 1.1 (build 2) archive was made
+  BEFORE this session's ad fix, re-archive to include it** for full parity (the project
+  is already synced and ready).
 - Test vs live ads is automatic: this synced build has **no** test-ad IDs — it ships the real live units. (Force test ads only for device QA with `VITE_USE_TEST_ADS=true bun run build:mobile`.)
 
 ---
