@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 import { useT } from "../lib/i18n";
 
-export const APP_VERSION = "1.0";
+export const APP_VERSION = "1.1";
 export const LEGAL_UPDATED = "August 2026";
 export const STUDIO = "Sole Via Entertainment LLC";
 export const SUPPORT_EMAIL = "contact@solevia.app";

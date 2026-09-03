@@ -1,9 +1,9 @@
-# Cap Kickers — Release notes: v1.0 (build 2 / versionCode 2)
+# Cap Kickers — Release notes: v1.1 (build 2 / versionCode 2)
 
 **App:** Cap Kickers — bottle-cap finger-flick soccer
 **Bundle:** `app.solevia.capkickers` · **Studio:** Sole Via Entertainment LLC
-**Branch/commit:** `cap-kickers` @ `51346c1`
-**Version:** 1.0 · **iOS build 2** · **Android versionCode 2** (marketing version stays 1.0 — this is the debut store release; only the build number was bumped so re-uploads get a unique code)
+**Branch:** `cap-kickers`
+**Version:** 1.1 · **iOS build 2** · **Android versionCode 2** (marketing version 1.0 → 1.1 — this is an update over the live 1.0; in-app About screen also reads v1.1)
 **AdMob:** `pub-9628521678374705` (live units in `src/lib/ads.ts`) · **Firebase/GA4:** project `cap-kickers`, property `552486617`
 
 ---
@@ -46,14 +46,19 @@
 
 1. **iOS — archive & submit.** Archive build 2 in Xcode, upload, then in App Store Connect attach it and submit for review. First submission: complete the listing, screenshots (iPhone + iPad — universal build), App Privacy label (tracking = Yes via AdMob/IDFA + ATT), and age rating (4+ / Everyone).
 2. **Android — upload AAB.** Upload `app-release.aab` (versionCode 2) to Play Console, complete the Data safety form, content rating (Everyone), and roll out.
-3. **AdMob — link the store listings (the reason rewarded ads show ZERO impressions).** AdMob ▸ Apps ▸ **Cap Kickers (Android)** ▸ **"Add store"** → link the live Play listing (use *Add store* on the existing row, NOT "create new app", which orphans the compiled ID). AdMob then reviews 2–3 days → "Ready · Ad serving enabled". Verify the **iOS** app is linked too. Real ad units no-fill until this is done.
+3. **AdMob — store linking is DONE; now monitor for impressions.** Both apps are linked. Rewarded/interstitial impressions were still zero on 1.0 — expected while a brand-new AdMob app/units sit in "limited ad serving" (24–48h+ after linking) and before real install traffic arrives. The 1.1 code path is verified correct (preloads on launch, shows only when ready, right unit IDs, reward event handled), and 1.1 adds a start-of-session interstitial, so watch impressions once 1.1 is live. If still zero after a few days of real installs, check AdMob ▸ the app ▸ status = "Ready · Ad serving enabled" (not "Getting ready"/"Limited") and that ad requests are arriving (AdMob ▸ Ad review center / Reports).
 4. **AdMob — banner auto-refresh.** For each banner ad unit, set **Auto-refresh = 60 seconds** (AdMob allows 30–120s; faster or code-driven reload is what gets penalized). This pairs with the app change so banners rotate compliantly.
 5. **AdMob — max ad content rating = G** (matches 4+/Everyone).
 6. **app-ads.txt** — already live on `solevia.app`; confirm AdMob has crawled/verified it against both store listings (can take up to ~7 days).
 7. **Consent/UMP** — left OFF (fine for US / Brazil / India). Must be re-enabled before EEA/UK/Switzerland availability.
 
-## Store "What's New" text (debut — copy/paste)
-> Cap Kickers is here! Flick your bottle caps across the pitch, thread them past your rivals, and score to win. Play the Campaign, challenge a friend in 2-Player pass-and-play, or take on the AI. Unlock cap skins, pitches and stadium sounds in the Trophy Cabinet. No ads during a match — just quick, satisfying flick-soccer. ⚽
+## Store "What's New" text (v1.1 update — copy/paste)
+> • New 2-Player pass-and-play mode — challenge a friend on one phone
+> • Clearer how-to-play tutorial (and you can turn it off)
+> • A bigger goal celebration and smoother shooting
+> • Real match sounds — referee whistle and goal roar
+> • Trophy Cabinet: earn Caps and unlock skins, pitches and stadium sounds
+> • Polish and stability fixes throughout
 
 ## Notes / non-blockers
 - Ad-campaign creatives (Higgsfield images + a promo video, ~19 MB) live locally at `store-assets/ads/` and are **not** committed (kept out of git history). They're for ad campaigns, not the store submission — grab them from the Mac if needed.
