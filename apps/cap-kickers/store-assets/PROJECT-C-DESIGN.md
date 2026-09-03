@@ -37,7 +37,7 @@ Nostalgic **"bottle-cap football on a school desk."** Real materials, warm and t
 
 ## Milestones / phases
 - **M1 — hero cap (DONE).** Photoreal top-down blue cap wired as default `soda-blue`; renders top-down w/ spin + shadow in a real match. Commit on branch.
-- **M2 — pitch (IN PROGRESS).** Photo-texture path added; school-desk (baked-line) prototype confirmed the direction. **Next:** clean full-screen plain-surface + hand-drawn procedural chalk + table-tinted out-of-bounds, demoed on the **plain-wood desk** (waiting on `wood-plain.png`).
+- **M2 — pitch (DONE).** Plain-wood surface fills the screen (`drawSurfaceFill`), improvised **hand-drawn chalk** field drawn on top at accurate geometry (deterministic wobble/overshoot), and the whole pitch is **baked to an offscreen buffer + blitted** so the chalk is static (no per-frame shimmer) and cheap. Goals kept as the original hatched net (chalk-goal experiment was reverted per feedback). Chalk look + no-shimmer both approved on-device.
 - **Phase A — full cap set** (both teams + unlockable skins as photoreal top-down sprites; perfect 90° overhead batch).
 - **Phase B — pitch variants** (grass/artificial/concrete/desk → the pitch unlockables become real surfaces; user already generated plain grass/artificial/concrete).
 - **Phase C — UI/menu restyle** to the warm-wood Cabinet language.

@@ -7,14 +7,24 @@
 // styleId → sprite filename. Project C uses photoreal top-down caps (Higgsfield);
 // the metal-* set is the older baked prototype. Extension varies (png/webp) until
 // the whole set is re-encoded to WebP.
+// Project C: photoreal top-down cap sprites (Higgsfield), one per style, mapped by
+// colour. neon-pink has no matching photo yet → vector fallback.
 const SPRITE_FILES: Record<string, string> = {
-  "soda-blue": "soda-blue.png", // Project C hero cap (photoreal, top-down)
-  "metal-silver": "metal-silver.webp",
-  "metal-red": "metal-red.webp",
-  "metal-blue": "metal-blue.webp",
-  "metal-green": "metal-green.webp",
-  "metal-orange": "metal-orange.webp",
-  "metal-purple": "metal-purple.webp",
+  "soda-blue": "soda-blue.png",
+  "crown-red": "crown-red.png",
+  "spring-teal": "spring-teal.png",
+  "sport-orange": "sport-orange.png",
+  "retro-gold": "retro-gold.png",
+  "grape-purple": "grape-purple.png",
+  "lime-green": "lime-green.png",
+  "brass-gold": "brass-gold.png",
+  "metal-silver": "metal-silver.png",
+  "metal-red": "metal-red.png",
+  "metal-blue": "metal-blue.png",
+  "metal-green": "metal-green.png",
+  "metal-orange": "metal-orange.png",
+  "metal-purple": "metal-purple.png",
+  "gold-legendary": "gold-legendary.png",
 };
 
 const cache = new Map<string, HTMLImageElement>();
