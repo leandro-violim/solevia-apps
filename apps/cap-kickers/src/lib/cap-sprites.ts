@@ -7,24 +7,25 @@
 // styleId → sprite filename. Project C uses photoreal top-down caps (Higgsfield);
 // the metal-* set is the older baked prototype. Extension varies (png/webp) until
 // the whole set is re-encoded to WebP.
-// Project C: photoreal top-down cap sprites (Higgsfield), one per style, mapped by
-// colour. neon-pink has no matching photo yet → vector fallback.
+// Project C: photoreal top-down cap sprites (Higgsfield, WebP), one per style,
+// mapped by colour. Every equippable style now has a photo.
 const SPRITE_FILES: Record<string, string> = {
-  "soda-blue": "soda-blue.png",
-  "crown-red": "crown-red.png",
-  "spring-teal": "spring-teal.png",
-  "sport-orange": "sport-orange.png",
-  "retro-gold": "retro-gold.png",
-  "grape-purple": "grape-purple.png",
-  "lime-green": "lime-green.png",
-  "brass-gold": "brass-gold.png",
-  "metal-silver": "metal-silver.png",
-  "metal-red": "metal-red.png",
-  "metal-blue": "metal-blue.png",
-  "metal-green": "metal-green.png",
-  "metal-orange": "metal-orange.png",
-  "metal-purple": "metal-purple.png",
-  "gold-legendary": "gold-legendary.png",
+  "soda-blue": "soda-blue.webp",
+  "crown-red": "crown-red.webp",
+  "spring-teal": "spring-teal.webp",
+  "sport-orange": "sport-orange.webp",
+  "retro-gold": "retro-gold.webp",
+  "neon-pink": "neon-pink.webp",
+  "grape-purple": "grape-purple.webp",
+  "lime-green": "lime-green.webp",
+  "brass-gold": "brass-gold.webp",
+  "metal-silver": "metal-silver.webp",
+  "metal-red": "metal-red.webp",
+  "metal-blue": "metal-blue.webp",
+  "metal-green": "metal-green.webp",
+  "metal-orange": "metal-orange.webp",
+  "metal-purple": "metal-purple.webp",
+  "gold-legendary": "gold-legendary.webp",
 };
 
 const cache = new Map<string, HTMLImageElement>();

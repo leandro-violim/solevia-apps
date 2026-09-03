@@ -181,7 +181,7 @@
        so content stays readable. (PNG for now; WebP is a production TODO.) */
     background:
       radial-gradient(125% 80% at 50% -8%, rgba(255, 249, 236, 0.6), rgba(255, 249, 236, 0) 55%),
-      url("/pitch-textures/wood-plain.png") center / cover fixed,
+      url("/pitch-textures/wood-plain.webp") center / cover fixed,
       #c79a63;
     /* 100dvh = the *visible* (dynamic) viewport, so a screen that fits is exactly
        the screen height and never overflows into a stray scroll. (100vh is the
