@@ -150,19 +150,30 @@ function bannerOptions(): BannerAdOptions {
   };
 }
 
+// Track whether a banner is currently up. Menu→menu navigation calls showBanner
+// on every route change; without this guard each call would REQUEST a brand-new
+// banner, which AdMob penalizes as over-frequent loading. We instead request one
+// banner when entering the menu context and keep it — the ad unit's own console
+// auto-refresh (set to a compliant 30–120s) rotates the creative from there.
+let bannerVisible = false;
+
 export async function showBanner(): Promise<void> {
   if (!IS_NATIVE) return;
+  if (bannerVisible) return; // already up — don't re-request (refresh-rate policy)
+  bannerVisible = true;
   trackBannerSize();
   try {
     await AdMob.showBanner(bannerOptions());
   } catch (e) {
+    bannerVisible = false;
     console.warn("[ads] showBanner failed:", e);
   }
 }
 
 export async function hideBanner(): Promise<void> {
   if (typeof document !== "undefined") document.documentElement.style.setProperty("--ad-banner-h", "0px");
-  if (!IS_NATIVE) return;
+  if (!IS_NATIVE || !bannerVisible) return;
+  bannerVisible = false;
   try {
     await AdMob.hideBanner();
   } catch (e) {
@@ -249,6 +260,25 @@ export async function notifyMatchEnded(): Promise<void> {
   if (matchesSinceAd >= MATCHES_PER_AD && now() - lastInterstitialAt > INTERSTITIAL_MIN_MS) {
     matchesSinceAd = 0;
     lastInterstitialAt = now();
+    trackInterstitialShown();
+    await showInterstitial();
+  } else {
+    void preloadInterstitial();
+  }
+}
+
+/**
+ * Show ONE interstitial as a casual session (2-Players / Practice) begins, then
+ * hand off to notifyMatchEnded's cadence for the rest. Non-intrusive by design:
+ * it only shows if an ad is already preloaded (never blocks the player waiting)
+ * and obeys the same INTERSTITIAL_MIN_MS gap, so bouncing in and out of a mode
+ * can't stack ads. Shown before the first flick, so no gameplay is interrupted.
+ */
+export async function notifyCasualStart(): Promise<void> {
+  if (!IS_NATIVE) return;
+  if (now() - lastInterstitialAt > INTERSTITIAL_MIN_MS) {
+    lastInterstitialAt = now();
+    matchesSinceAd = 0;
     trackInterstitialShown();
     await showInterstitial();
   } else {

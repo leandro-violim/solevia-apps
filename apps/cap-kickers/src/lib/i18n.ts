@@ -95,7 +95,7 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     // Home / menu
     "home.tagline": "Flick bottle caps across the pitch and score goals.",
     "home.campaign": "Campaign",
-    "home.passPlay": "Pass & Play",
+    "home.passPlay": "2 Players",
     "home.practice": "Practice",
     "home.soloVsAi": "Solo vs AI",
     "home.settings": "Settings",
@@ -258,7 +258,7 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     // Home / menu
     "home.tagline": "Dê petelecos nas tampinhas pelo campo e faça gols.",
     "home.campaign": "Campanha",
-    "home.passPlay": "Passa e Joga",
+    "home.passPlay": "2 Jogadores",
     "home.practice": "Treino",
     "home.soloVsAi": "Contra a Máquina",
     "home.settings": "Ajustes",
@@ -420,7 +420,7 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     // Home / menu
     "home.tagline": "Impulsa las tapitas por la cancha con un toque del dedo y mete goles.",
     "home.campaign": "Campaña",
-    "home.passPlay": "Pasa y Juega",
+    "home.passPlay": "2 Jugadores",
     "home.practice": "Práctica",
     "home.soloVsAi": "Contra la Máquina",
     "home.settings": "Ajustes",

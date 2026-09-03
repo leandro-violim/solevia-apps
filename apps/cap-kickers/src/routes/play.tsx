@@ -18,7 +18,7 @@ import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 import { gameAudio } from "../lib/audio";
-import { notifyMatchEnded, rewardedAvailable, showRewarded } from "../lib/ads";
+import { notifyMatchEnded, notifyCasualStart, rewardedAvailable, showRewarded } from "../lib/ads";
 import { t as tRaw, useT } from "../lib/i18n";
 import {
   trackCampaignComplete,
@@ -566,6 +566,9 @@ function PlayPage() {
     endLoggedRef.current = false;
     trackMatchStart(analyticsMode, mode === "ai" ? difficulty : undefined);
     revealStartHint();
+    // Casual modes (2-Players / Practice) get one interstitial as the session
+    // opens — non-intrusive: only if preloaded, gap-capped, before the first flick.
+    if (mode === "2p" || mode === "practice") void notifyCasualStart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
