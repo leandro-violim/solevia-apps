@@ -31,6 +31,66 @@ const hexToRgba = (hex: string, a: number): string => {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 };
 
+// ── Hand-drawn chalk primitives ─────────────────────────────────────────────
+// Deterministic wobble so an "improvised" chalk field renders identically every
+// frame (Math.random is banned in the game layer). `amp` = wobble px, `over` =
+// end overshoot px (hand-drawn strokes run past their corners).
+const jit = (seed: number): number => frac(seed) * 2 - 1;
+
+const chalkLine = (ctx: Ctx, x1: number, y1: number, x2: number, y2: number, amp: number, seed: number, over = 0) => {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy) || 1;
+  const ex = dx / len;
+  const ey = dy / len;
+  const nx = -ey;
+  const ny = ex;
+  const ax = x1 - ex * over;
+  const ay = y1 - ey * over;
+  const bx = x2 + ex * over;
+  const by = y2 + ey * over;
+  const segs = Math.max(4, Math.round((len + 2 * over) / 14));
+  ctx.beginPath();
+  for (let i = 0; i <= segs; i++) {
+    const t = i / segs;
+    const w = amp * jit(seed + i * 1.7);
+    ctx.lineTo(ax + (bx - ax) * t + nx * w, ay + (by - ay) * t + ny * w);
+  }
+  ctx.stroke();
+};
+
+const chalkArc = (ctx: Ctx, cx: number, cy: number, r: number, a0: number, a1: number, amp: number, seed: number) => {
+  const span = a1 - a0;
+  const segs = Math.max(8, Math.round((Math.abs(span) * r) / 12));
+  ctx.beginPath();
+  for (let i = 0; i <= segs; i++) {
+    const a = a0 + span * (i / segs);
+    const rr = r + amp * jit(seed + i * 1.3);
+    ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+  }
+  ctx.stroke();
+};
+
+const chalkCircle = (ctx: Ctx, cx: number, cy: number, r: number, amp: number, seed: number) =>
+  chalkArc(ctx, cx, cy, r, -0.15, Math.PI * 2 + 0.1, amp, seed); // slight overshoot to close the loop
+
+const chalkRect = (ctx: Ctx, x: number, y: number, w: number, h: number, amp: number, seed: number, over: number) => {
+  chalkLine(ctx, x, y, x + w, y, amp, seed + 11, over);
+  chalkLine(ctx, x + w, y, x + w, y + h, amp, seed + 23, over);
+  chalkLine(ctx, x + w, y + h, x, y + h, amp, seed + 37, over);
+  chalkLine(ctx, x, y + h, x, y, amp, seed + 51, over);
+};
+
+const chalkDot = (ctx: Ctx, x: number, y: number, r: number, seed: number) => {
+  ctx.beginPath();
+  for (let i = 0; i <= 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    const rr = r * (0.8 + frac(seed + i) * 0.5);
+    ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  ctx.fill();
+};
+
 export const ARCADE = {
   grassLight: "#46cf6d",
   grassDark: "#3cbb61",
@@ -194,6 +254,27 @@ export const drawPitch = (ctx: Ctx, r: Rect, scale: number, style: PitchStyle) =
 
   // All marking geometry in one place so it can be replayed per chalk pass.
   const paintMarks = () => {
+    if (style.chalkLines) {
+      // Improvised, hand-drawn chalk: wobbly strokes + corners that overshoot.
+      const amp = Math.max(1.6, r.h * 0.007);
+      const over = lw * 1.7;
+      chalkRect(ctx, r.x + inset, r.y + inset, r.w - inset * 2, r.h - inset * 2, amp, 3.1, over);
+      chalkLine(ctx, cx, r.y + inset, cx, r.y + r.h - inset, amp, 7.7, over * 0.5);
+      chalkCircle(ctx, cx, cy, cr, amp, 12.3);
+      chalkDot(ctx, cx, cy, lw * 1.1, 4.5);
+      for (const left of [true, false]) {
+        const bx = left ? r.x + inset : r.x + r.w - inset - boxW;
+        const by = cy - boxH / 2;
+        chalkRect(ctx, bx, by, boxW, boxH, amp, left ? 21.1 : 29.9, over * 0.7);
+        const spotX = left ? r.x + r.w * 0.09 : r.x + r.w * 0.91;
+        chalkDot(ctx, spotX, cy, lw * 0.9, left ? 33 : 41);
+        const a = r.h * 0.13;
+        if (left) chalkArc(ctx, bx + boxW, cy, a, -Math.PI / 2.4, Math.PI / 2.4, amp, 51);
+        else chalkArc(ctx, bx, cy, a, Math.PI - Math.PI / 2.4, Math.PI + Math.PI / 2.4, amp, 61);
+      }
+      return;
+    }
+    // Clean painted lines (grass / cement).
     roundRectPath(
       ctx,
       { x: r.x + inset, y: r.y + inset, w: r.w - inset * 2, h: r.h - inset * 2 },
