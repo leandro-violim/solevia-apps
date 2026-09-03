@@ -48,9 +48,10 @@ function PitchesPage() {
 
   return (
     <div
-      className="flex screen flex-col items-center px-6 py-8"
-      style={{ paddingTop: "calc(env(safe-area-inset-top) + 20px)" }}
+      className="flex screen flex-col items-center px-4 py-6"
+      style={{ paddingTop: "calc(env(safe-area-inset-top) + 14px)" }}
     >
+      <div className="panel flex w-full max-w-md flex-col items-center px-5 py-7">
       <h1 className="font-display text-5xl uppercase tracking-tight text-foreground">
         {t("pitch.title")}
       </h1>
@@ -80,6 +81,7 @@ function PitchesPage() {
       <Link to="/settings" className="arcade-btn mt-9 px-12 py-3 text-xl">
         {t("common.done")}
       </Link>
+      </div>
     </div>
   );
 }

@@ -301,10 +301,11 @@ function CabinetPage() {
 
   return (
     <div
-      className="flex screen flex-col items-center px-5 pb-10"
-      style={{ paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}
+      className="flex screen flex-col items-center px-4 pb-8"
+      style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
     >
-      <div className="flex w-full max-w-md items-center justify-between">
+      <div className="panel flex w-full max-w-md flex-col items-center px-4 py-6">
+      <div className="flex w-full items-center justify-between">
         <Link to="/" className="font-display text-sm uppercase tracking-wide text-muted-foreground">
           ‹ {t("common.back")}
         </Link>
@@ -336,6 +337,7 @@ function CabinetPage() {
         <Section titleKey="cabinet.secPitches" type="pitch" />
         <Section titleKey="cabinet.secCaps" type="cap" />
         <Section titleKey="cabinet.secAudio" type="audio" />
+      </div>
       </div>
     </div>
   );
