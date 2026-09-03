@@ -18,7 +18,7 @@ import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 import { gameAudio } from "../lib/audio";
-import { notifyMatchEnded, notifyCasualStart, rewardedAvailable, showRewardedNow, ADS_TEST_MODE } from "../lib/ads";
+import { notifyMatchEnded, notifyCasualStart, showRewardedNow } from "../lib/ads";
 import { t as tRaw, useT } from "../lib/i18n";
 import {
   trackCampaignComplete,
@@ -195,6 +195,9 @@ function PlayPage() {
   }, []);
   const [retryOffer, setRetryOffer] = useState(false);
   const retryOfferRef = useRef(false);
+  // True while a rewarded ad is loading/showing after tapping Watch — guards against
+  // double-taps now that the offer no longer waits for a preloaded ad.
+  const [retryBusy, setRetryBusy] = useState(false);
   const setRetry = (v: boolean) => {
     retryOfferRef.current = v;
     setRetryOffer(v);
@@ -470,11 +473,11 @@ function PlayPage() {
               modeRef.current === "ai" &&
               shooterSide === 0 &&
               wasShot &&
-              session.canRetryShot() &&
-              // Normally only offer when an ad is already loaded. In dev/test builds
-              // always offer — the Watch handler loads the ad on demand — so the
-              // rewarded flow is testable even before a preload has landed.
-              (rewardedAvailable() || import.meta.env.DEV || ADS_TEST_MODE);
+              session.canRetryShot();
+            // Always offer when eligible (don't gate on a preloaded ad — that's a
+            // module flag read once here and nothing re-checks it). The Watch handler
+            // loads a rewarded ad on demand and, if none is available, falls through
+            // to the normal turn-over.
             if (offerRetry) {
               setRetry(true);
               trackRewardedOffered();
@@ -736,24 +739,30 @@ function PlayPage() {
   // Rewarded extra-shot overlay actions.
   const handleWatchAd = async () => {
     const session = sessionRef.current;
-    if (!session) return;
-    // Load-then-show: if a rewarded ad wasn't preloaded yet, showRewardedNow loads
-    // one first (and awaits an in-flight load), so tapping Watch reliably shows an
-    // ad instead of no-opping. On web it returns the DEV flag so the flow is testable.
-    const earned = await showRewardedNow();
-    // `rewarded_watched` means the reward was actually earned, not merely that
-    // the player tapped — an abandoned or failed ad counts as skipped.
-    if (earned) trackRewardedWatched();
-    else trackRewardedSkipped();
-    if (earned && session.retryShot()) {
-      setMatch(session.match);
-      setViewAttacker(session.match.attacker);
-    } else {
-      session.declineRetry();
-      setMatch(session.match);
-      showBanner(t("play.turnOver"));
+    if (!session || retryBusy) return;
+    setRetryBusy(true);
+    try {
+      // Load-then-show: if a rewarded ad wasn't preloaded yet, showRewardedNow loads
+      // one first (and awaits an in-flight load), so tapping Watch reliably shows an
+      // ad instead of no-opping. On web it returns the DEV flag so the flow is testable.
+      const earned = await showRewardedNow();
+      // `rewarded_watched` means the reward was actually earned, not merely that
+      // the player tapped — an abandoned or failed ad counts as skipped.
+      if (earned) trackRewardedWatched();
+      else trackRewardedSkipped();
+      if (earned && session.retryShot()) {
+        setMatch(session.match);
+        setViewAttacker(session.match.attacker);
+      } else {
+        // No ad available (or dismissed) → proceed with the normal turn-over.
+        session.declineRetry();
+        setMatch(session.match);
+        showBanner(t("play.turnOver"));
+      }
+      setRetry(false);
+    } finally {
+      setRetryBusy(false);
     }
-    setRetry(false);
   };
   const handleDeclineRetry = () => {
     trackRewardedSkipped();
@@ -926,13 +935,15 @@ function PlayPage() {
           </p>
           <button
             onClick={handleWatchAd}
-            className="arcade-btn arcade-btn--gold mt-1 px-10 py-5 text-2xl shadow-[0_8px_0_#d8a400]"
+            disabled={retryBusy}
+            className="arcade-btn arcade-btn--gold mt-1 px-10 py-5 text-2xl shadow-[0_8px_0_#d8a400] disabled:opacity-60"
           >
-            {t("play.watchShoot")}
+            {retryBusy ? t("cabinet.watchLoading") : t("play.watchShoot")}
           </button>
           <button
             onClick={handleDeclineRetry}
-            className="font-display rounded-full border-2 border-white/60 px-8 py-2.5 text-base uppercase tracking-wide text-white/90 active:scale-95"
+            disabled={retryBusy}
+            className="font-display rounded-full border-2 border-white/60 px-8 py-2.5 text-base uppercase tracking-wide text-white/90 active:scale-95 disabled:opacity-60"
           >
             {t("play.noThanks")}
           </button>

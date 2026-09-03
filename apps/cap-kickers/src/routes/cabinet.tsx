@@ -14,7 +14,7 @@ import { drawPitch, drawCap } from "../game/render/draw";
 import { capSpriteReady, capSpriteImage } from "../lib/cap-sprites";
 import { gameAudio } from "../lib/audio";
 import { packPreviewFile } from "../lib/samples";
-import { rewardedAvailable, showRewarded } from "../lib/ads";
+import { showRewardedNow } from "../lib/ads";
 import {
   trackCabinetOpened,
   trackLockedItemTapped,
@@ -139,7 +139,8 @@ function CabinetPage() {
   const [equippedPitch, setEquippedPitch] = useState(() => loadPitchStyleId());
   const [equippedCap, setEquippedCap] = useState(() => loadCapStyleId());
   const [watchLeft, setWatchLeft] = useState(() => rewardedEarnsLeft(today));
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false); // true while a rewarded ad loads/plays
+  const [noAd, setNoAd] = useState(false); // brief "no ad available" notice
   const shown = useCountUp(balance);
 
   useEffect(() => {
@@ -191,11 +192,15 @@ function CabinetPage() {
   };
 
   const watchForCaps = async () => {
-    if (busy || !rewardedAvailable() || rewardedEarnsLeft(today) <= 0) return;
+    // Don't gate on rewardedAvailable() — that's a module flag read once at render, so
+    // the button would stay stuck if a preload lands later. showRewardedNow() loads on
+    // demand; the button shows a loading state meanwhile (busy) and a notice on failure.
+    if (busy || rewardedEarnsLeft(today) <= 0) return;
     setBusy(true);
+    setNoAd(false);
     trackRewardedOffered();
     try {
-      const earned = await showRewarded();
+      const earned = await showRewardedNow();
       if (earned) {
         recordRewardedEarn(today);
         setBalance(earn(EARN.rewardedWatch));
@@ -204,6 +209,8 @@ function CabinetPage() {
         trackCurrencyEarned("rewarded", EARN.rewardedWatch);
       } else {
         trackRewardedSkipped();
+        setNoAd(true);
+        window.setTimeout(() => setNoAd(false), 3000);
       }
     } finally {
       setBusy(false);
@@ -290,7 +297,7 @@ function CabinetPage() {
     </div>
   );
 
-  const canWatch = rewardedAvailable() && watchLeft > 0;
+  const canWatch = watchLeft > 0;
 
   return (
     <div
@@ -315,8 +322,15 @@ function CabinetPage() {
         disabled={!canWatch || busy}
         className="arcade-btn arcade-btn--gold mt-4 px-6 py-2.5 text-base disabled:opacity-45"
       >
-        {canWatch ? t("cabinet.watch", { n: EARN.rewardedWatch }) : t("cabinet.watchDone")}
+        {busy
+          ? t("cabinet.watchLoading")
+          : canWatch
+            ? t("cabinet.watch", { n: EARN.rewardedWatch })
+            : t("cabinet.watchDone")}
       </button>
+      {noAd ? (
+        <p className="mt-2 text-xs font-semibold text-muted-foreground">{t("cabinet.noAd")}</p>
+      ) : null}
 
       <div className="w-full max-w-md">
         <Section titleKey="cabinet.secPitches" type="pitch" />
