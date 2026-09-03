@@ -18,7 +18,7 @@ import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 import { gameAudio } from "../lib/audio";
-import { notifyMatchEnded, notifyCasualStart, rewardedAvailable, showRewarded } from "../lib/ads";
+import { notifyMatchEnded, notifyCasualStart, rewardedAvailable, showRewardedNow, ADS_TEST_MODE } from "../lib/ads";
 import { t as tRaw, useT } from "../lib/i18n";
 import {
   trackCampaignComplete,
@@ -471,7 +471,10 @@ function PlayPage() {
               shooterSide === 0 &&
               wasShot &&
               session.canRetryShot() &&
-              (rewardedAvailable() || import.meta.env.DEV);
+              // Normally only offer when an ad is already loaded. In dev/test builds
+              // always offer — the Watch handler loads the ad on demand — so the
+              // rewarded flow is testable even before a preload has landed.
+              (rewardedAvailable() || import.meta.env.DEV || ADS_TEST_MODE);
             if (offerRetry) {
               setRetry(true);
               trackRewardedOffered();
@@ -734,9 +737,10 @@ function PlayPage() {
   const handleWatchAd = async () => {
     const session = sessionRef.current;
     if (!session) return;
-    // Real rewarded ad on device; in dev (no native ad) the reward is granted so
-    // the flow is testable in the browser.
-    const earned = rewardedAvailable() ? await showRewarded() : import.meta.env.DEV;
+    // Load-then-show: if a rewarded ad wasn't preloaded yet, showRewardedNow loads
+    // one first (and awaits an in-flight load), so tapping Watch reliably shows an
+    // ad instead of no-opping. On web it returns the DEV flag so the flow is testable.
+    const earned = await showRewardedNow();
     // `rewarded_watched` means the reward was actually earned, not merely that
     // the player tapped — an abandoned or failed ad counts as skipped.
     if (earned) trackRewardedWatched();

@@ -33,6 +33,25 @@ const USE_TEST_ADS =
   import.meta.env.DEV ||
   (import.meta.env as unknown as { VITE_USE_TEST_ADS?: string }).VITE_USE_TEST_ADS === "true";
 
+// Serve Google TEST CREATIVES even for the LIVE ad-unit IDs. Set
+// VITE_ADMOB_TEST_DEVICE=true for a local emulator/device build to render the real
+// live units safely (a "Test Ad" you can tap without invalid-traffic risk, and the
+// rewarded callback still fires). NEVER set this in a store build. It only affects
+// the `isTesting` request flag — the LIVE ids are still used (USE_TEST_ADS stays
+// false), so this proves the live rewarded unit is wired end to end.
+const TEST_CREATIVES =
+  USE_TEST_ADS ||
+  (import.meta.env as unknown as { VITE_ADMOB_TEST_DEVICE?: string }).VITE_ADMOB_TEST_DEVICE ===
+    "true";
+
+/** True in dev / test-ad / test-device builds. UI can relax ad gates in this mode. */
+export const ADS_TEST_MODE = TEST_CREATIVES;
+
+/** Verbose ad logging, only in test builds (visible in Logcat / Safari console). */
+const dbg = (...a: unknown[]): void => {
+  if (TEST_CREATIVES) console.log("[ads]", ...a);
+};
+
 // Google's official sample ad unit ids — safe to build and tap.
 const TEST_IDS = {
   ios: {
@@ -146,7 +165,7 @@ function bannerOptions(): BannerAdOptions {
     adSize: BannerAdSize.ADAPTIVE_BANNER,
     position: BannerAdPosition.BOTTOM_CENTER,
     margin: 0,
-    isTesting: USE_TEST_ADS,
+    isTesting: TEST_CREATIVES,
   };
 }
 
@@ -204,8 +223,14 @@ export async function preloadInterstitial(): Promise<void> {
   setupInterstitialListeners();
   interstitialLoading = true;
   try {
-    await AdMob.prepareInterstitial({ adId: unitIds().interstitial, isTesting: USE_TEST_ADS });
+    await AdMob.prepareInterstitial({ adId: unitIds().interstitial, isTesting: TEST_CREATIVES });
+    // prepareInterstitial resolves once the ad is loaded. Trust that resolution
+    // instead of depending only on the Loaded event, which can fire before its
+    // async listener is attached (fast test ads) and be missed → stuck "not ready".
+    interstitialReady = true;
+    interstitialLoading = false;
   } catch (e) {
+    interstitialReady = false;
     interstitialLoading = false;
     console.warn("[ads] interstitial preload failed (offline?):", e);
   }
@@ -291,33 +316,65 @@ let rewardedReady = false;
 let rewardedLoading = false;
 let rewardedListenersAdded = false;
 
+let rewardedInflight: Promise<void> | null = null;
+
 function setupRewardedListeners() {
   if (rewardedListenersAdded) return;
   rewardedListenersAdded = true;
   AdMob.addListener(RewardAdPluginEvents.Loaded, () => {
     rewardedReady = true;
     rewardedLoading = false;
+    dbg("rewarded Loaded (event)");
   }).catch(() => {});
-  AdMob.addListener(RewardAdPluginEvents.FailedToLoad, () => {
+  AdMob.addListener(RewardAdPluginEvents.FailedToLoad, (err) => {
     rewardedReady = false;
     rewardedLoading = false;
+    dbg("rewarded FailedToLoad (event):", err);
   }).catch(() => {});
 }
 
-export async function preloadRewarded(): Promise<void> {
-  if (!IS_NATIVE || rewardedReady || rewardedLoading || !isOnline()) return;
+export function preloadRewarded(): Promise<void> {
+  // In test mode ignore navigator.onLine (emulators sometimes report it wrong).
+  if (!IS_NATIVE || rewardedReady || (!isOnline() && !TEST_CREATIVES)) return Promise.resolve();
+  if (rewardedInflight) return rewardedInflight; // await the in-flight load, don't start a 2nd
   setupRewardedListeners();
   rewardedLoading = true;
-  try {
-    await AdMob.prepareRewardVideoAd({ adId: unitIds().rewarded, isTesting: USE_TEST_ADS });
-  } catch (e) {
-    rewardedLoading = false;
-    console.warn("[ads] rewarded preload failed (offline?):", e);
-  }
+  dbg("rewarded preload → prepare", unitIds().rewarded, "test:", TEST_CREATIVES);
+  rewardedInflight = (async () => {
+    try {
+      // prepareRewardVideoAd RESOLVES once the ad is loaded — trust that rather than
+      // depending only on the Loaded event, which can fire before its async listener
+      // is attached (fast test ads) and be missed → the rewarded surfaces (retry
+      // offer + Cabinet button) would then never appear.
+      await AdMob.prepareRewardVideoAd({ adId: unitIds().rewarded, isTesting: TEST_CREATIVES });
+      rewardedReady = true;
+      dbg("rewarded ready ✓");
+    } catch (e) {
+      rewardedReady = false;
+      console.warn("[ads] rewarded preload failed:", e);
+    } finally {
+      rewardedLoading = false;
+      rewardedInflight = null;
+    }
+  })();
+  return rewardedInflight;
 }
 
 /** True if a rewarded ad is loaded and ready to show right now. */
 export const rewardedAvailable = (): boolean => IS_NATIVE && rewardedReady;
+
+/**
+ * Show a rewarded ad, LOADING one first if needed (awaits an in-flight load or
+ * starts one). Use this for the retry/Cabinet CTAs so a tap still shows an ad that
+ * wasn't preloaded yet, instead of silently doing nothing. On web returns the DEV
+ * flag so the retry flow stays testable in the browser.
+ */
+export async function showRewardedNow(): Promise<boolean> {
+  if (!IS_NATIVE) return import.meta.env.DEV;
+  if (!rewardedReady) await preloadRewarded();
+  dbg("showRewardedNow → ready:", rewardedReady);
+  return rewardedReady ? showRewarded() : false;
+}
 
 /** Show a rewarded ad; resolves true only if the reward was actually earned. */
 export async function showRewarded(): Promise<boolean> {
