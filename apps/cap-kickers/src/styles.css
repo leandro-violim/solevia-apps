@@ -93,7 +93,7 @@
   --secondary: #eef6f0;
   --secondary-foreground: #12281c;
   --muted: #eef4f0;
-  --muted-foreground: #5f7869;
+  --muted-foreground: #8a6b4a;
 
   /* Reward gold accent. */
   --accent: #ffcf33;
@@ -171,16 +171,18 @@
   }
 
   html {
-    background-color: var(--background);
+    background-color: #c79a63;
   }
 
   body {
     color: var(--color-foreground);
     font-family: "Barlow", ui-sans-serif, system-ui, -apple-system, sans-serif;
-    /* Sunny stadium: sky blue fading into pitch mint. */
+    /* Project C: warm wooden table under the menus, with a soft light from the top
+       so content stays readable. (PNG for now; WebP is a production TODO.) */
     background:
-      radial-gradient(125% 95% at 50% -12%, #bfe9ff 0%, #e9f8ef 52%, #dcf1e4 100%)
-      fixed;
+      radial-gradient(125% 80% at 50% -8%, rgba(255, 249, 236, 0.6), rgba(255, 249, 236, 0) 55%),
+      url("/pitch-textures/wood-plain.png") center / cover fixed,
+      #c79a63;
     /* 100dvh = the *visible* (dynamic) viewport, so a screen that fits is exactly
        the screen height and never overflows into a stray scroll. (100vh is the
        LARGE viewport — taller than what's actually visible on device — which is
@@ -212,6 +214,17 @@
     letter-spacing: 0.01em;
     font-weight: 800;
   }
+}
+
+/* Project C (warm & bright): a cream "card" that floats the menu content above the
+   wooden table, keeping the bright arcade UI high-contrast and readable. */
+.panel {
+  background: linear-gradient(#fffdf7, #f8f0df);
+  border-radius: 26px;
+  box-shadow:
+    0 10px 0 rgba(120, 80, 40, 0.22),
+    0 18px 30px -10px rgba(60, 36, 19, 0.4),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.65);
 }
 
 /* Chunky "sticker" arcade button: bold fill + a solid drop that reads as depth,
