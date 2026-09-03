@@ -41,18 +41,24 @@ function Home() {
   return (
     <div className="screen relative flex flex-col items-center px-5 text-center">
       <div
-        className="panel my-auto flex w-full max-w-sm flex-col items-center px-6 py-8"
+        className="panel my-auto flex w-full max-w-sm flex-col items-center px-5 py-6"
         style={{ marginTop: "max(env(safe-area-inset-top), 12px)", marginBottom: "max(env(safe-area-inset-bottom), 12px)" }}
       >
-      <h1 className="font-display text-6xl uppercase leading-[0.9] tracking-tight text-foreground drop-shadow-[0_3px_0_rgba(120,80,40,0.18)]">
-        Cap<br />
-        <span className="text-primary">Kickers</span>
+      {/* Cinematic hero: real caps on the wooden pitch. */}
+      <div
+        className="mb-4 w-full overflow-hidden rounded-2xl shadow-[0_6px_16px_rgba(60,36,19,0.45)] ring-1 ring-black/10"
+        style={{ aspectRatio: "16 / 7" }}
+      >
+        <img src="/hero/home-hero.jpg" alt="Bottle caps on a wooden pitch" className="h-full w-full object-cover" />
+      </div>
+      <h1 className="font-display text-5xl uppercase leading-[0.9] tracking-tight text-foreground drop-shadow-[0_3px_0_rgba(120,80,40,0.18)]">
+        Cap <span className="text-primary">Kickers</span>
       </h1>
-      <p className="mt-3 max-w-xs text-sm font-medium text-muted-foreground">
+      <p className="mt-2 max-w-xs text-sm font-medium text-muted-foreground">
         {t("home.tagline")}
       </p>
 
-      <div className="mt-9 flex w-full max-w-xs flex-col gap-3">
+      <div className="mt-6 flex w-full max-w-xs flex-col gap-3">
         <Link to="/campaign" className="arcade-btn arcade-btn--gold py-4 text-2xl">
           {t("home.campaign")}
         </Link>
