@@ -13,6 +13,7 @@ import { capSpriteReady } from "../lib/cap-sprites";
 import { loadCapStyleId } from "../game/caps/storage";
 import { pitchStyleById } from "../game/pitches/styles";
 import { loadPitchStyleId } from "../game/pitches/storage";
+import { pitchTextureReady } from "../lib/pitch-textures";
 import { completeLevel, isCompleted, levelById, levelIndex, nextLevelId } from "../game/campaign/ladder";
 import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { type Vec2 } from "../game/physics/vec";
@@ -148,6 +149,10 @@ function PlayPage() {
   // frames the caps up close so they're big/easy to tap, and eases to follow
   // the action. `init` snaps to the target on the first frame (no fly-in flash).
   const camRef = useRef({ z: 1, fx: 0, fy: 0, init: false });
+  // The pitch (surface + hand-drawn chalk lines) is baked into an offscreen buffer
+  // ONCE and blitted each frame, so the wobbly chalk never re-rasterizes (no
+  // shimmer/"boil") as the camera pans, and it's cheaper than redrawing it live.
+  const pitchBufRef = useRef<{ canvas: HTMLCanvasElement | null; key: string }>({ canvas: null, key: "" });
   // Purely-cosmetic juice state (spin, trails, dust, confetti, shake). UI-only.
   const fxRef = useRef(createFx());
   const dragRef = useRef<Drag | null>(null);
@@ -360,8 +365,34 @@ function PlayPage() {
 
       const scale = pres.viewport.scale;
 
-      // Pitch: grass stripes + markings.
-      drawPitch(ctx, { x: rectX, y: rectY, w: pitchW, h: pitchH }, scale, pitchStyle);
+      // Pitch: baked once into an offscreen buffer, then blitted — so the chalk
+      // lines are static (never re-rasterized per frame) and cheap.
+      {
+        const buf = pitchBufRef.current;
+        const bw = Math.max(2, Math.round(pitchW));
+        const bh = Math.max(2, Math.round(pitchH));
+        const ss = Math.max(1, dpr); // buffer resolution ≈ device px at zoom 1
+        const texReady = !!pitchTextureReady(pitchStyle.photo);
+        const key = `${pitchStyle.id}|${bw}x${bh}|${flippedRef.current ? 1 : 0}|${ss}|${texReady ? 1 : 0}`;
+        if (buf.key !== key) {
+          let c = buf.canvas;
+          if (!c) {
+            c = document.createElement("canvas");
+            buf.canvas = c;
+          }
+          c.width = Math.round(bw * ss);
+          c.height = Math.round(bh * ss);
+          const bctx = c.getContext("2d");
+          if (bctx) {
+            bctx.setTransform(ss, 0, 0, ss, 0, 0);
+            bctx.clearRect(0, 0, bw, bh);
+            drawPitch(bctx, { x: 0, y: 0, w: bw, h: bh }, scale, pitchStyle);
+            buf.key = key;
+          }
+        }
+        if (buf.canvas && buf.key === key) ctx.drawImage(buf.canvas, rectX, rectY, pitchW, pitchH);
+        else drawPitch(ctx, { x: rectX, y: rectY, w: pitchW, h: pitchH }, scale, pitchStyle);
+      }
 
       // Goals: framed nets protruding outward from each end line.
       const half = PITCH.goalWidth / 2;
