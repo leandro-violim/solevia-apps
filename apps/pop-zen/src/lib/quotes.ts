@@ -22,6 +22,16 @@ export const QUOTES: Record<Lang, readonly string[]> = {
     "Você terminou — agora supere a si mesmo.",
     "Mais uma rodada. Mais um recorde.",
   ],
+  es: [
+    "Cada burbuja, un poco más de calma. Cada partida, un poco mejor.",
+    "Todo progreso cuenta — mejora a tu ritmo.",
+    "Inhala. Supera tu récord. Exhala.",
+    "En la repetición se esconde la maestría.",
+    "La próxima partida siempre es la mejor para mejorar.",
+    "Manos tranquilas, mente ágil.",
+    "Acabas de terminar — ahora supérate a ti mismo.",
+    "Una ronda más. Un récord más.",
+  ],
 };
 
 export function pickQuote(seed = Date.now()): string {

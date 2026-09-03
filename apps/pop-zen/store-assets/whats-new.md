@@ -51,6 +51,28 @@ Estoure, relaxe, repita. 🫧
 
 ---
 
+## Spanish (Latin America) — "Novedades"
+
+```
+Burbujas Zen creció muchísimo:
+
+• Dos formas de jugar — Desafío Pop (contra el tiempo, con metas) y Reventar por diversión (relájate y revienta sin fin)
+• Cuatro "mundos" que renuevan el juego — burbujas fuera de línea, flotantes y escondidas tras escudos deslizantes
+• Un desafío diario con metas, más un bono diario y rachas
+• Gana monedas y gástalas en la nueva Tienda — estilos de burbuja y potenciadores (Bomba, Congelar Tiempo)
+• Música de fondo tranquila y una celebración entre rondas
+• Estallidos más suaves y muchos ajustes
+
+Revienta, relájate, repite. 🫧
+```
+
+**One-liner (if a short field is needed):**
+```
+Nueva Tienda, potenciadores, un desafío diario y cuatro mundos — con música más calmada y estallidos más suaves.
+```
+
+---
+
 ## iOS-only add-ons (players coming from 1.0.x)
 
 If listing iOS separately, prepend these two lines — 1.0.x users haven't seen them yet:

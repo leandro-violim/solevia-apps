@@ -89,7 +89,7 @@ The in-app Privacy Policy is already updated in code (discloses analytics + the 
 opt-out). The **store-side** declarations still need updating:
 - **iOS App Privacy label (App Store Connect)** — add **Usage Data → Product Interaction / Analytics** (alongside the existing AdMob advertising data). Not linked to identity; not used for tracking.
 - **Android Data Safety form (Play Console)** — add **App activity / Analytics** and the analytics identifier, on top of the AdMob Advertising ID already declared.
-- **Apple privacy-policy URL is per-language.** This release ships Portuguese (Brazil). If you add a **pt-BR localization** to the App Store Connect listing, its **Privacy Policy URL field starts empty** and Apple only validates it at "Add for Review" — set the pt-BR privacy URL (and any other pt-BR-required fields) so the localized listing doesn't get rejected for a missing policy.
+- **Apple privacy-policy URL is per-language.** This release ships **Portuguese (Brazil)** and **Spanish (Latin America)**. Each localization you add to the App Store Connect listing (pt-BR, es-419/es-MX) starts with an **empty Privacy Policy URL field**, and Apple only validates it at "Add for Review" — set the privacy URL (and any other required fields) for **every** added localization so no localized listing is rejected for a missing policy.
 - If the hosted privacy page (solevia.app) mirrors the in-app policy, update it too. `app-ads.txt` is unchanged.
 
 > **Cowork:** Please treat the two lists above as the known minimum, then do your **own
@@ -103,10 +103,14 @@ opt-out). The **store-side** declarations still need updating:
 
 ## 5. Decisions — RESOLVED (recorded here for the file)
 
-1. **Availability** = US, Canada, New Zealand, Australia, India, Brazil (unchanged).
-   None are EEA/UK, so analytics/ads run with the in-app opt-out and ATT/UMP as today;
-   no consent-gating code change is needed for this country list. (If the list ever
-   adds an EEA/UK country, analytics must first be gated behind UMP consent.)
+1. **Availability** = US, Canada, New Zealand, Australia, India, Brazil, **plus the
+   Latin American Spanish-speaking countries** (Mexico, Argentina, Colombia, Chile,
+   Peru, etc.) now that the app ships **Spanish** — to widen reach. **Cowork:** add
+   those countries to the App Store + Play availability, and add the **es (Spanish)**
+   store listing (title, description, "What's New", screenshots, privacy URL) alongside
+   the pt-BR one. None of these countries are EEA/UK, so analytics/ads still run with
+   the in-app opt-out + ATT/UMP as today — no consent-gating change needed. (Only an
+   EEA/UK/CH country would require gating analytics behind UMP consent first.)
 2. **App size** — **keep the ~2.3 MB near-lossless skin art as-is** (lazy-loaded, no
    launch cost, best quality / no iOS banding). No change.
 3. **Per-world best scores** — **DONE in this release.** Records are now keyed per stage,

@@ -23,7 +23,20 @@ describe("i18n", () => {
     expect(t("phase1")).toBe("Bolhas extragrandes");
   });
 
-  it("falls back to English for non-pt languages", async () => {
+  it("returns Spanish strings when the device language is es-*", async () => {
+    for (const lang of ["es-419", "es-MX", "es-ES"]) {
+      vi.stubGlobal("navigator", { language: lang });
+      vi.resetModules();
+      const { t, LANG } = await import("./i18n");
+      expect(LANG).toBe("es");
+      expect(t("home.play")).toBe("Jugar");
+      expect(t("nav.settings")).toBe("Ajustes");
+      expect(t("play.phaseOf", { phase: 2, total: 5 })).toBe("Fase 2 de 5");
+      expect(t("phase1")).toBe("Burbujas extragrandes");
+    }
+  });
+
+  it("falls back to English for other languages", async () => {
     vi.stubGlobal("navigator", { language: "en-US" });
     vi.resetModules();
     const { t, LANG } = await import("./i18n");
@@ -31,6 +44,15 @@ describe("i18n", () => {
     expect(LANG).toBe("en");
     expect(t("home.play")).toBe("Play");
     expect(t("phase1")).toBe("Extra Large bubbles");
+  });
+
+  it("every language defines exactly the same keys (no missing/extra translations)", async () => {
+    const { STRINGS } = await import("./i18n");
+    const en = Object.keys(STRINGS.en).sort();
+    for (const lang of ["pt", "es"] as const) {
+      const keys = Object.keys(STRINGS[lang]).sort();
+      expect({ lang, keys }).toEqual({ lang, keys: en });
+    }
   });
 
   it("leaves unmatched placeholders intact (used to splice the support email link)", async () => {
