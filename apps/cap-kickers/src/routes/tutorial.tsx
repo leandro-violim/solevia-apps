@@ -177,65 +177,6 @@ function drawArrow(
   ctx.restore();
 }
 
-/** A short round-capped "capsule" segment with a darker outline — a finger part. */
-function capsule(
-  ctx: CanvasRenderingContext2D,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-  w: number,
-  fill: string,
-  edge: string,
-) {
-  ctx.lineCap = "round";
-  ctx.strokeStyle = edge;
-  ctx.lineWidth = w + 2.5;
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
-  ctx.strokeStyle = fill;
-  ctx.lineWidth = w;
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
-}
-
-/**
- * A cartoon hand mid-flick: fingertip at (tx,ty) pointing along `angle` (0 = right).
- * A curled fist, a cocked thumb and the extended index finger, so it reads as the
- * finger that just snapped the cap forward.
- */
-function drawFlickFinger(
-  ctx: CanvasRenderingContext2D,
-  tx: number,
-  ty: number,
-  angle: number,
-) {
-  const skin = "#f4c79b";
-  const edge = "#cf9666";
-  const nail = "#fbe3cb";
-  ctx.save();
-  ctx.translate(tx, ty);
-  ctx.rotate(angle);
-  ctx.lineJoin = "round";
-  // Draw the outlines first (thicker) then fills, so parts blend without seams.
-  // Curled fist (the folded hand) behind the finger.
-  capsule(ctx, -56, 4, -44, 4, 24, skin, edge);
-  // Cocked thumb resting on the fist.
-  capsule(ctx, -52, -6, -40, -12, 8, skin, edge);
-  // Extended index finger up to the tip.
-  capsule(ctx, -44, 0, -3, 0, 12, skin, edge);
-  // Fingernail near the tip.
-  ctx.beginPath();
-  ctx.ellipse(-6, -1.5, 3, 4, 0, 0, Math.PI * 2);
-  ctx.fillStyle = nail;
-  ctx.fill();
-  ctx.restore();
-}
-
 /** Paint one tutorial step with the real gameplay pitch/cap/goal/keeper art. */
 function drawTutorialScene(
   ctx: CanvasRenderingContext2D,
@@ -258,16 +199,17 @@ function drawTutorialScene(
 
   switch (stepId) {
     case "flick": {
-      // A finger snaps one cap and it rockets away toward the goal.
+      drawC(40, 40);
+      drawC(40, 90);
+      // Speed ghosts trailing the flicked cap.
       ctx.save();
-      ctx.globalAlpha = 0.28;
-      drawCap(ctx, 84, cy, R * 0.9, cap, {});
-      ctx.globalAlpha = 0.5;
-      drawCap(ctx, 98, cy, R, cap, {});
+      ctx.globalAlpha = 0.22;
+      drawCap(ctx, 58, cy, R * 0.9, cap, {});
+      ctx.globalAlpha = 0.4;
+      drawCap(ctx, 72, cy, R, cap, {});
       ctx.restore();
-      drawC(114, cy, 0.5);
-      drawArrow(ctx, 130, cy, 166, cy, GOLD);
-      drawFlickFinger(ctx, 72, cy + 2, -0.18);
+      drawC(90, cy, 0.5);
+      drawArrow(ctx, 105, cy, 150, cy, GOLD);
       break;
     }
     case "thread": {
