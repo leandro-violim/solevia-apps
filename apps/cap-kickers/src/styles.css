@@ -196,7 +196,10 @@
      inside itself when its content is taller than the screen, so nothing is ever
      clipped and the page itself never scrolls under the banner. */
   .screen {
-    height: calc(100dvh - var(--ad-banner-h, 0px));
+    /* Usable area = viewport minus the native ad banner, with an extra safety gap
+       so the bottom-most control (a Back button) never sits flush against the
+       banner even if the reported banner height is a touch short. */
+    height: calc(100dvh - var(--ad-banner-h, 0px) - 10px);
     overflow-y: auto;
     overflow-x: hidden;
   }

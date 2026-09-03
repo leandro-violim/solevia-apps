@@ -13,6 +13,7 @@ import {
   cachedSample,
   playSample,
   CROWD_FILES,
+  FREE_SFX_FILES,
   AMBIENCE_FILE,
   packFiles,
   type CrowdSfx,
@@ -176,7 +177,14 @@ export class GameAudio {
     this.wantMusic = false;
     this.inGame = true;
     this.stopMusic();
+    this.prefetchFree();
     this.startAmbience();
+  }
+
+  /** Warm the always-free match recordings so the first whistle/goal plays real. */
+  private prefetchFree(): void {
+    if (!this.settings.sound || !this.ensure() || !this.ctx) return;
+    for (const id of Object.values(FREE_SFX_FILES)) void loadSample(this.ctx, id);
   }
 
   // ---- SFX -------------------------------------------------------------
@@ -187,10 +195,13 @@ export class GameAudio {
     // A non-running context (post-interruption) would swallow the sound — nudge it.
     if (this.ctx.state !== "running") this.ctx.resume().catch(() => {});
     try {
-      // Sample layer IN FRONT of the synth: a real crowd recording when the pack is
-      // unlocked and the buffer is already decoded, else the synth baseline. flick/
-      // clack are not in CROWD_FILES, so they always stay synthesised.
-      const file = this.packs.crowd ? CROWD_FILES[name as CrowdSfx] : undefined;
+      // Sample layer IN FRONT of the synth: a real crowd recording when the buffer
+      // is already decoded, else the synth baseline. The crowd pack covers every
+      // one-shot; without it, the free whistle + goal roar still play real. flick/
+      // clack are in neither map, so they always stay synthesised.
+      const file = this.packs.crowd
+        ? CROWD_FILES[name as CrowdSfx]
+        : FREE_SFX_FILES[name as CrowdSfx];
       const buf = file ? cachedSample(file) : undefined;
       if (buf) {
         playSample(this.ctx, this.sfxGain, buf);

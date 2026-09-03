@@ -33,3 +33,13 @@ export const markTutorialSeen = (storage: StorageLike | null = defaultStorage())
     /* blocked/full -> ignore */
   }
 };
+
+/** Re-arm the first-run auto-show (the "keep showing the tutorial" choice). */
+export const clearTutorialSeen = (storage: StorageLike | null = defaultStorage()): void => {
+  if (!storage) return;
+  try {
+    storage.setItem(KEY, "0");
+  } catch {
+    /* blocked/full -> ignore */
+  }
+};

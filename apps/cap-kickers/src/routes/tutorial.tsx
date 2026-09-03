@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { TUTORIAL_STEPS, isLastStep, stepCount } from "../game/tutorial/steps";
-import { markTutorialSeen } from "../game/tutorial/storage";
+import { markTutorialSeen, clearTutorialSeen } from "../game/tutorial/storage";
 import { trackTutorialBegin, trackTutorialComplete, trackTutorialSkip } from "../lib/analytics";
 import { useT } from "../lib/i18n";
 import { drawPitch, drawGoal, drawCap, drawKeeper } from "../game/render/draw";
@@ -23,6 +23,8 @@ const GOLD = "#ffcf33";
 function TutorialPage() {
   const t = useT();
   const [i, setI] = useState(0);
+  // Checked = don't auto-show the tutorial on future launches (the default).
+  const [dontShowAgain, setDontShowAgain] = useState(true);
   const step = TUTORIAL_STEPS[i];
   const nav = useNavigate();
 
@@ -36,7 +38,10 @@ function TutorialPage() {
   const finish = (completed: boolean) => {
     if (completed) trackTutorialComplete();
     else trackTutorialSkip(i);
-    markTutorialSeen();
+    // Honour the "don't show again" choice: keep re-arming it when unchecked so a
+    // first-time player who wants a refresher sees it again next launch.
+    if (dontShowAgain) markTutorialSeen();
+    else clearTutorialSeen();
     nav({ to: "/" });
   };
 
@@ -85,7 +90,32 @@ function TutorialPage() {
       </h2>
       <p className="mt-2 max-w-xs text-sm font-medium text-muted-foreground">{t(`tutorial.${step.id}.body`)}</p>
 
-      <div className="mt-auto flex w-full max-w-xs gap-3 pt-8">
+      {isLastStep(i) ? (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={dontShowAgain}
+          onClick={() => setDontShowAgain((v) => !v)}
+          className="mt-auto flex items-center gap-2.5 pt-8 text-sm font-medium text-muted-foreground"
+        >
+          <span
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2"
+            style={{
+              borderColor: dontShowAgain ? "#1fb457" : "#cbd8cf",
+              background: dontShowAgain ? "#1fb457" : "transparent",
+            }}
+          >
+            {dontShowAgain ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : null}
+          </span>
+          {t("tutorial.dontShow")}
+        </button>
+      ) : null}
+
+      <div className={`flex w-full max-w-xs gap-3 pt-4 ${isLastStep(i) ? "" : "mt-auto pt-8"}`}>
         {i > 0 ? (
           <button
             type="button"
@@ -215,6 +245,21 @@ function drawTutorialScene(
       drawKeeper(ctx, goal.x - 3, cy, 8);
       break;
     }
+    case "middle": {
+      // Three caps in a column; ring the middle one and send it forward.
+      drawC(52, 40);
+      drawC(52, 90);
+      ctx.save();
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(52, cy, R + 6, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      drawC(52, cy, 0.4);
+      drawArrow(ctx, 70, cy, 150, cy, GOLD);
+      break;
+    }
     case "intro":
     default: {
       drawC(44, 42);
@@ -227,6 +272,7 @@ function drawTutorialScene(
 
 const SCENE_LABEL: Record<string, string> = {
   flick: "Flick a cap with your finger",
+  middle: "Start each turn with the middle cap",
   thread: "Flick a cap between the other two",
   advance: "Five touches to work up the pitch",
   shoot: "Shoot past the keeper into the goal",

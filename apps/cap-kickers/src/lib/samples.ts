@@ -70,6 +70,17 @@ export const CROWD_FILES: Record<CrowdSfx, string> = {
   ohh: "cheer-near", // shot saved — "so close"
 };
 
+/**
+ * The two real recordings everyone gets for FREE during a match — the referee
+ * whistle (turnover / kickoff) and the goal roar — so the game sounds real out of
+ * the box. The paid "crowd" pack extends this to the win + near-miss moments and
+ * the "stadium" pack adds the looping ambience bed.
+ */
+export const FREE_SFX_FILES: Partial<Record<CrowdSfx, string>> = {
+  whistle: "whistle",
+  horn: "cheer-goal",
+};
+
 /** The "stadium" pack: one seamless-looping murmur bed under matches. */
 export const AMBIENCE_FILE = "amb-crowd";
 
