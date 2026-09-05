@@ -25,17 +25,18 @@ function CampaignPage() {
 
   return (
     <div
-      className="relative flex screen flex-col items-center px-6 pb-8"
-      style={{ paddingTop: "calc(env(safe-area-inset-top) + 32px)" }}
+      className="relative flex screen flex-col items-center px-4 pb-6"
+      style={{ paddingTop: "calc(env(safe-area-inset-top) + 14px)" }}
     >
-      <h1 className="font-display text-5xl uppercase tracking-tight text-foreground drop-shadow-[0_3px_0_rgba(18,40,28,0.12)]">
+      <div className="panel flex w-full max-w-md flex-col items-center px-5 py-6">
+      <h1 className="font-display text-5xl uppercase tracking-tight text-foreground drop-shadow-[0_3px_0_rgba(120,80,40,0.18)]">
         {t("campaign.title")}
       </h1>
       <p className="mt-2 max-w-xs text-center text-sm font-medium text-muted-foreground">
         {t("campaign.subtitle")}
       </p>
 
-      <div className="mt-7 flex w-full max-w-sm flex-1 flex-col gap-3 overflow-y-auto pb-2">
+      <div className="mt-6 flex w-full flex-col gap-3 pb-1">
         {LEVELS.map((level, index) => {
           const unlocked = isUnlocked(level.id, progress);
           const completed = isCompleted(level.id, progress);
@@ -125,6 +126,7 @@ function CampaignPage() {
       >
         {t("common.back")}
       </Link>
+      </div>
     </div>
   );
 }

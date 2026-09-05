@@ -60,7 +60,7 @@ function Home() {
 
       <div className="mt-6 flex w-full max-w-xs flex-col gap-3">
         <Link to="/campaign" className="arcade-btn arcade-btn--gold py-4 text-2xl">
-          {t("home.campaign")}
+          {t("home.soloVsAi")}
         </Link>
         <Link to="/play" search={{ mode: "2p" }} className="arcade-btn py-3.5 text-xl">
           {t("home.passPlay")}
@@ -72,32 +72,7 @@ function Home() {
         >
           {t("home.practice")}
         </Link>
-        <div>
-          <p className="font-display mb-2 text-sm uppercase tracking-wider text-muted-foreground">
-            {t("home.soloVsAi")}
-          </p>
-          <div className="flex gap-2">
-            {(
-              [
-                ["easy", "#1fb457", "#128040", "#ffffff"],
-                ["normal", "#ffcf33", "#d8a400", "#4a3600"],
-                ["hard", "#ff5a3c", "#c8341c", "#ffffff"],
-              ] as const
-            ).map(([diff, bg, sh, fg]) => (
-              <Link
-                key={diff}
-                to="/play"
-                search={{ mode: "ai", difficulty: diff }}
-                className="font-display flex-1 rounded-full py-3 text-base uppercase tracking-wide transition active:translate-y-1"
-                style={{ background: bg, color: fg, boxShadow: `0 4px 0 ${sh}` }}
-              >
-                {t(`diff.${diff}`)}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-1 flex items-center justify-center gap-5">
+        <div className="mt-2 flex items-center justify-center gap-5">
           <Link
             to="/cabinet"
             className="font-display text-sm uppercase tracking-wider text-muted-foreground underline underline-offset-4"

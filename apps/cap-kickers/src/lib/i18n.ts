@@ -152,7 +152,7 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "caps.subtitle": "Pick your cap. Your opponent gets a contrasting one.",
 
     // Campaign
-    "campaign.title": "Campaign",
+    "campaign.title": "Solo vs AI",
     "campaign.subtitle": "Beat each rival to unlock the next.",
     "campaign.locked": "Locked",
     "campaign.play": "Play",
@@ -317,7 +317,7 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "caps.subtitle": "Escolha sua tampinha. O adversário fica com uma de cor diferente.",
 
     // Campaign
-    "campaign.title": "Campanha",
+    "campaign.title": "Contra a Máquina",
     "campaign.subtitle": "Vença cada rival para desbloquear o próximo.",
     "campaign.locked": "Bloqueado",
     "campaign.play": "Jogar",
@@ -481,7 +481,7 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     "caps.subtitle": "Elige tu tapita. Tu rival recibe una de color distinto.",
 
     // Campaign
-    "campaign.title": "Campaña",
+    "campaign.title": "Contra la Máquina",
     "campaign.subtitle": "Vence a cada rival para desbloquear el siguiente.",
     "campaign.locked": "Bloqueado",
     "campaign.play": "Jugar",
