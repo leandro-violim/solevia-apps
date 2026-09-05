@@ -47,19 +47,20 @@ function TutorialPage() {
 
   return (
     <div
-      className="relative flex screen flex-col items-center px-6 pb-8 text-center"
-      style={{ paddingTop: "calc(env(safe-area-inset-top) + 32px)" }}
+      className="relative flex screen flex-col items-center px-4 pb-6 text-center"
+      style={{ paddingTop: "calc(env(safe-area-inset-top) + 14px)" }}
     >
       <button
         type="button"
         onClick={() => finish(false)}
-        className="font-display absolute right-5 text-sm uppercase tracking-wide text-muted-foreground"
-        style={{ top: "calc(env(safe-area-inset-top) + 14px)" }}
+        className="font-display absolute right-6 z-10 text-sm uppercase tracking-wide text-muted-foreground"
+        style={{ top: "calc(env(safe-area-inset-top) + 22px)" }}
       >
         {t("tutorial.skip")}
       </button>
 
-      <h1 className="font-display text-4xl uppercase tracking-tight text-foreground drop-shadow-[0_3px_0_rgba(18,40,28,0.12)]">
+      <div className="panel mt-1 flex w-full max-w-sm flex-col items-center px-5 py-6">
+      <h1 className="font-display text-4xl uppercase tracking-tight text-foreground drop-shadow-[0_3px_0_rgba(120,80,40,0.18)]">
         Cap <span className="text-primary">Kickers</span>
       </h1>
 
@@ -74,21 +75,22 @@ function TutorialPage() {
             className="h-2.5 rounded-full transition-all"
             style={{
               width: dotIndex === i ? 22 : 10,
-              backgroundColor: dotIndex === i ? GOLD : "rgba(95, 120, 105, 0.3)",
+              backgroundColor: dotIndex === i ? GOLD : "rgba(122, 90, 46, 0.28)",
             }}
           />
         ))}
       </div>
 
       {/* Framed pitch illustration — a little arcade "screen". */}
-      <div className="mt-6 w-full max-w-xs rounded-3xl bg-white p-3 shadow-[0_6px_0_#cdddd3]">
+      <div className="mt-5 w-full max-w-xs rounded-3xl bg-white p-3 shadow-[0_6px_0_#d8c3a3]">
         <TutorialScene stepId={step.id} />
       </div>
 
-      <h2 className="font-display mt-6 text-2xl uppercase tracking-wide text-foreground">
+      <h2 className="font-display mt-5 text-2xl uppercase tracking-wide text-foreground">
         {t(`tutorial.${step.id}.title`)}
       </h2>
       <p className="mt-2 max-w-xs text-sm font-medium text-muted-foreground">{t(`tutorial.${step.id}.body`)}</p>
+      </div>
 
       {isLastStep(i) ? (
         <button
