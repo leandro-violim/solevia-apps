@@ -9,6 +9,7 @@ import {
   levelById,
   levelReward,
   upcomingReward,
+  missingRewardItems,
 } from "./ladder";
 
 describe("campaign ladder", () => {
@@ -65,5 +66,21 @@ describe("campaign ladder", () => {
     // Nothing left after the final phase.
     expect(upcomingReward(LEVELS[LEVELS.length - 1].id, [])).toBeNull();
     expect(upcomingReward("nope", [])).toBeNull();
+  });
+
+  it("missingRewardItems lists earned-but-unowned rewards for completed phases", () => {
+    const rewarding = LEVELS.filter((l) => levelReward(l.id));
+    const first = rewarding[0];
+    const second = rewarding[1];
+    // Cleared the first two rewarding phases, but owns neither reward yet.
+    const missing = missingRewardItems([first.id, second.id], []);
+    expect(missing).toContain(levelReward(first.id)!.itemId);
+    expect(missing).toContain(levelReward(second.id)!.itemId);
+    // Already owning the first reward drops it from the list.
+    const after = missingRewardItems([first.id, second.id], [levelReward(first.id)!.itemId]);
+    expect(after).not.toContain(levelReward(first.id)!.itemId);
+    expect(after).toContain(levelReward(second.id)!.itemId);
+    // No completed phases → nothing owed.
+    expect(missingRewardItems([], [])).toEqual([]);
   });
 });

@@ -15,6 +15,9 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { gameAudio } from "../lib/audio";
 import { syncAudioPacks } from "../lib/audio-sync";
 import { loadSettings } from "../game/settings/storage";
+import { loadProgress } from "../game/campaign/storage";
+import { loadOwned, unlock } from "../game/economy/inventory";
+import { missingRewardItems } from "../game/campaign/ladder";
 import { initAds, showBanner, hideBanner } from "../lib/ads";
 import { initAnalytics, trackGameReady, trackScreen } from "../lib/analytics";
 import { useLocale } from "../lib/i18n";
@@ -146,6 +149,13 @@ function RootComponent() {
     gameAudio.setSettings(settings);
     gameAudio.init();
     void initAds();
+    // Backfill any phase reward the player has already earned by progress but whose
+    // item isn't in inventory yet (saves that cleared a phase before its reward
+    // existed). Keeps ownership in sync with the campaign so the reward road is
+    // accurate. Runs before syncAudioPacks so awarded audio packs turn on too.
+    const completed = loadProgress().completed;
+    const owned = loadOwned();
+    for (const id of missingRewardItems(completed, owned)) unlock(id);
     // Analytics honours the persisted opt-in before anything is logged. Events
     // fired during startup buffer inside the module and flush once this resolves.
     void initAnalytics(settings.analytics).then(trackGameReady);

@@ -61,6 +61,25 @@ export const nextLevelId = (id: string): string | null => {
 export const LAST_LEVEL_ID = LEVELS[LEVELS.length - 1].id;
 
 /**
+ * Reward item ids the player has EARNED (their phase is completed) but that are not
+ * in `owned` yet. Used to backfill inventory for saves that cleared a phase before
+ * its reward existed — so ownership always matches campaign progress and the reward
+ * road doesn't dangle an already-passed prize as "next".
+ */
+export const missingRewardItems = (
+  completed: readonly string[],
+  owned: readonly string[],
+): string[] => {
+  const out: string[] = [];
+  for (const l of LEVELS) {
+    if (l.reward && completed.includes(l.id) && !owned.includes(l.reward.itemId)) {
+      out.push(l.reward.itemId);
+    }
+  }
+  return out;
+};
+
+/**
  * The nearest phase AFTER `afterId` that awards something the player hasn't earned
  * yet — the "up next" carrot shown on the win screen. Null if nothing's left.
  */
