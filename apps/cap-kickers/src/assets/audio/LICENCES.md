@@ -22,6 +22,8 @@ ever added to the About screen, list these authors.
   clear the rights problem that parked the earlier chant/stadium files.
   ⚠️ Re-confirm ElevenLabs' current output-rights terms before a store release.
 - **Commentary VO** (`vo-*`) — generated (ElevenLabs / Qwen); see the delivery notes.
+- **Menu theme** (`menu-theme.m4a`, "Arena of Glory") — owner-supplied track,
+  re-encoded here to AAC. ⚠️ Confirm its licence/source before a store release.
 
 Earlier rejected/deferred candidates: see `../../audio-parked/README.md`.
 

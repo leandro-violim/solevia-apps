@@ -1,5 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { GameAudio } from "./audio";
+
+// Stub the menu-theme asset so the unit test doesn't pull the ~1 MB clip; the real
+// decode is verified against the bundle in the browser. A tiny valid data URI is
+// enough for decodeDataUri -> the mocked decodeAudioData.
+vi.mock("./menu-music", () => ({ default: "data:audio/mp4;base64,AAAAAAAA" }));
 
 // ---- Minimal WebAudio mock (node test env has no AudioContext) ----------
 const param = () => ({
@@ -18,7 +23,7 @@ const node = (extra: Record<string, unknown> = {}) => ({
 
 type MockCtx = ReturnType<typeof makeMockCtx>;
 function makeMockCtx() {
-  const counts = { osc: 0, resume: 0 };
+  const counts = { osc: 0, resume: 0, srcStarted: 0, srcStopped: 0 };
   const ctx = {
     counts,
     sampleRate: 44100,
@@ -35,11 +40,23 @@ function makeMockCtx() {
       return node({ type: "sine", frequency: param() });
     },
     createBiquadFilter: () => node({ type: "bandpass", frequency: param(), Q: param() }),
-    createBufferSource: () => node({ buffer: null }),
+    createBufferSource: () =>
+      node({
+        buffer: null,
+        loop: false,
+        start: vi.fn(() => {
+          counts.srcStarted++;
+        }),
+        stop: vi.fn(() => {
+          counts.srcStopped++;
+        }),
+      }),
     createBuffer: (_c: number, n: number) => ({ getChannelData: () => new Float32Array(n) }),
+    decodeAudioData: vi.fn(async () => ({ duration: 60 }) as unknown as AudioBuffer),
   };
   return ctx;
 }
+
 
 const make = () => {
   const ctx = makeMockCtx();
@@ -48,9 +65,6 @@ const make = () => {
 };
 
 describe("GameAudio", () => {
-  beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
-
   it("plays no SFX when sound is off", async () => {
     const { ctx, audio } = make();
     await audio.unlock(); // builds the graph
@@ -89,27 +103,27 @@ describe("GameAudio", () => {
     expect(ctx.counts.resume).toBe(resumes); // already running -> no-op
   });
 
-  it("starts music only on a menu scene and stops it in-game", async () => {
+  it("loops the menu theme on a menu scene, not in-game", async () => {
     const { ctx, audio } = make();
     await audio.unlock();
     audio.setSettings({ sound: true, music: true, ambience: true });
-    audio.enterGame(); // wantMusic=false
-    const inGame = ctx.counts.osc;
-    audio.startMusic();
-    expect(ctx.counts.osc).toBe(inGame); // no music in a game
 
-    audio.enterMenu(); // wantMusic=true -> starts the loop (immediate first tick)
-    expect(ctx.counts.osc).toBeGreaterThan(inGame);
-    audio.stopMusic(); // clean up the interval
+    audio.enterGame(); // wantMusic=false -> startMusic returns before any load kicks
+    audio.startMusic();
+    expect(ctx.counts.srcStarted).toBe(0); // no menu music during a game
+
+    audio.enterMenu(); // wantMusic=true -> lazy-load + loop the theme
+    await vi.waitFor(() => expect(ctx.counts.srcStarted).toBeGreaterThan(0));
+    audio.stopMusic();
   });
 
-  it("stops music when music is toggled off", async () => {
+  it("stops the menu theme when music is toggled off", async () => {
     const { ctx, audio } = make();
     await audio.unlock();
     audio.enterMenu();
-    const playing = ctx.counts.osc;
+    await vi.waitFor(() => expect(ctx.counts.srcStarted).toBeGreaterThan(0)); // playing
+    const stoppedBefore = ctx.counts.srcStopped;
     audio.setSettings({ sound: true, music: false, ambience: false });
-    vi.advanceTimersByTime(1000); // the loop must be stopped, so no new notes
-    expect(ctx.counts.osc).toBe(playing);
+    expect(ctx.counts.srcStopped).toBe(stoppedBefore + 1); // the loop was stopped
   });
 });

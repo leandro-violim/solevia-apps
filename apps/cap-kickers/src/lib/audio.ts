@@ -64,7 +64,9 @@ export class GameAudio {
   // Last free-foley variant played per sfx name, so a random pick never repeats.
   private sfxLast: Partial<Record<SfxName, string>> = {};
   private ambienceBed = ""; // the bed chosen for the current match (random per match)
-  private music: { stop: () => void } | null = null;
+  private musicSrc: AudioBufferSourceNode | null = null; // looping menu theme
+  private menuBuf: AudioBuffer | null = null; // decoded menu theme (lazy, once)
+  private menuLoading = false;
   private wantMusic = false; // true while on a menu-type screen
   private initialized = false;
   private makeCtx: () => Ctx;
@@ -382,22 +384,43 @@ export class GameAudio {
     }
   }
 
-  // ---- Music -----------------------------------------------------------
+  // ---- Music (looping menu theme) --------------------------------------
 
   startMusic(): void {
     if (!this.settings.music || !this.wantMusic) return;
-    if (this.music) return;
+    if (this.musicSrc) return; // already looping — never start a second
     if (!this.ensure() || !this.ctx || !this.musicGain) return;
+    if (!this.menuBuf) {
+      void this.loadMenuMusic(); // decode once, then start from there
+      return;
+    }
     try {
-      this.music = startTune(this.ctx, this.musicGain);
+      this.musicSrc = playSample(this.ctx, this.musicGain, this.menuBuf, 1, true);
     } catch {
-      this.music = null;
+      this.musicSrc = null;
+    }
+  }
+
+  /** Lazy-load + decode the menu theme once (its own code-split chunk). */
+  private async loadMenuMusic(): Promise<void> {
+    if (this.menuBuf || this.menuLoading || !this.ensure() || !this.ctx) return;
+    this.menuLoading = true;
+    try {
+      const uri = (await import("./menu-music")).default;
+      this.menuBuf = await decodeDataUri(this.ctx, uri);
+      if (this.wantMusic && this.settings.music) this.startMusic();
+    } finally {
+      this.menuLoading = false;
     }
   }
 
   stopMusic(): void {
-    this.music?.stop();
-    this.music = null;
+    try {
+      this.musicSrc?.stop();
+    } catch {
+      /* already stopped */
+    }
+    this.musicSrc = null;
   }
 }
 
@@ -492,51 +515,6 @@ const synth = (ctx: Ctx, out: AudioNode, name: SfxName): void => {
       tone(ctx, out, freq(52), t, 0.8, "sine", 0.14);
       break;
   }
-};
-
-// ---- Placeholder menu music (upbeat I–V–vi–IV loop) --------------------
-
-type Bar = { bass: number; arp: [number, number, number, number] };
-const BARS: Bar[] = [
-  { bass: 48, arp: [60, 64, 67, 72] }, // C
-  { bass: 43, arp: [59, 62, 67, 71] }, // G
-  { bass: 45, arp: [57, 60, 64, 69] }, // Am
-  { bass: 41, arp: [53, 57, 60, 65] }, // F
-];
-const STEP = 0.2; // eighth-note ~150 BPM feel
-
-const startTune = (ctx: Ctx, out: AudioNode): { stop: () => void } => {
-  let step = 0;
-  let stopped = false;
-  const oscs: OscillatorNode[] = [];
-  const play = (f: number, dur: number, type: OscillatorType, peak: number) => {
-    oscs.push(tone(ctx, out, f, ctx.currentTime + 0.01, dur, type, peak));
-    if (oscs.length > 24) oscs.splice(0, oscs.length - 24);
-  };
-  const tick = () => {
-    if (stopped) return;
-    const bar = BARS[Math.floor(step / 4) % BARS.length];
-    const beat = step % 4;
-    play(freq(bar.arp[beat]), STEP * 0.9, "triangle", 0.5); // arpeggio lead
-    if (beat === 0) play(freq(bar.bass), STEP * 3.6, "sine", 0.55); // bass on the bar
-    if (beat % 2 === 1) noise(ctx, out, ctx.currentTime + 0.01, 0.03, 0.1, { type: "highpass", from: 6000, to: 6000 }); // hat
-    step++;
-  };
-  tick();
-  const id = setInterval(tick, STEP * 1000);
-  return {
-    stop: () => {
-      stopped = true;
-      clearInterval(id);
-      for (const o of oscs) {
-        try {
-          o.stop();
-        } catch {
-          /* already stopped */
-        }
-      }
-    },
-  };
 };
 
 /** App-wide singleton. */
