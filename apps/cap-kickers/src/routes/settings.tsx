@@ -8,6 +8,7 @@ import { loadCapStyleId } from "../game/caps/storage";
 import { loadOwned, unlock, lock } from "../game/economy/inventory";
 import { isAudioPackUnlocked } from "../game/economy/catalog";
 import { loadProgress } from "../game/campaign/storage";
+import { packPreviewFile } from "../lib/samples";
 import { APP_VERSION } from "./-legal-doc";
 import { useT, useLocale, setLocale, LOCALES } from "../lib/i18n";
 import { setAnalyticsEnabled, trackLanguageSet, trackSettingChanged } from "../lib/analytics";
@@ -92,11 +93,19 @@ function SettingsPage() {
   const applyPacks = () => {
     gameAudio.setPacks({ crowd: packUnlocked("crowd"), stadium: packUnlocked("stadium") });
   };
-  const togglePack = (itemId: string, on: boolean, set: (v: boolean) => void) => {
+  const togglePack = (itemId: string, packId: string, on: boolean, set: (v: boolean) => void) => {
     if (on) unlock(itemId);
     else lock(itemId);
     set(on);
     applyPacks();
+    // Instant feedback: play a short clip of the pack the moment it's switched on,
+    // so this test switch is actually audible without going into a match. (Ambience
+    // + crowd swaps otherwise only play mid-game.) previewSample unlocks the audio
+    // context on this tap and bypasses the SFX mute so it's heard even while testing.
+    if (on) {
+      const file = packPreviewFile(packId);
+      if (file) void gameAudio.previewSample(file);
+    }
   };
 
   return (
@@ -192,13 +201,15 @@ function SettingsPage() {
         </p>
         <Toggle
           label={t("cabinet.packCrowd")}
+          sub={t("settings.audioTestHint")}
           on={crowdOn}
-          onToggle={() => togglePack("audio-crowd", !crowdOn, setCrowdOn)}
+          onToggle={() => togglePack("audio-crowd", "crowd", !crowdOn, setCrowdOn)}
         />
         <Toggle
           label={t("cabinet.packStadium")}
+          sub={t("settings.audioTestHint")}
           on={stadiumOn}
-          onToggle={() => togglePack("audio-stadium", !stadiumOn, setStadiumOn)}
+          onToggle={() => togglePack("audio-stadium", "stadium", !stadiumOn, setStadiumOn)}
         />
 
         <div className="mt-2 h-px w-full bg-border" />
