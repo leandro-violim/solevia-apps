@@ -47,8 +47,12 @@ function TutorialPage() {
 
   return (
     <div
-      className="relative flex screen flex-col items-center px-4 pb-6 text-center"
-      style={{ paddingTop: "calc(env(safe-area-inset-top) + 14px)" }}
+      className="relative flex screen flex-col items-center px-4 text-center"
+      style={{
+        paddingTop: "calc(env(safe-area-inset-top) + 14px)",
+        // Extra bottom gap so the Back/Next buttons clear the native ad banner.
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 28px)",
+      }}
     >
       <button
         type="button"
