@@ -6,6 +6,7 @@ import { loadPitchStyleId, savePitchStyleId } from "../game/pitches/storage";
 import { loadOwned } from "../game/economy/inventory";
 import { loadProgress } from "../game/campaign/storage";
 import { isStyleEquippable } from "../game/economy/catalog";
+import { UNLOCK_ALL } from "../lib/dev-flags";
 import { trackPitchSelected } from "../lib/analytics";
 import { drawPitch } from "../game/render/draw";
 import { pitchTextureImage } from "../lib/pitch-textures";
@@ -50,7 +51,9 @@ function PitchesPage() {
   // Only base + unlocked pitches are equippable here; locked ones live in the Cabinet.
   const owned = loadOwned();
   const completed = loadProgress().completed;
-  const styles = PITCH_STYLES.filter((s) => isStyleEquippable("pitch", s.id, owned, completed));
+  const styles = UNLOCK_ALL
+    ? PITCH_STYLES
+    : PITCH_STYLES.filter((s) => isStyleEquippable("pitch", s.id, owned, completed));
   const choose = (id: string) => {
     setSelected(id);
     savePitchStyleId(id);

@@ -15,6 +15,7 @@
 import { Capacitor } from "@capacitor/core";
 import { trackInterstitialShown } from "./analytics";
 import { gameAudio } from "./audio";
+import { UNLOCK_ALL } from "./dev-flags"; // test builds: suppress all ads
 import type { PluginListenerHandle } from "@capacitor/core";
 import {
   AdMob,
@@ -177,7 +178,7 @@ function bannerOptions(): BannerAdOptions {
 let bannerVisible = false;
 
 export async function showBanner(): Promise<void> {
-  if (!IS_NATIVE) return;
+  if (!IS_NATIVE || UNLOCK_ALL) return;
   if (bannerVisible) return; // already up — don't re-request (refresh-rate policy)
   bannerVisible = true;
   trackBannerSize();
@@ -237,7 +238,7 @@ export async function preloadInterstitial(): Promise<void> {
 }
 
 async function showInterstitial(): Promise<void> {
-  if (!IS_NATIVE) return;
+  if (!IS_NATIVE || UNLOCK_ALL) return;
   if (!interstitialReady) {
     void preloadInterstitial();
     return;
@@ -378,7 +379,7 @@ export async function showRewardedNow(): Promise<boolean> {
 
 /** Show a rewarded ad; resolves true only if the reward was actually earned. */
 export async function showRewarded(): Promise<boolean> {
-  if (!IS_NATIVE || !rewardedReady) return false;
+  if (!IS_NATIVE || UNLOCK_ALL || !rewardedReady) return false;
   return await new Promise<boolean>((resolve) => {
     const handles: PluginListenerHandle[] = [];
     let earned = false;
