@@ -6,6 +6,11 @@ import { type SwipeOpts, type FlickOpts } from "./input-mapping";
 // Landscape pitch, ~1.6:1. Goal mouth is the middle 220 of the 620-tall end lines.
 export const PITCH: Pitch = { width: 1000, height: 620, goalWidth: 220 };
 export const CAP_RADIUS = 16;
+// Goal posts are solid obstacles at the two ends of each goal mouth (on the end
+// line). A cap that hits one bounces off it — deflecting back out, or in off the
+// post. Radius chosen to read as a real post while leaving the mouth easily
+// passable (mouth 220 tall, cap Ø32, so ~168 of clear corridor between the posts).
+export const POST_RADIUS = 10;
 // radius: keeper hit-box. 1.4x cap radius (22.4) made even a STATIC (unreacted)
 // keeper block off-center shots merely by standing at the mouth's spawn point —
 // its collision circle overlapped shot lines aimed well away from goal center.

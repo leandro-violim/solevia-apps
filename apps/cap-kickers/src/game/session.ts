@@ -1,6 +1,6 @@
 import { PhysicsWorld, type PhysicsConfig } from "./physics/world";
 import { type Vec2 } from "./physics/vec";
-import { type Pitch, type PlayerSide, type GoalSide, attackingGoal } from "./rules/pitch";
+import { type Pitch, type PlayerSide, type GoalSide, attackingGoal, goalPosts } from "./rules/pitch";
 import { makeTriangle } from "./rules/setup";
 import { FlickTracker } from "./rules/flick-tracker";
 import {
@@ -10,7 +10,7 @@ import {
   type MatchConfig,
   type TurnResult,
 } from "./rules/match";
-import { PITCH, CAP_RADIUS, PHYSICS, MATCH, KEEPER } from "./constants";
+import { PITCH, CAP_RADIUS, PHYSICS, MATCH, KEEPER, POST_RADIUS } from "./constants";
 import { KEEPER_DIFFS, ELITE_KEEPER, keeperTrackVelocityY } from "./ai/keeper";
 import { type Difficulty } from "./ai/policy";
 
@@ -78,7 +78,27 @@ export class GameSession {
         mass: 1,
       });
     }
+    this.addGoalPosts();
     this.positionTriangle(this.match.attacker);
+  }
+
+  /**
+   * Solid goal posts at the two ends of each goal mouth (on the end lines). They're
+   * immovable (infinite mass) static bodies, so a cap that reaches a post bounces
+   * off it naturally — back out, or deflected in off the post — instead of running
+   * through it. They're excluded from cap classification (not in CAP_IDS), so they
+   * only ever act as obstacles.
+   */
+  private addGoalPosts(): void {
+    for (const p of goalPosts(this.cfg.pitch)) {
+      this.world.addBody({
+        id: p.id,
+        position: { x: p.x, y: p.y },
+        velocity: { x: 0, y: 0 },
+        radius: POST_RADIUS,
+        mass: Infinity,
+      });
+    }
   }
 
   private positionTriangle(side: PlayerSide): void {

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { GameSession } from "../game/session";
-import { PITCH, PHYSICS, CAP_RADIUS, SWIPE, FLICK, MATCH } from "../game/constants";
+import { PITCH, PHYSICS, CAP_RADIUS, SWIPE, FLICK, MATCH, POST_RADIUS } from "../game/constants";
 import { makePresentation, pitchToScreen, screenToPitch } from "../game/presentation";
 import { capAtPoint, flickToVelocity, type FlickSample } from "../game/input-mapping";
 import { chooseAiFlick } from "../game/ai/policy";
@@ -435,6 +435,22 @@ function PlayPage() {
         const side =
           Math.abs(outX - gx) < Math.abs(outX - (gx + gw)) ? "left" : "right";
         drawGoal(ctx, { x: gx, y: gy, w: gw, h: gh }, side, scale);
+      }
+
+      // Solid goal posts at the mouth ends (match the collision obstacles in
+      // session.ts). A cap bounces off these, so draw them where they actually are.
+      for (const goalX of [0, PITCH.width]) {
+        for (const py of [midY - half, midY + half]) {
+          const p = pitchToScreen({ x: goalX, y: py }, pres);
+          const pr = POST_RADIUS * scale;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+          ctx.fillStyle = "#f6f2e6";
+          ctx.fill();
+          ctx.lineWidth = Math.max(1.5, pr * 0.22);
+          ctx.strokeStyle = "rgba(90,60,30,0.45)";
+          ctx.stroke();
+        }
       }
 
       // Goal celebration: hold on the roar with the caps hidden, then pop the

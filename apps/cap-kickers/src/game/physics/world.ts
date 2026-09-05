@@ -123,6 +123,7 @@ export class PhysicsWorld {
     const normal = scale(delta, 1 / distance); // unit, a -> b
     const invA = 1 / a.mass;
     const invB = 1 / b.mass;
+    if (invA + invB === 0) return; // two immovable bodies (e.g. two posts) — nothing to do
 
     // Positional correction: push apart, split by inverse mass.
     const penetration = minDist - distance;

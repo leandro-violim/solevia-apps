@@ -26,22 +26,31 @@ describe("pitch classification", () => {
     expect(classifyCap(cap(400, 250), pitch)).toBe("in");
   });
 
-  it("classifies crossing the right end line inside the mouth as goalRight", () => {
-    expect(classifyCap(cap(800, 250), pitch)).toBe("goalRight");
-    expect(classifyCap(cap(810, 250), pitch)).toBe("goalRight");
+  it("keeps a cap that only PARTLY crossed a line as 'in' (some pixels still on the pitch)", () => {
+    // r = 10. Center on/just past a line = still straddling it → in play, not out/goal.
+    expect(classifyCap(cap(800, 250), pitch)).toBe("in"); // half over the right goal line
+    expect(classifyCap(cap(0, 250), pitch)).toBe("in"); // half over the left goal line
+    expect(classifyCap(cap(400, 0), pitch)).toBe("in"); // half over the top sideline
+    expect(classifyCap(cap(400, 500), pitch)).toBe("in"); // half over the bottom sideline
+    expect(classifyCap(cap(805, 250), pitch)).toBe("in"); // near edge (795) still inside
   });
 
-  it("classifies crossing the left end line inside the mouth as goalLeft", () => {
-    expect(classifyCap(cap(0, 250), pitch)).toBe("goalLeft");
+  it("classifies the WHOLE cap past the right end line inside the mouth as goalRight", () => {
+    expect(classifyCap(cap(810, 250), pitch)).toBe("goalRight"); // near edge 800 == line
+    expect(classifyCap(cap(830, 250), pitch)).toBe("goalRight");
   });
 
-  it("classifies crossing an end line OUTSIDE the mouth as out", () => {
-    expect(classifyCap(cap(800, 100), pitch)).toBe("out"); // above the mouth
-    expect(classifyCap(cap(0, 400), pitch)).toBe("out"); // below the mouth
+  it("classifies the WHOLE cap past the left end line inside the mouth as goalLeft", () => {
+    expect(classifyCap(cap(-10, 250), pitch)).toBe("goalLeft");
   });
 
-  it("classifies crossing top/bottom sidelines as out", () => {
-    expect(classifyCap(cap(400, 0), pitch)).toBe("out");
-    expect(classifyCap(cap(400, 500), pitch)).toBe("out");
+  it("classifies the whole cap past an end line OUTSIDE the mouth as out", () => {
+    expect(classifyCap(cap(810, 100), pitch)).toBe("out"); // above the mouth
+    expect(classifyCap(cap(-10, 400), pitch)).toBe("out"); // below the mouth
+  });
+
+  it("classifies the whole cap past top/bottom sidelines as out", () => {
+    expect(classifyCap(cap(400, -10), pitch)).toBe("out");
+    expect(classifyCap(cap(400, 510), pitch)).toBe("out");
   });
 });
