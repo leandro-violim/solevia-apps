@@ -108,6 +108,20 @@ function SettingsPage() {
     }
   };
 
+  // On-device audio self-test: plays a beep + the real clip and reports where the
+  // chain breaks, so silence on a device can be diagnosed without a debugger.
+  const [diag, setDiag] = useState<string | null>(null);
+  const runSelfTest = () => {
+    setDiag("…");
+    void gameAudio.selfTest().then((r) => {
+      setDiag(
+        `context=${r.context} · fetch=${r.fetchOk ? "ok" : "FAIL"} · decode=${
+          r.decoded ? `ok (${r.durationSec}s)` : "FAIL"
+        }${r.error ? ` · err=${r.error}` : ""}`,
+      );
+    });
+  };
+
   return (
     <div
       className="flex screen flex-col items-center px-4 py-6"
@@ -211,6 +225,21 @@ function SettingsPage() {
           on={stadiumOn}
           onToggle={() => togglePack("audio-stadium", "stadium", !stadiumOn, setStadiumOn)}
         />
+        <button
+          onClick={runSelfTest}
+          className="flex w-full items-center justify-between rounded-2xl bg-white px-5 py-4 shadow-[0_4px_0_#cdddd3] transition active:translate-y-0.5"
+        >
+          <span className="flex flex-col items-start text-left">
+            <span className="font-display text-lg uppercase tracking-wide text-foreground">
+              {t("settings.audioSelfTest")}
+            </span>
+            <span className="text-xs font-medium text-muted-foreground">{t("settings.audioSelfTestHint")}</span>
+          </span>
+          <span className="font-display text-sm uppercase tracking-wide text-primary">▶</span>
+        </button>
+        {diag ? (
+          <p className="-mt-1 break-words px-2 text-left text-[11px] font-semibold text-muted-foreground">{diag}</p>
+        ) : null}
 
         <div className="mt-2 h-px w-full bg-border" />
 
