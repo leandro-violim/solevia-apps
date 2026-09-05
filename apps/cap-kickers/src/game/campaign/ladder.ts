@@ -59,3 +59,20 @@ export const nextLevelId = (id: string): string | null => {
 
 /** The last phase — clearing it completes the whole ladder. */
 export const LAST_LEVEL_ID = LEVELS[LEVELS.length - 1].id;
+
+/**
+ * The nearest phase AFTER `afterId` that awards something the player hasn't earned
+ * yet — the "up next" carrot shown on the win screen. Null if nothing's left.
+ */
+export const upcomingReward = (
+  afterId: string,
+  ownedItemIds: readonly string[],
+): { level: CampaignLevel; index: number; reward: PhaseReward } | null => {
+  const start = levelIndex(afterId);
+  if (start < 0) return null;
+  for (let i = start + 1; i < LEVELS.length; i++) {
+    const r = LEVELS[i].reward;
+    if (r && !ownedItemIds.includes(r.itemId)) return { level: LEVELS[i], index: i, reward: r };
+  }
+  return null;
+};

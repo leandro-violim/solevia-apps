@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { GameSession } from "../game/session";
-import { PITCH, PHYSICS, CAP_RADIUS, SWIPE, FLICK, MATCH, POST_RADIUS } from "../game/constants";
+import { PITCH, PHYSICS, CAP_RADIUS, SWIPE, FLICK, MATCH } from "../game/constants";
 import { makePresentation, pitchToScreen, screenToPitch } from "../game/presentation";
 import { capAtPoint, flickToVelocity, type FlickSample } from "../game/input-mapping";
 import { chooseAiFlick } from "../game/ai/policy";
@@ -20,8 +20,10 @@ import {
   levelIndex,
   levelReward,
   nextLevelId,
+  upcomingReward,
   type PhaseReward,
 } from "../game/campaign/ladder";
+import { rewardView } from "../game/campaign/reward-display";
 import { loadProgress, saveProgress } from "../game/campaign/storage";
 import { isStyleEquippable } from "../game/economy/catalog";
 import { loadOwned, isOwned, unlock } from "../game/economy/inventory";
@@ -435,22 +437,6 @@ function PlayPage() {
         const side =
           Math.abs(outX - gx) < Math.abs(outX - (gx + gw)) ? "left" : "right";
         drawGoal(ctx, { x: gx, y: gy, w: gw, h: gh }, side, scale);
-      }
-
-      // Solid goal posts at the mouth ends (match the collision obstacles in
-      // session.ts). A cap bounces off these, so draw them where they actually are.
-      for (const goalX of [0, PITCH.width]) {
-        for (const py of [midY - half, midY + half]) {
-          const p = pitchToScreen({ x: goalX, y: py }, pres);
-          const pr = POST_RADIUS * scale;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, pr, 0, Math.PI * 2);
-          ctx.fillStyle = "#f6f2e6";
-          ctx.fill();
-          ctx.lineWidth = Math.max(1.5, pr * 0.22);
-          ctx.strokeStyle = "rgba(90,60,30,0.45)";
-          ctx.stroke();
-        }
       }
 
       // Goal celebration: hold on the roar with the caps hidden, then pop the
@@ -869,6 +855,11 @@ function PlayPage() {
 
   const won = match.phase === "won";
   const nextLevel = campaign ? levelById(nextLevelId(campaign) ?? "") : undefined;
+  // The next prize still to earn on the road ahead — teased on the win screen so
+  // the player sees what's waiting a phase or two on. (The reward for the phase
+  // just cleared is already granted, so it's skipped.)
+  const upNext = won && campaign && match.winner === 0 ? upcomingReward(campaign, loadOwned()) : null;
+  const upNextView = upNext ? rewardView(upNext.reward) : null;
 
   return (
     <div
@@ -1049,6 +1040,31 @@ function PlayPage() {
               <div className="text-3xl font-bold text-white">
                 {nextLevel ? t("play.levelComplete") : t("play.campaignComplete")}
               </div>
+
+              {/* "Up next" teaser — the next prize on the road, to pull the player on. */}
+              {upNext && upNextView && (
+                <div className="flex items-center gap-3 rounded-2xl bg-[#fff7e0] px-4 py-3 shadow-[0_4px_0_#e8cf88]">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#fdf7ea] ring-1 ring-[#7a5a2e]/20">
+                    {upNextView.img ? (
+                      <img src={upNextView.img} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-2xl">{upNextView.emoji}</span>
+                    )}
+                  </span>
+                  <div className="flex flex-col items-start text-left">
+                    <span className="font-display text-[11px] uppercase tracking-[0.18em] text-[#b8860b]">
+                      {t("campaign.nextReward")}
+                    </span>
+                    <span className="font-display text-base uppercase leading-tight text-foreground">
+                      {upNextView.nameKey ? t(upNextView.nameKey) : upNextView.name}
+                    </span>
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {t("campaign.nextRewardCta", { n: upNext.index + 1, name: upNext.level.name })}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 {nextLevel && (
                   <Link

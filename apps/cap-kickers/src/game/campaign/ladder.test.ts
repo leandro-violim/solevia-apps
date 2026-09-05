@@ -7,6 +7,8 @@ import {
   completeLevel,
   nextLevelId,
   levelById,
+  levelReward,
+  upcomingReward,
 } from "./ladder";
 
 describe("campaign ladder", () => {
@@ -43,5 +45,25 @@ describe("campaign ladder", () => {
   it("levelById resolves known ids", () => {
     expect(levelById(LEVELS[2].id)?.id).toBe(LEVELS[2].id);
     expect(levelById("nope")).toBeUndefined();
+  });
+
+  it("upcomingReward finds the next UNOWNED prize after a level, skipping owned ones", () => {
+    // Find the first two rewarding phases on the ladder.
+    const rewarding = LEVELS.filter((l) => levelReward(l.id));
+    expect(rewarding.length).toBeGreaterThanOrEqual(2);
+    const first = rewarding[0];
+    const second = rewarding[1];
+
+    // From the very start, the next prize is the first rewarding phase's reward.
+    const up = upcomingReward(LEVELS[0].id, []);
+    expect(up?.level.id).toBe(first.id);
+
+    // Owning that reward makes it skip to the next unowned one.
+    const skipped = upcomingReward(LEVELS[0].id, [levelReward(first.id)!.itemId]);
+    expect(skipped?.level.id).toBe(second.id);
+
+    // Nothing left after the final phase.
+    expect(upcomingReward(LEVELS[LEVELS.length - 1].id, [])).toBeNull();
+    expect(upcomingReward("nope", [])).toBeNull();
   });
 });
