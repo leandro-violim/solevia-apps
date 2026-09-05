@@ -26,6 +26,7 @@ const SPRITE_FILES: Record<string, string> = {
   "metal-orange": "metal-orange.webp",
   "metal-purple": "metal-purple.webp",
   "gold-legendary": "gold-legendary.webp",
+  keeper: "keeper.webp", // the goalkeeper cap (embossed "1")
 };
 
 const cache = new Map<string, HTMLImageElement>();

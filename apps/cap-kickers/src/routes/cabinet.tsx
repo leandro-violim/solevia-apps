@@ -12,6 +12,7 @@ import { pitchStyleById } from "../game/pitches/styles";
 import { styleById } from "../game/caps/styles";
 import { drawPitch, drawCap } from "../game/render/draw";
 import { capSpriteReady, capSpriteImage } from "../lib/cap-sprites";
+import { pitchTextureImage } from "../lib/pitch-textures";
 import { gameAudio } from "../lib/audio";
 import { packPreviewFile } from "../lib/samples";
 import { showRewardedNow } from "../lib/ads";
@@ -104,12 +105,16 @@ function Preview({ item, dim }: { item: Item; dim: boolean }) {
       }
     };
     draw();
-    if (item.type === "cap") {
-      const img = capSpriteImage(item.styleId);
-      if (img && !(img.complete && img.naturalWidth > 0)) {
-        img.addEventListener("load", draw, { once: true });
-        return () => img.removeEventListener("load", draw);
-      }
+    // Cap sprites AND pitch surface photos decode async — redraw once ready.
+    const img =
+      item.type === "cap"
+        ? capSpriteImage(item.styleId)
+        : item.type === "pitch"
+          ? pitchTextureImage(pitchStyleById(item.styleId).photo ?? "")
+          : null;
+    if (img && !(img.complete && img.naturalWidth > 0)) {
+      img.addEventListener("load", draw, { once: true });
+      return () => img.removeEventListener("load", draw);
     }
   }, [item]);
 

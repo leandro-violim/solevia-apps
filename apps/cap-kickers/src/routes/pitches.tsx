@@ -8,6 +8,7 @@ import { loadProgress } from "../game/campaign/storage";
 import { isStyleEquippable } from "../game/economy/catalog";
 import { trackPitchSelected } from "../lib/analytics";
 import { drawPitch } from "../game/render/draw";
+import { pitchTextureImage } from "../lib/pitch-textures";
 import { useT } from "../lib/i18n";
 
 /** A tiny canvas that renders one surface as a mini pitch preview. */
@@ -21,9 +22,19 @@ function Swatch({ styleId, w, h }: { styleId: string; w: number; h: number }) {
     const dpr = window.devicePixelRatio || 1;
     c.width = Math.round(w * dpr);
     c.height = Math.round(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    drawPitch(ctx, { x: 2, y: 2, w: w - 4, h: h - 4 }, 0.32, pitchStyleById(styleId));
+    const style = pitchStyleById(styleId);
+    const draw = () => {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      drawPitch(ctx, { x: 2, y: 2, w: w - 4, h: h - 4 }, 0.32, style);
+    };
+    draw();
+    // Real surface photos decode async — redraw once the texture is ready.
+    const img = style.photo ? pitchTextureImage(style.photo) : null;
+    if (img && !(img.complete && img.naturalWidth > 0)) {
+      img.addEventListener("load", draw, { once: true });
+      return () => img.removeEventListener("load", draw);
+    }
   }, [styleId, w, h]);
   return <canvas ref={ref} style={{ width: w, height: h }} />;
 }

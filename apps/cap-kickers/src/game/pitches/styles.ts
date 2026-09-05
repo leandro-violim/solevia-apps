@@ -19,15 +19,14 @@ export type PitchStyle = {
 };
 
 export const PITCH_STYLES: PitchStyle[] = [
-  { id: "grass", name: "Grass", base: "#46cf6d", base2: "#3cbb61", edge: "#0a2814", line: "#f6fff9", lineAlpha: 1, texture: "stripes" },
+  { id: "grass", name: "Grass", base: "#46cf6d", base2: "#3cbb61", edge: "#0a2814", line: "#f6fff9", lineAlpha: 1, texture: "stripes", photo: "surf-grass.webp" },
   { id: "school", name: "School", base: "#e3b787", base2: "#d4a468", edge: "#3a2413", line: "#f4ede0", lineAlpha: 0.9, texture: "wood", photo: "wood-plain.webp", chalkLines: true },
-  { id: "table", name: "Table", base: "#7d5636", base2: "#6a4527", edge: "#2c1a0d", line: "#f3e7d5", lineAlpha: 0.78, texture: "wood" },
-  { id: "cement", name: "Cement", base: "#b7bcbd", base2: "#a6acad", edge: "#4c5254", line: "#fdf6d8", lineAlpha: 0.7, texture: "concrete" },
-  // Unlockable pitches (Trophy Cabinet). First-pass procedural palettes — refine
-  // against the Higgsfield reference images (REWARDS-AND-AUDIO-PLAN.md §5).
-  { id: "night", name: "Night", base: "#1f6b47", base2: "#1a5c3d", edge: "#04140c", line: "#eafff2", lineAlpha: 0.95, texture: "stripes" },
-  { id: "street", name: "Street", base: "#6f7478", base2: "#616669", edge: "#232628", line: "#ffe14d", lineAlpha: 0.9, texture: "concrete" },
-  { id: "beach", name: "Beach", base: "#f0d59a", base2: "#e6c684", edge: "#a07b3a", line: "#ffffff", lineAlpha: 0.85, texture: "concrete" },
+  { id: "table", name: "Table", base: "#7d5636", base2: "#6a4527", edge: "#2c1a0d", line: "#f3e7d5", lineAlpha: 0.78, texture: "wood", photo: "wood-plain.webp", chalkLines: true },
+  { id: "cement", name: "Cement", base: "#b7bcbd", base2: "#a6acad", edge: "#4c5254", line: "#fdf6d8", lineAlpha: 0.85, texture: "concrete", photo: "surf-cement.webp" },
+  // Unlockable pitches (Trophy Cabinet) — real Higgsfield surfaces + painted lines.
+  { id: "night", name: "Night", base: "#1f6b47", base2: "#1a5c3d", edge: "#04140c", line: "#eafff2", lineAlpha: 0.95, texture: "stripes", photo: "surf-night.webp" },
+  { id: "street", name: "Street", base: "#6f7478", base2: "#616669", edge: "#232628", line: "#ffe14d", lineAlpha: 0.95, texture: "concrete", photo: "surf-street.webp" },
+  { id: "beach", name: "Beach", base: "#f0d59a", base2: "#e6c684", edge: "#a07b3a", line: "#ffffff", lineAlpha: 0.9, texture: "concrete", photo: "surf-beach.webp" },
 ];
 
 // Project C prototype: default to the photographic school-desk pitch for on-device review.

@@ -4,6 +4,7 @@
 import { type CapStyle } from "../caps/styles";
 import { type PitchStyle } from "../pitches/styles";
 import { pitchTextureReady } from "../../lib/pitch-textures";
+import { capSpriteReady } from "../../lib/cap-sprites";
 
 type Ctx = CanvasRenderingContext2D;
 type Rect = { x: number; y: number; w: number; h: number };
@@ -577,6 +578,14 @@ export const drawKeeper = (ctx: Ctx, x: number, y: number, radius: number) => {
   ctx.ellipse(x + r * 0.12, y + r * 0.42, r * 0.98, r * 0.7, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
+
+  // Photoreal keeper cap (the lime "1" cap) when decoded; procedural fallback below.
+  const sprite = capSpriteReady("keeper");
+  if (sprite) {
+    const d = r * 2.15;
+    ctx.drawImage(sprite, x - d / 2, y - d / 2, d, d);
+    return;
+  }
 
   const grad = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.15, x, y, r);
   grad.addColorStop(0, ARCADE.keeperRim);
