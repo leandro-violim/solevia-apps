@@ -258,68 +258,6 @@ export class GameAudio {
     }
   }
 
-  // ---- Diagnostics -----------------------------------------------------
-
-  /**
-   * On-device audio self-test (Settings). Runs the full sample chain and reports
-   * where it breaks, and plays two unmistakable sounds through the SAME graph:
-   *   1) a synth BEEP (proves WebAudio reaches the speaker at all), then
-   *   2) the decoded crowd sample (proves fetch + decodeAudioData works here).
-   * If you hear the beep but not the clip → decode/fetch is the problem (see the
-   * returned fields). If you hear neither → the device audio session is muted
-   * (iOS ring/silent switch, or no audio device on an emulator).
-   */
-  async selfTest(): Promise<{
-    context: string;
-    decoded: boolean;
-    durationSec: number;
-    error: string;
-  }> {
-    const r = { context: "none", decoded: false, durationSec: 0, error: "" };
-    if (!this.ensure() || !this.ctx || !this.master) {
-      r.error = "no-webaudio";
-      return r;
-    }
-    try {
-      if (this.ctx.state !== "running") await this.ctx.resume();
-    } catch (e) {
-      r.error = `resume:${String(e)}`;
-    }
-    r.context = this.ctx.state;
-    // 1) A loud, obvious beep straight to master (bypasses the SFX mute).
-    try {
-      const t = this.ctx.currentTime;
-      const o = this.ctx.createOscillator();
-      const g = this.ctx.createGain();
-      o.type = "triangle";
-      o.frequency.setValueAtTime(660, t);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(0.35, t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
-      o.connect(g);
-      g.connect(this.master);
-      o.start(t);
-      o.stop(t + 0.45);
-    } catch (e) {
-      r.error += ` beep:${String(e)}`;
-    }
-    // 2) The real recording through the SAME path the game uses (bundled bytes +
-    //    decodeAudioData, no fetch), ~0.5s after the beep.
-    try {
-      const buf = await loadSample(this.ctx, "cheer-win");
-      if (buf) {
-        r.decoded = true;
-        r.durationSec = Math.round(buf.duration * 100) / 100;
-        playSample(this.ctx, this.master, buf, 1);
-      } else {
-        r.error += " sample:null";
-      }
-    } catch (e) {
-      r.error += ` sample:${String(e)}`;
-    }
-    return r;
-  }
-
   // ---- Music -----------------------------------------------------------
 
   startMusic(): void {

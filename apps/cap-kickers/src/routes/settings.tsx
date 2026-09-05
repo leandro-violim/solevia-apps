@@ -5,10 +5,6 @@ import { loadSettings, patchSettings, type Settings } from "../game/settings/sto
 import { gameAudio } from "../lib/audio";
 import { styleById } from "../game/caps/styles";
 import { loadCapStyleId } from "../game/caps/storage";
-import { loadOwned, unlock, lock } from "../game/economy/inventory";
-import { isAudioPackUnlocked } from "../game/economy/catalog";
-import { loadProgress } from "../game/campaign/storage";
-import { packPreviewFile } from "../lib/samples";
 import { APP_VERSION } from "./-legal-doc";
 import { useT, useLocale, setLocale, LOCALES } from "../lib/i18n";
 import { setAnalyticsEnabled, trackLanguageSet, trackSettingChanged } from "../lib/analytics";
@@ -84,43 +80,6 @@ function SettingsPage() {
   // Current cap selection (persists in its own store). Pitches are no longer
   // equipped here — they're awarded as phase rewards and picked at random.
   const cap = styleById(loadCapStyleId());
-
-  // Audio-pack test switches: enable the Crowd / Stadium packs directly (normally
-  // earned by clearing phases) so the layered audio can be checked without grinding.
-  const packUnlocked = (packId: string) => isAudioPackUnlocked(packId, loadOwned(), loadProgress().completed);
-  const [crowdOn, setCrowdOn] = useState(() => packUnlocked("crowd"));
-  const [stadiumOn, setStadiumOn] = useState(() => packUnlocked("stadium"));
-  const applyPacks = () => {
-    gameAudio.setPacks({ crowd: packUnlocked("crowd"), stadium: packUnlocked("stadium") });
-  };
-  const togglePack = (itemId: string, packId: string, on: boolean, set: (v: boolean) => void) => {
-    if (on) unlock(itemId);
-    else lock(itemId);
-    set(on);
-    applyPacks();
-    // Instant feedback: play a short clip of the pack the moment it's switched on,
-    // so this test switch is actually audible without going into a match. (Ambience
-    // + crowd swaps otherwise only play mid-game.) previewSample unlocks the audio
-    // context on this tap and bypasses the SFX mute so it's heard even while testing.
-    if (on) {
-      const file = packPreviewFile(packId);
-      if (file) void gameAudio.previewSample(file);
-    }
-  };
-
-  // On-device audio self-test: plays a beep + the real clip and reports where the
-  // chain breaks, so silence on a device can be diagnosed without a debugger.
-  const [diag, setDiag] = useState<string | null>(null);
-  const runSelfTest = () => {
-    setDiag("…");
-    void gameAudio.selfTest().then((r) => {
-      setDiag(
-        `context=${r.context} · decode=${r.decoded ? `ok (${r.durationSec}s)` : "FAIL"}${
-          r.error ? ` · err=${r.error}` : ""
-        }`,
-      );
-    });
-  };
 
   return (
     <div
@@ -208,38 +167,6 @@ function SettingsPage() {
         <div className="mt-2 h-px w-full bg-border" />
 
         <NavRow to="/caps" label={t("settings.yourCap")} value={cap.name} />
-
-        {/* Audio-pack test switches — enable the earned packs directly. */}
-        <p className="mt-1 px-1 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {t("settings.audioTest")}
-        </p>
-        <Toggle
-          label={t("cabinet.packCrowd")}
-          sub={t("settings.audioTestHint")}
-          on={crowdOn}
-          onToggle={() => togglePack("audio-crowd", "crowd", !crowdOn, setCrowdOn)}
-        />
-        <Toggle
-          label={t("cabinet.packStadium")}
-          sub={t("settings.audioTestHint")}
-          on={stadiumOn}
-          onToggle={() => togglePack("audio-stadium", "stadium", !stadiumOn, setStadiumOn)}
-        />
-        <button
-          onClick={runSelfTest}
-          className="flex w-full items-center justify-between rounded-2xl bg-white px-5 py-4 shadow-[0_4px_0_#cdddd3] transition active:translate-y-0.5"
-        >
-          <span className="flex flex-col items-start text-left">
-            <span className="font-display text-lg uppercase tracking-wide text-foreground">
-              {t("settings.audioSelfTest")}
-            </span>
-            <span className="text-xs font-medium text-muted-foreground">{t("settings.audioSelfTestHint")}</span>
-          </span>
-          <span className="font-display text-sm uppercase tracking-wide text-primary">▶</span>
-        </button>
-        {diag ? (
-          <p className="-mt-1 break-words px-2 text-left text-[11px] font-semibold text-muted-foreground">{diag}</p>
-        ) : null}
 
         <div className="mt-2 h-px w-full bg-border" />
 

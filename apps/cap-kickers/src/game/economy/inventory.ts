@@ -61,12 +61,3 @@ export const unlock = (id: string, storage: StorageLike | null = defaultStorage(
   }
   return owned;
 };
-
-/** Remove an item from the owned set (idempotent). Returns the new owned set.
- *  Used by the Settings audio-pack test toggles to turn a pack back off. */
-export const lock = (id: string, storage: StorageLike | null = defaultStorage()): string[] => {
-  const owned = loadOwned(storage);
-  const next = owned.filter((x) => x !== id);
-  if (next.length !== owned.length) saveOwned(next, storage);
-  return next;
-};
