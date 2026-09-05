@@ -6,7 +6,6 @@ import { loadCapStyleId, saveCapStyleId } from "../game/caps/storage";
 import { loadOwned } from "../game/economy/inventory";
 import { loadProgress } from "../game/campaign/storage";
 import { isStyleEquippable } from "../game/economy/catalog";
-import { UNLOCK_ALL } from "../lib/dev-flags";
 import { trackCapSelected } from "../lib/analytics";
 import { drawCap } from "../game/render/draw";
 import { capSpriteReady, capSpriteImage } from "../lib/cap-sprites";
@@ -51,9 +50,7 @@ function CapsPage() {
   // Only base + unlocked caps are equippable here; locked ones live in the Cabinet.
   const owned = loadOwned();
   const completed = loadProgress().completed;
-  const styles = UNLOCK_ALL
-    ? CAP_STYLES
-    : CAP_STYLES.filter((s) => isStyleEquippable("cap", s.id, owned, completed));
+  const styles = CAP_STYLES.filter((s) => isStyleEquippable("cap", s.id, owned, completed));
   const choose = (id: string) => {
     setSelected(id);
     saveCapStyleId(id);
