@@ -232,3 +232,125 @@ Studio's **Shorts** tab, not Videos — that's normal and doesn't affect their u
 
 Check cost per install against the Zen benchmark ($0.077 BR / $0.084 IN) and open **Ad assets ▸
 Performance** to see which creative Google rates Low / Good / Best. Drop the Lows, make more Bests.
+
+---
+
+## Campaign 3 — Spanish LatAm (added 2026-09-03)
+
+| Setting | Value |
+|---|---|
+| Name | `Cap Kickers Spanish LatAm — Installs` |
+| Type | App campaign → App installs → Android |
+| Locations | 17 Spanish-speaking Play countries: Argentina, Bolivia, Chile, Colombia, Costa Rica, Dominican Republic, Ecuador, El Salvador, Guatemala, Honduras, Mexico, Nicaragua, Panama, Paraguay, Peru, Uruguay, Venezuela |
+| Languages | Spanish |
+| Budget | **$7.00/day** (account total → $35/day) |
+| Bidding | Install volume · All users · maximise conversions, no target CPI |
+| View-through conv. | On |
+
+Brazil and India are excluded — they have their own campaigns. Chosen over
+"all 23 Play countries with Spanish language" because US/Canada CPIs run several
+times LatAm's and would absorb the $7 before LatAm saw delivery.
+
+### Ad copy (es) — verified against Google's limits programmatically
+
+**Headlines** (≤30) — 20 / 17 / 21 / 21 / 23 chars
+
+| # | Text |
+|---|---|
+| 1 | Toque, gambeta y gol |
+| 2 | Fútbol de Tapitas |
+| 3 | Sin mira. Puro tacto. |
+| 4 | Gratis y sin conexión |
+| 5 | Vence al portero y gana |
+
+**Descriptions** (≤90) — 77 / 77 / 87 / 75 / 80 chars
+
+| # | Text |
+|---|---|
+| 1 | Dale un toque a la tapita: mientras más fuerte, más lejos llega. Mete el gol. |
+| 2 | Cinco toques por turno. Pasa por el hueco para conservar la pelota y dispara. |
+| 3 | Campaña contra la máquina, Pasa y Juega con un amigo o Práctica. Gratis y sin conexión. |
+| 4 | Desbloquea canchas y estilos de tapita. Sin cuenta ni registro. Solo juega. |
+| 5 | Partidas rápidas para el recreo. El fútbol de mesa de la escuela en tu bolsillo. |
+
+Vocabulary matches the shipped `es` strings and the `es-419` Play listing:
+*tapita*, *portero*, *cancha*, *sin conexión* — not the Mexico-only *corcholata*
+or the Argentina-only *chapita*.
+
+### Creative — built 2026-09-03
+
+**Regenerated the source screenshots in Spanish.** The pt-BR ad set has a real
+flaw worth not repeating: `ck-pt-b-*` shows Portuguese marketing copy over an
+**English** app screen ("CAMPAIGN", "LOCKED", "Beat each rival…"). The Spanish
+set uses screens captured from the shipped 1.1.1 web build with the app forced
+to Spanish, so the UI in every frame reads CAMPAÑA / NOVATO / BLOQUEADO /
+JUGADOR 1 — TOQUE 1/5 / CANCHA / TU TAPITA.
+
+How they were made (the Sep 1 generator did not survive — this one is written down):
+1. `android/app/src/main/assets/public` served locally; Playwright/Chromium at
+   1080×1920, `localStorage['capkickers.locale.v1']='es'` and
+   `['capkickers.tutorial.v1']='1'` injected before load, routes
+   `/` `/campaign` `/play?mode=ai` `/pitches` `/caps`.
+2. Ad images composed as HTML in Chromium (Poppins, `#21b24b` CTA, the same
+   dark-green radial background sampled from the pt files) and screenshotted.
+3. Video: seven scene stills → ffmpeg crop-pan → `xfade` crossfades.
+   *Do not use ffmpeg `zoompan` for this — it took 2m20s per 3s clip; the
+   pre-scale + animated `crop` does the same job in ~3s.*
+
+**Images** — `ads/image/` · variant A gameplay, variant B campaign ladder
+
+| Ratio | Pixels | Files |
+|---|---|---|
+| 1.91:1 | 1200×628 | `ck-es-{a,b}-16x9.jpg` |
+| 1:1 | 1200×1200 | `ck-es-{a,b}-1x1.jpg` |
+| 4:5 | 1200×1500 | `ck-es-{a,b}-4x5.jpg` |
+
+**Videos** — `ads/video/` · 20.0 s · H.264 · yuv420p · 30 fps
+
+| File | Pixels |
+|---|---|
+| `capkickers-es-9x16.mp4` | 1080×1920 |
+| `capkickers-es-16x9.mp4` | 1920×1080 |
+| `capkickers-es-1x1.mp4` | 1080×1080 |
+
+Scenes: title card → "Sin mira. Solo tu dedo." → "Pasa por el hueco y conserva
+la pelota" → "Sube en la campaña, de Fácil a Difícil" → "Elige tu cancha" →
+"Elige tu tapita" → end card with GRATIS · SIN CONEXIÓN · SIN REGISTRO.
+
+### Live in the campaign (Sep 3, 2026)
+
+All 6 images and all 3 videos are attached to ad group `200767393918`.
+Ad strength went **Poor → Average**; the ad is *Under review* (normal for new
+creative).
+
+| Slot | Count |
+|---|---|
+| Headlines | 5/5 |
+| Descriptions | 5/5 |
+| Images | 6/20 |
+| Videos | 3/20 |
+
+**YouTube** — Google Ads accepts video assets *only* as YouTube URLs; there is no
+direct upload. The three MP4s live on Leandro's channel
+(`UCUzdDnlSSiHS-0UsTH_a1wQ`) as **Unlisted**, *not made for kids*, titled to match
+the existing en/pt set. Unlisted videos are found by pasting the **watch URL**
+into *Videos ▸ Search YouTube* — they never show up in keyword search.
+
+| File | Title | Video ID | Watch URL |
+|---|---|---|---|
+| `capkickers-es-9x16.mp4` | capkickers es 9x16 | `o0_Ib5-Grx8` | https://www.youtube.com/watch?v=o0_Ib5-Grx8 |
+| `capkickers-es-16x9.mp4` | capkickers es 16x9 | `t7WtmlcmH_A` | https://www.youtube.com/watch?v=t7WtmlcmH_A |
+| `capkickers-es-1x1.mp4` | capkickers es 1x1 | `C1UlORtFMD8` | https://www.youtube.com/watch?v=C1UlORtFMD8 |
+
+Description used on all three:
+`Cap Kickers — Fútbol de Tapitas. Toque, gambeta y gol: vence a todos los rivales en la campaña. Juega gratis en Android e iOS.`
+
+**Upload gotcha, resolved:** the Chrome extension's `file_upload` allow-list is
+*session-scoped*, not path-scoped — Mac paths (`/Users/...`) are rejected, but
+container paths (`/mnt/user-data/outputs/...`) upload fine. Write the asset into
+the container's outputs folder first and the upload works without any dragging.
+Note YouTube's upload dialog only accepts **one file per call** (the input is
+`multiple: false`); a multi-file call breaks the page.
+
+**Optional next lift:** Ad strength reads *Average*; Google suggests another
+landscape video to reach *Good*.

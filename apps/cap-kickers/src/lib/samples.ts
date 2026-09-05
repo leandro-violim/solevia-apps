@@ -8,12 +8,17 @@
 //  • Lazy-load. Callers fetch a pack's files only when it is unlocked AND sound is
 //    on — cold start pays nothing for audio the player has not earned.
 
+import { SAMPLE_DATA, dataUriToBytes } from "./sample-data";
+
 const cache = new Map<string, AudioBuffer>();
 const inflight = new Map<string, Promise<AudioBuffer | null>>();
 
-const sampleUrl = (id: string): string => `/audio/${id}.m4a`;
-
-/** Decode a sample once and cache it. Returns null on any failure (never throws). */
+/**
+ * Decode a sample once and cache it. Returns null on any failure (never throws).
+ * The bytes come from a bundled base64 data URI (see sample-data.ts) rather than a
+ * runtime fetch, because `fetch()` of a local file fails under iOS WKWebView's
+ * capacitor:// scheme — which had left every recording silent on iPhone.
+ */
 export async function loadSample(ctx: AudioContext, id: string): Promise<AudioBuffer | null> {
   const hit = cache.get(id);
   if (hit) return hit;
@@ -21,10 +26,9 @@ export async function loadSample(ctx: AudioContext, id: string): Promise<AudioBu
   if (pending) return pending;
   const p = (async (): Promise<AudioBuffer | null> => {
     try {
-      const res = await fetch(sampleUrl(id));
-      if (!res.ok) return null;
-      const bytes = await res.arrayBuffer();
-      const buf = await ctx.decodeAudioData(bytes);
+      const uri = SAMPLE_DATA[id];
+      if (!uri) return null;
+      const buf = await ctx.decodeAudioData(dataUriToBytes(uri));
       cache.set(id, buf);
       return buf;
     } catch {

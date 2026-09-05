@@ -115,9 +115,9 @@ function SettingsPage() {
     setDiag("…");
     void gameAudio.selfTest().then((r) => {
       setDiag(
-        `context=${r.context} · fetch=${r.fetchOk ? "ok" : "FAIL"} · decode=${
-          r.decoded ? `ok (${r.durationSec}s)` : "FAIL"
-        }${r.error ? ` · err=${r.error}` : ""}`,
+        `context=${r.context} · decode=${r.decoded ? `ok (${r.durationSec}s)` : "FAIL"}${
+          r.error ? ` · err=${r.error}` : ""
+        }`,
       );
     });
   };

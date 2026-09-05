@@ -271,12 +271,11 @@ export class GameAudio {
    */
   async selfTest(): Promise<{
     context: string;
-    fetchOk: boolean;
     decoded: boolean;
     durationSec: number;
     error: string;
   }> {
-    const r = { context: "none", fetchOk: false, decoded: false, durationSec: 0, error: "" };
+    const r = { context: "none", decoded: false, durationSec: 0, error: "" };
     if (!this.ensure() || !this.ctx || !this.master) {
       r.error = "no-webaudio";
       return r;
@@ -304,23 +303,16 @@ export class GameAudio {
     } catch (e) {
       r.error += ` beep:${String(e)}`;
     }
-    // 2) The real recording — fetch + decode + play, ~0.5s after the beep.
+    // 2) The real recording through the SAME path the game uses (bundled bytes +
+    //    decodeAudioData, no fetch), ~0.5s after the beep.
     try {
-      const res = await fetch("/audio/cheer-win.m4a");
-      r.fetchOk = res.ok;
-      if (res.ok) {
-        const bytes = await res.arrayBuffer();
-        const buf = await this.ctx.decodeAudioData(bytes.slice(0));
+      const buf = await loadSample(this.ctx, "cheer-win");
+      if (buf) {
         r.decoded = true;
         r.durationSec = Math.round(buf.duration * 100) / 100;
-        const when = this.ctx.currentTime + 0.5;
-        const src = this.ctx.createBufferSource();
-        src.buffer = buf;
-        const g = this.ctx.createGain();
-        g.gain.value = 1;
-        src.connect(g);
-        g.connect(this.master);
-        src.start(when);
+        playSample(this.ctx, this.master, buf, 1);
+      } else {
+        r.error += " sample:null";
       }
     } catch (e) {
       r.error += ` sample:${String(e)}`;
