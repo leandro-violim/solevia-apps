@@ -834,21 +834,21 @@ function PlayPage() {
         className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between px-4"
         style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
       >
-        <div className="font-display rounded-2xl bg-white/95 px-4 py-1 text-3xl tabular-nums shadow-[0_4px_0_rgba(7,40,24,0.4)] ring-2 ring-black/5">
+        <div className="font-display rounded-2xl bg-[#fdf7ea]/95 px-4 py-1 text-3xl tabular-nums shadow-[0_4px_0_rgba(90,60,30,0.38)] ring-1 ring-[#7a5a2e]/20">
           <span style={{ color: teamColors[0] }}>{match.scores[0]}</span>
           <span className="px-1.5 text-foreground/25">–</span>
           <span style={{ color: teamColors[1] }}>{match.scores[1]}</span>
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          <div className="font-display rounded-2xl bg-white/95 px-4 py-1 text-lg uppercase tracking-wide text-foreground shadow-[0_4px_0_rgba(7,40,24,0.4)] ring-2 ring-black/5">
+          <div className="font-display rounded-2xl bg-[#fdf7ea]/95 px-4 py-1 text-lg uppercase tracking-wide text-foreground shadow-[0_4px_0_rgba(90,60,30,0.38)] ring-1 ring-[#7a5a2e]/20">
             {won
               ? t("play.playerWins", { n: match.winner! + 1 })
               : mode === "ai" && match.attacker === AI_SIDE
                 ? t("play.aiTouch", { t: match.touch, shot: MATCH.shotTouch })
                 : t("play.playerTouch", { n: match.attacker + 1, t: match.touch, shot: MATCH.shotTouch })}
           </div>
-          <div className="flex gap-1.5 rounded-full bg-white/90 px-3 py-1.5 shadow-md">
+          <div className="flex gap-1.5 rounded-full bg-[#fdf7ea]/92 px-3 py-1.5 shadow-md">
             {Array.from({ length: MATCH.shotTouch }, (_, i) => i + 1).map((n) => {
               // Paint a pip only after a flick is completed: touch 1 = 0 pips,
               // then +1 per flick taken (n < match.touch = flicks already made).
@@ -859,7 +859,7 @@ function PlayPage() {
                   className="h-3 w-3 rounded-full border-2"
                   style={{
                     backgroundColor: filled ? SELECT_RING : "transparent",
-                    borderColor: filled ? "#d8a400" : "#cbd8cf",
+                    borderColor: filled ? "#d8a400" : "#cbb48f",
                   }}
                 />
               );
@@ -874,7 +874,7 @@ function PlayPage() {
           className="pointer-events-none absolute inset-x-0 bottom-16 flex justify-center px-6"
           style={{ marginBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="goal-pop font-display max-w-xs rounded-full bg-black/70 px-5 py-2.5 text-center text-sm font-semibold uppercase tracking-wide text-white shadow-lg">
+          <div className="goal-pop font-display max-w-xs rounded-full bg-[#2a1a0e]/82 px-5 py-2.5 text-center text-sm font-semibold uppercase tracking-wide text-white shadow-lg">
             👆 {t("play.middleHint")}
           </div>
         </div>
@@ -888,13 +888,13 @@ function PlayPage() {
         <Link
           to="/"
           onClick={() => void notifyMatchEnded()}
-          className="font-display pointer-events-auto rounded-full bg-white/90 px-5 py-2 text-xs uppercase tracking-wider text-primary shadow-md active:scale-95"
+          className="font-display pointer-events-auto rounded-full bg-[#fdf7ea]/92 px-5 py-2 text-xs uppercase tracking-wider text-primary shadow-md active:scale-95"
         >
           {t("play.menu")}
         </Link>
         <button
           onClick={handleNewMatch}
-          className="font-display pointer-events-auto rounded-full bg-white/90 px-5 py-2 text-xs uppercase tracking-wider text-foreground shadow-md active:scale-95"
+          className="font-display pointer-events-auto rounded-full bg-[#fdf7ea]/92 px-5 py-2 text-xs uppercase tracking-wider text-foreground shadow-md active:scale-95"
         >
           {t("play.newMatch")}
         </button>
@@ -914,7 +914,7 @@ function PlayPage() {
                 className={
                   big
                     ? "goal-pop font-display rounded-2xl bg-black/75 px-8 py-4 text-5xl font-extrabold uppercase tracking-wide text-[#ffcf33] shadow-[0_8px_0_rgba(0,0,0,0.35)]"
-                    : "animate-in fade-in zoom-in rounded-2xl bg-black/70 px-6 py-3 text-2xl font-extrabold text-white"
+                    : "animate-in fade-in zoom-in rounded-2xl bg-[#2a1a0e]/82 px-6 py-3 text-2xl font-extrabold text-white"
                 }
               >
                 {banner.text}
