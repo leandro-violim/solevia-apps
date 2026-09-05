@@ -6,7 +6,6 @@ import { itemsByType, isItemUnlocked, isAudioPackUnlocked, type Item } from "../
 import { loadBalance, earn, spend, EARN, rewardedEarnsLeft, recordRewardedEarn } from "../game/economy/currency";
 import { loadOwned, unlock } from "../game/economy/inventory";
 import { loadProgress } from "../game/campaign/storage";
-import { loadPitchStyleId, savePitchStyleId } from "../game/pitches/storage";
 import { loadCapStyleId, saveCapStyleId } from "../game/caps/storage";
 import { pitchStyleById } from "../game/pitches/styles";
 import { styleById } from "../game/caps/styles";
@@ -141,7 +140,6 @@ function CabinetPage() {
   const completed = loadProgress().completed;
   const [balance, setBalance] = useState(() => loadBalance());
   const [owned, setOwned] = useState<string[]>(() => loadOwned());
-  const [equippedPitch, setEquippedPitch] = useState(() => loadPitchStyleId());
   const [equippedCap, setEquippedCap] = useState(() => loadCapStyleId());
   const [watchLeft, setWatchLeft] = useState(() => rewardedEarnsLeft(today));
   const [busy, setBusy] = useState(false); // true while a rewarded ad loads/plays
@@ -159,14 +157,12 @@ function CabinetPage() {
     });
   };
 
+  // Only caps are equipped now. Pitches are awarded as phase rewards and used at
+  // random each match, so the Cabinet shows them as a collection, not a picker.
   const equip = (item: Item) => {
-    if (item.type === "pitch") {
-      savePitchStyleId(item.styleId);
-      setEquippedPitch(item.styleId);
-    } else if (item.type === "cap") {
-      saveCapStyleId(item.styleId);
-      setEquippedCap(item.styleId);
-    }
+    if (item.type !== "cap") return;
+    saveCapStyleId(item.styleId);
+    setEquippedCap(item.styleId);
     trackItemEquipped(item.id, item.type);
     gameAudio.sfx("clack");
   };
@@ -225,13 +221,13 @@ function CabinetPage() {
   const reqText = (item: Item): string =>
     item.unlock.kind === "progress"
       ? t(item.unlock.requires === "beat-veteran" ? "cabinet.reqVeteran" : "cabinet.reqCampaign")
-      : "";
+      : item.unlock.kind === "reward"
+        ? t("cabinet.reqReward")
+        : "";
 
   const Niche = ({ item }: { item: Item }) => {
     const unlocked = isItemUnlocked(item, owned, completed);
-    const equipped =
-      (item.type === "pitch" && equippedPitch === item.styleId) ||
-      (item.type === "cap" && equippedCap === item.styleId);
+    const equipped = item.type === "cap" && equippedCap === item.styleId;
     const name =
       item.type === "audio"
         ? t(item.styleId === "crowd" ? "cabinet.packCrowd" : "cabinet.packStadium")
@@ -255,7 +251,7 @@ function CabinetPage() {
                 {t("cabinet.preview")}
               </button>
             </div>
-          ) : (
+          ) : item.type === "cap" ? (
             <button
               onClick={() => equip(item)}
               disabled={equipped}
@@ -264,27 +260,21 @@ function CabinetPage() {
             >
               {t(equipped ? "cabinet.equipped" : "cabinet.equip")}
             </button>
+          ) : (
+            // Pitch — collected trophy (played at random, nothing to equip).
+            <span className="text-[11px] font-bold uppercase text-primary">{t("cabinet.owned")}</span>
           )
         ) : item.unlock.kind === "coins" ? (
-          // Audio niches carry a Preview + Buy pair; stack them so neither button
-          // overflows the narrow 1/3-width card. Pitches/caps keep the single button.
-          <div className={item.type === "audio" ? "flex w-full flex-col items-center gap-1" : "flex items-center gap-1"}>
-            {item.type === "audio" && (
-              <button onClick={() => previewAudio(item)} className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-bold uppercase text-foreground/60">
-                {t("cabinet.preview")}
-              </button>
-            )}
-            <button
-              onClick={() => buy(item)}
-              className="flex items-center justify-center gap-0.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase leading-none"
-              style={{ background: affordable ? GOLD : "#eee", color: affordable ? "#3a2b00" : "#999" }}
-            >
-              <span>⬤</span> {item.unlock.cost}
-            </button>
-          </div>
+          <button
+            onClick={() => buy(item)}
+            className="flex items-center justify-center gap-0.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase leading-none"
+            style={{ background: affordable ? GOLD : "#eee", color: affordable ? "#3a2b00" : "#999" }}
+          >
+            <span>⬤</span> {item.unlock.cost}
+          </button>
         ) : (
           <span className="px-1 text-center text-[10px] font-semibold leading-tight text-muted-foreground">
-            🔒 {reqText(item)}
+            {item.unlock.kind === "reward" ? "🏆" : "🔒"} {reqText(item)}
           </span>
         )}
       </div>

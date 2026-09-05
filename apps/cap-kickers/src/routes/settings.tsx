@@ -3,10 +3,11 @@ import { useState } from "react";
 
 import { loadSettings, patchSettings, type Settings } from "../game/settings/storage";
 import { gameAudio } from "../lib/audio";
-import { pitchStyleById } from "../game/pitches/styles";
-import { loadPitchStyleId } from "../game/pitches/storage";
 import { styleById } from "../game/caps/styles";
 import { loadCapStyleId } from "../game/caps/storage";
+import { loadOwned, unlock, lock } from "../game/economy/inventory";
+import { isAudioPackUnlocked } from "../game/economy/catalog";
+import { loadProgress } from "../game/campaign/storage";
 import { APP_VERSION } from "./-legal-doc";
 import { useT, useLocale, setLocale, LOCALES } from "../lib/i18n";
 import { setAnalyticsEnabled, trackLanguageSet, trackSettingChanged } from "../lib/analytics";
@@ -79,9 +80,24 @@ function SettingsPage() {
     gameAudio.setSettings(next); // apply mute/music live
   };
 
-  // Current selections (read once; these persist in their own stores).
-  const pitch = pitchStyleById(loadPitchStyleId());
+  // Current cap selection (persists in its own store). Pitches are no longer
+  // equipped here — they're awarded as phase rewards and picked at random.
   const cap = styleById(loadCapStyleId());
+
+  // Audio-pack test switches: enable the Crowd / Stadium packs directly (normally
+  // earned by clearing phases) so the layered audio can be checked without grinding.
+  const packUnlocked = (packId: string) => isAudioPackUnlocked(packId, loadOwned(), loadProgress().completed);
+  const [crowdOn, setCrowdOn] = useState(() => packUnlocked("crowd"));
+  const [stadiumOn, setStadiumOn] = useState(() => packUnlocked("stadium"));
+  const applyPacks = () => {
+    gameAudio.setPacks({ crowd: packUnlocked("crowd"), stadium: packUnlocked("stadium") });
+  };
+  const togglePack = (itemId: string, on: boolean, set: (v: boolean) => void) => {
+    if (on) unlock(itemId);
+    else lock(itemId);
+    set(on);
+    applyPacks();
+  };
 
   return (
     <div
@@ -168,8 +184,22 @@ function SettingsPage() {
 
         <div className="mt-2 h-px w-full bg-border" />
 
-        <NavRow to="/pitches" label={t("settings.pitch")} value={t(`pitch.${pitch.id}`)} />
         <NavRow to="/caps" label={t("settings.yourCap")} value={cap.name} />
+
+        {/* Audio-pack test switches — enable the earned packs directly. */}
+        <p className="mt-1 px-1 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {t("settings.audioTest")}
+        </p>
+        <Toggle
+          label={t("cabinet.packCrowd")}
+          on={crowdOn}
+          onToggle={() => togglePack("audio-crowd", !crowdOn, setCrowdOn)}
+        />
+        <Toggle
+          label={t("cabinet.packStadium")}
+          on={stadiumOn}
+          onToggle={() => togglePack("audio-stadium", !stadiumOn, setStadiumOn)}
+        />
 
         <div className="mt-2 h-px w-full bg-border" />
 

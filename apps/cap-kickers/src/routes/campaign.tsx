@@ -54,7 +54,7 @@ function CampaignPage() {
                 </span>
                 <span className="flex flex-1 flex-col items-start text-left">
                   <span className="font-display text-lg uppercase leading-none tracking-wide text-muted-foreground">
-                    {t(`campaign.level.${level.id}`)}
+                    {level.name}
                   </span>
                   <span className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground/70">
                     {t("campaign.locked")}
@@ -90,7 +90,7 @@ function CampaignPage() {
 
               <span className="flex flex-1 flex-col items-start text-left">
                 <span className="font-display text-lg uppercase leading-none tracking-wide text-foreground">
-                  {t(`campaign.level.${level.id}`)}
+                  {level.name}
                 </span>
                 <span
                   className="mt-1 text-xs font-semibold uppercase tracking-wide"

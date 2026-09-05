@@ -187,7 +187,7 @@ export const trackInterstitialShown = (): void => send("ad_interstitial_shown");
 // ── Trophy Cabinet / reward loop (§4). Every param is an enum, id, or number. ──
 
 export type ItemType = "pitch" | "cap" | "audio";
-export type UnlockMethod = "progress" | "coins" | "rewarded";
+export type UnlockMethod = "progress" | "coins" | "rewarded" | "reward";
 
 export const trackCabinetOpened = (from: string): void => send("cabinet_opened", { from });
 /** The intent signal: what players want but can't afford yet. */

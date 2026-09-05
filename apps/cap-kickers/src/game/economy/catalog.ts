@@ -1,19 +1,23 @@
 // The catalog of UNLOCKABLE cosmetics — every collectible the Cabinet shows.
 // Cosmetics only: nothing here gates the core loop (REWARDS-AND-AUDIO-PLAN.md §1).
-// Base styles (grass/school/table/cement pitches, the existing caps) are free and
-// are NOT listed here — they need no unlock. This file holds only the earned ones.
+// Base styles (grass/school pitches, the starter caps) are free and are NOT listed
+// here — they need no unlock. This file holds only the earned ones (awarded pitch +
+// audio rewards, the coins-bought caps, and the campaign-trophy gold cap).
 //
 // Pure data + pure predicates. It takes the player's owned ids and completed
 // campaign level ids as plain arrays, so it never imports storage and stays
 // trivially testable.
 
+import { LAST_LEVEL_ID } from "../campaign/ladder";
+
 export type ItemType = "pitch" | "cap" | "audio";
 
-/** A play-only progress gate. `beat-veteran` = clear level l4; `campaign-complete` = clear l6. */
+/** A play-only progress gate. `campaign-complete` = clear the final phase. */
 export type ProgressReq = "beat-veteran" | "campaign-complete";
 
 export type Unlock =
   | { kind: "progress"; requires: ProgressReq } // free + automatic when the condition is met
+  | { kind: "reward" } // AWARDED for completing a phase (tracked in inventory)
   | { kind: "coins"; cost: number }; // bought with earned Caps
 
 export type Item = {
@@ -24,11 +28,17 @@ export type Item = {
 };
 
 export const CATALOG: Item[] = [
-  // Pitches
-  { id: "pitch-night", type: "pitch", styleId: "night", unlock: { kind: "progress", requires: "beat-veteran" } },
-  { id: "pitch-street", type: "pitch", styleId: "street", unlock: { kind: "coins", cost: 200 } },
-  { id: "pitch-beach", type: "pitch", styleId: "beach", unlock: { kind: "coins", cost: 300 } },
-  // Caps — the realistic metal set (six colourways) + the legendary gold
+  // Pitch surfaces — AWARDED as you clear phases (see ladder.ts rewards).
+  { id: "pitch-table", type: "pitch", styleId: "table", unlock: { kind: "reward" } },
+  { id: "pitch-cement", type: "pitch", styleId: "cement", unlock: { kind: "reward" } },
+  { id: "pitch-night", type: "pitch", styleId: "night", unlock: { kind: "reward" } },
+  { id: "pitch-street", type: "pitch", styleId: "street", unlock: { kind: "reward" } },
+  { id: "pitch-beach", type: "pitch", styleId: "beach", unlock: { kind: "reward" } },
+  // Audio packs — also AWARDED by phases (the synth engine stays the free baseline).
+  { id: "audio-crowd", type: "audio", styleId: "crowd", unlock: { kind: "reward" } },
+  { id: "audio-stadium", type: "audio", styleId: "stadium", unlock: { kind: "reward" } },
+  // Caps — the realistic metal set (six colourways) + the legendary gold. Still the
+  // earned-Caps (coins) economy in the Cabinet; the legendary is the campaign trophy.
   { id: "cap-metal-silver", type: "cap", styleId: "metal-silver", unlock: { kind: "coins", cost: 150 } },
   { id: "cap-metal-red", type: "cap", styleId: "metal-red", unlock: { kind: "coins", cost: 150 } },
   { id: "cap-metal-blue", type: "cap", styleId: "metal-blue", unlock: { kind: "coins", cost: 150 } },
@@ -36,9 +46,6 @@ export const CATALOG: Item[] = [
   { id: "cap-metal-orange", type: "cap", styleId: "metal-orange", unlock: { kind: "coins", cost: 150 } },
   { id: "cap-metal-purple", type: "cap", styleId: "metal-purple", unlock: { kind: "coins", cost: 150 } },
   { id: "cap-gold-legendary", type: "cap", styleId: "gold-legendary", unlock: { kind: "progress", requires: "campaign-complete" } },
-  // Audio packs (§3) — the synth engine stays the free baseline; these are the reward.
-  { id: "audio-crowd", type: "audio", styleId: "crowd", unlock: { kind: "coins", cost: 250 } },
-  { id: "audio-stadium", type: "audio", styleId: "stadium", unlock: { kind: "coins", cost: 400 } },
 ];
 
 export const itemById = (id: string): Item | undefined => CATALOG.find((i) => i.id === id);
@@ -46,11 +53,11 @@ export const itemsByType = (type: ItemType): Item[] => CATALOG.filter((i) => i.t
 
 /** Whether a campaign progress requirement is met, given the completed level ids. */
 export const progressSatisfied = (req: ProgressReq, completed: readonly string[]): boolean =>
-  req === "beat-veteran" ? completed.includes("l4") : completed.includes("l6");
+  req === "beat-veteran" ? completed.includes("l6") : completed.includes(LAST_LEVEL_ID);
 
 /**
  * Is an item unlocked? Progress items are automatic once their campaign condition
- * is met; coins items are unlocked once bought (present in `owned`).
+ * is met; reward + coins items are unlocked once earned/bought (present in `owned`).
  */
 export const isItemUnlocked = (item: Item, owned: readonly string[], completed: readonly string[]): boolean =>
   item.unlock.kind === "progress"

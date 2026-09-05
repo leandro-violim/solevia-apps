@@ -11,11 +11,20 @@ import { drawPitch, drawGoal, drawCap, drawKeeper, drawSurfaceFill } from "../ga
 import { styleById, opponentFor } from "../game/caps/styles";
 import { capSpriteReady } from "../lib/cap-sprites";
 import { loadCapStyleId } from "../game/caps/storage";
-import { pitchStyleById } from "../game/pitches/styles";
-import { loadPitchStyleId } from "../game/pitches/storage";
+import { PITCH_STYLES, pitchStyleById } from "../game/pitches/styles";
 import { pitchTextureReady } from "../lib/pitch-textures";
-import { completeLevel, isCompleted, levelById, levelIndex, nextLevelId } from "../game/campaign/ladder";
+import {
+  completeLevel,
+  isCompleted,
+  levelById,
+  levelIndex,
+  levelReward,
+  nextLevelId,
+  type PhaseReward,
+} from "../game/campaign/ladder";
 import { loadProgress, saveProgress } from "../game/campaign/storage";
+import { isStyleEquippable, isAudioPackUnlocked } from "../game/economy/catalog";
+import { loadOwned, isOwned, unlock } from "../game/economy/inventory";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 import { gameAudio } from "../lib/audio";
@@ -102,6 +111,18 @@ const localToday = (): string => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 };
 
+// Pick a random pitch surface from those the player has unlocked (base styles are
+// always available). Pitches are earned as phase rewards now, not equipped, so each
+// match just plays on a random one of the surfaces you've collected — a little
+// variety, and a reason to keep unlocking more.
+const randomAvailablePitch = () => {
+  const owned = loadOwned();
+  const completed = loadProgress().completed;
+  const pool = PITCH_STYLES.filter((s) => isStyleEquippable("pitch", s.id, owned, completed));
+  const list = pool.length > 0 ? pool : PITCH_STYLES;
+  return list[Math.floor(Math.random() * list.length)];
+};
+
 // Count matches started, so the "start with the middle cap" tip shows only for a
 // new player's first few games. Returns a big number if storage is blocked (→ no tip).
 const GAMES_KEY = "capkickers.games.v1";
@@ -132,7 +153,7 @@ function PlayPage() {
   // Cap styles: the player's chosen cap vs a contrasting opponent cap. Side 0
   // (human/Player 1) uses the chosen style; side 1 (Player 2 / AI) the opponent.
   const playerStyle = useState(() => styleById(loadCapStyleId()))[0];
-  const pitchStyle = useState(() => pitchStyleById(loadPitchStyleId()))[0];
+  const pitchStyle = useState(randomAvailablePitch)[0];
   const oppStyle = opponentFor(playerStyle.id);
   const teamColors: [string, string] = [playerStyle.base, oppStyle.base];
 
@@ -163,6 +184,9 @@ function PlayPage() {
   // Guards against double-recording campaign completion when the "won"
   // match state triggers more than one re-render.
   const recordedRef = useRef(false);
+  // The cosmetic just awarded for clearing this phase (pitch/audio), shown as a
+  // big "Unlocked!" celebration over the win screen. null = nothing to celebrate.
+  const [unlockedReward, setUnlockedReward] = useState<PhaseReward | null>(null);
   // Analytics: wall-clock start of the current match, and a latch so match_end
   // fires exactly once per match even though the effect re-runs on every state
   // change while the win overlay is up.
@@ -664,8 +688,23 @@ function PlayPage() {
       if (firstClear) {
         earn(EARN.firstLevelClear);
         trackCurrencyEarned("first_level_clear", EARN.firstLevelClear);
-        // Beating the Veteran (l4) unlocks the Night pitch (progress gate).
-        if (campaign === "l4") trackItemUnlocked("pitch-night", "pitch", "progress");
+        // Award this phase's cosmetic (pitch surface or audio pack), if any, the
+        // first time it's cleared. Grant it to the inventory + pop the big
+        // "Unlocked!" celebration; an audio pack starts playing immediately.
+        const reward = levelReward(campaign);
+        if (reward && !isOwned(reward.itemId)) {
+          unlock(reward.itemId);
+          trackItemUnlocked(reward.itemId, reward.type, "reward");
+          if (reward.type === "audio") {
+            const owned = loadOwned();
+            const completed = loadProgress().completed;
+            gameAudio.setPacks({
+              crowd: isAudioPackUnlocked("crowd", owned, completed),
+              stadium: isAudioPackUnlocked("stadium", owned, completed),
+            });
+          }
+          setUnlockedReward(reward);
+        }
       }
       if (!nextLevelId(campaign)) {
         trackCampaignComplete();
@@ -1045,6 +1084,46 @@ function PlayPage() {
             className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
           >
             {t("play.rematch")}
+          </button>
+        </div>
+      )}
+
+      {/* Reward celebration — pops over the win screen when a phase awards a
+          cosmetic. Tapping "Nice!" dismisses it to reveal the next-level card. */}
+      {unlockedReward && (
+        <div className="pointer-events-auto absolute inset-0 z-30 flex flex-col items-center justify-center gap-5 bg-black/85 px-8 text-center">
+          <div className="goal-pop text-7xl drop-shadow-[0_4px_0_rgba(0,0,0,0.4)]">🎉</div>
+          <h2 className="font-display text-4xl uppercase tracking-wide text-[#ffcf33] drop-shadow-[0_3px_0_rgba(0,0,0,0.4)]">
+            {t("play.rewardUnlocked")}
+          </h2>
+          <div className="goal-pop flex flex-col items-center gap-3 rounded-3xl bg-[#fdf7ea] p-4 shadow-[0_10px_0_rgba(90,60,30,0.4)]">
+            {unlockedReward.type === "pitch" ? (
+              <img
+                src={`/pitch-textures/${pitchStyleById(unlockedReward.styleId).photo}`}
+                alt=""
+                className="h-28 w-44 rounded-xl object-cover ring-2 ring-[#7a5a2e]/25"
+              />
+            ) : (
+              <div className="flex h-28 w-44 items-center justify-center rounded-xl bg-[#2a1a0e] text-6xl">
+                🔊
+              </div>
+            )}
+            <span className="font-display text-2xl uppercase tracking-wide text-foreground">
+              {unlockedReward.type === "pitch"
+                ? pitchStyleById(unlockedReward.styleId).name
+                : unlockedReward.styleId === "crowd"
+                  ? t("cabinet.packCrowd")
+                  : t("cabinet.packStadium")}
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {unlockedReward.type === "pitch" ? t("play.rewardPitch") : t("play.rewardAudio")}
+            </span>
+          </div>
+          <button
+            onClick={() => setUnlockedReward(null)}
+            className="arcade-btn arcade-btn--gold mt-1 px-12 py-4 text-2xl shadow-[0_8px_0_#d8a400]"
+          >
+            {t("play.nice")}
           </button>
         </div>
       )}
