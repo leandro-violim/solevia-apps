@@ -36,6 +36,7 @@ export const CATALOG: Item[] = [
   { id: "pitch-beach", type: "pitch", styleId: "beach", unlock: { kind: "reward" } },
   // Audio packs — also AWARDED by phases (the synth engine stays the free baseline).
   { id: "audio-crowd", type: "audio", styleId: "crowd", unlock: { kind: "reward" } },
+  { id: "audio-commentary", type: "audio", styleId: "commentary", unlock: { kind: "reward" } },
   { id: "audio-stadium", type: "audio", styleId: "stadium", unlock: { kind: "reward" } },
   // Caps — the realistic metal set (six colourways) + the legendary gold. Still the
   // earned-Caps (coins) economy in the Cabinet; the legendary is the campaign trophy.

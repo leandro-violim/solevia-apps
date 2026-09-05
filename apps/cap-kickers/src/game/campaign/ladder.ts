@@ -21,7 +21,7 @@ export const LEVELS: CampaignLevel[] = [
   { id: "l4", name: "Regular", difficulty: "normal", goalsToWin: 3, reward: { type: "audio", styleId: "crowd", itemId: "audio-crowd" } },
   { id: "l5", name: "Starter", difficulty: "normal", goalsToWin: 3 },
   { id: "l6", name: "Veteran", difficulty: "normal", goalsToWin: 5, reward: { type: "pitch", styleId: "cement", itemId: "pitch-cement" } },
-  { id: "l7", name: "Captain", difficulty: "normal", goalsToWin: 5 },
+  { id: "l7", name: "Captain", difficulty: "normal", goalsToWin: 5, reward: { type: "audio", styleId: "commentary", itemId: "audio-commentary" } },
   { id: "l8", name: "Pro", difficulty: "hard", goalsToWin: 5, reward: { type: "pitch", styleId: "night", itemId: "pitch-night" } },
   { id: "l9", name: "All-Star", difficulty: "hard", goalsToWin: 5 },
   { id: "l10", name: "Elite", difficulty: "hard", goalsToWin: 5, reward: { type: "audio", styleId: "stadium", itemId: "audio-stadium" } },

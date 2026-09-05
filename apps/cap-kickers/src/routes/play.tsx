@@ -23,8 +23,9 @@ import {
   type PhaseReward,
 } from "../game/campaign/ladder";
 import { loadProgress, saveProgress } from "../game/campaign/storage";
-import { isStyleEquippable, isAudioPackUnlocked } from "../game/economy/catalog";
+import { isStyleEquippable } from "../game/economy/catalog";
 import { loadOwned, isOwned, unlock } from "../game/economy/inventory";
+import { syncAudioPacks } from "../lib/audio-sync";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 import { gameAudio } from "../lib/audio";
@@ -512,9 +513,13 @@ function PlayPage() {
             gameAudio.sfx("horn");
             gameAudio.sfx("cheer");
             if (report.result === "win") {
+              // Commentator's full-time call — only when the human wins (a loss has
+              // its own screen; no "what a match" over the opponent beating you).
+              if (report.match.winner === 0) gameAudio.vo("final");
               showBanner(tRaw("play.playerWins", { n: report.match.winner! + 1 }));
               void notifyMatchEnded(); // a match finished -> maybe an interstitial
             } else {
+              gameAudio.vo("goal"); // commentator calls the goal, over the crowd
               // A scored goal holds on a big centre score card, then pops the next
               // team's caps in. Freeze runs off goalAtRef; the card off goalCard.
               goalAtRef.current = t;
@@ -523,7 +528,10 @@ function PlayPage() {
               goalCardTimerRef.current = window.setTimeout(() => setGoalCard(null), GOAL_CARD_MS);
             }
           } else if (report.result === "turnover") {
-            if (wasShot) gameAudio.sfx("ohh"); // missed shot -> crowd groans
+            if (wasShot) {
+              gameAudio.sfx("ohh"); // missed shot -> crowd groans
+              gameAudio.vo("near"); // "so close!" over the groan
+            }
             gameAudio.sfx("whistle");
             // Rewarded "one more shot": human missed a shot in vs-AI and a reward
             // is ready — offer it instead of handing the turn over. (Dev builds
@@ -695,14 +703,8 @@ function PlayPage() {
         if (reward && !isOwned(reward.itemId)) {
           unlock(reward.itemId);
           trackItemUnlocked(reward.itemId, reward.type, "reward");
-          if (reward.type === "audio") {
-            const owned = loadOwned();
-            const completed = loadProgress().completed;
-            gameAudio.setPacks({
-              crowd: isAudioPackUnlocked("crowd", owned, completed),
-              stadium: isAudioPackUnlocked("stadium", owned, completed),
-            });
-          }
+          // An awarded audio pack (crowd / commentary / stadium) turns on right away.
+          if (reward.type === "audio") syncAudioPacks();
           setUnlockedReward(reward);
         }
       }
@@ -1113,7 +1115,9 @@ function PlayPage() {
                 ? pitchStyleById(unlockedReward.styleId).name
                 : unlockedReward.styleId === "crowd"
                   ? t("cabinet.packCrowd")
-                  : t("cabinet.packStadium")}
+                  : unlockedReward.styleId === "commentary"
+                    ? t("cabinet.packCommentary")
+                    : t("cabinet.packStadium")}
             </span>
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {unlockedReward.type === "pitch" ? t("play.rewardPitch") : t("play.rewardAudio")}

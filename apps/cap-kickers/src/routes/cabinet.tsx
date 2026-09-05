@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { useT } from "../lib/i18n";
-import { itemsByType, isItemUnlocked, isAudioPackUnlocked, type Item } from "../game/economy/catalog";
+import { itemsByType, isItemUnlocked, type Item } from "../game/economy/catalog";
 import { loadBalance, earn, spend, EARN, rewardedEarnsLeft, recordRewardedEarn } from "../game/economy/currency";
 import { loadOwned, unlock } from "../game/economy/inventory";
 import { loadProgress } from "../game/campaign/storage";
@@ -150,13 +150,6 @@ function CabinetPage() {
     trackCabinetOpened("menu");
   }, []);
 
-  const syncPacks = (nextOwned: string[]) => {
-    gameAudio.setPacks({
-      crowd: isAudioPackUnlocked("crowd", nextOwned, completed),
-      stadium: isAudioPackUnlocked("stadium", nextOwned, completed),
-    });
-  };
-
   // Only caps are equipped now. Pitches are awarded as phase rewards and used at
   // random each match, so the Cabinet shows them as a collection, not a picker.
   const equip = (item: Item) => {
@@ -180,15 +173,20 @@ function CabinetPage() {
       setBalance(loadBalance());
       trackCurrencySpent(item.id, cost);
       trackItemUnlocked(item.id, item.type, "coins");
-      if (item.type === "audio") syncPacks(next);
       gameAudio.sfx("clack");
     }
   };
 
   const previewAudio = (item: Item) => {
-    const file = packPreviewFile(item.styleId);
-    if (!file) return;
-    void gameAudio.previewSample(file);
+    // Commentary clips are lazy-loaded per language (not in the static sample set),
+    // so they preview through a dedicated path; crowd/stadium play a sample clip.
+    if (item.styleId === "commentary") {
+      void gameAudio.previewVo();
+    } else {
+      const file = packPreviewFile(item.styleId);
+      if (!file) return;
+      void gameAudio.previewSample(file);
+    }
     trackAudioPreviewed(item.styleId);
   };
 
@@ -230,7 +228,13 @@ function CabinetPage() {
     const equipped = item.type === "cap" && equippedCap === item.styleId;
     const name =
       item.type === "audio"
-        ? t(item.styleId === "crowd" ? "cabinet.packCrowd" : "cabinet.packStadium")
+        ? t(
+            item.styleId === "crowd"
+              ? "cabinet.packCrowd"
+              : item.styleId === "commentary"
+                ? "cabinet.packCommentary"
+                : "cabinet.packStadium",
+          )
         : item.type === "pitch"
           ? pitchStyleById(item.styleId).name
           : styleById(item.styleId).name;

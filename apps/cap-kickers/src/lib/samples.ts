@@ -44,6 +44,16 @@ export async function loadSample(ctx: AudioContext, id: string): Promise<AudioBu
 /** The already-decoded buffer for `id`, if it has been loaded. Cheap, sync. */
 export const cachedSample = (id: string): AudioBuffer | undefined => cache.get(id);
 
+/** Decode a base64 `data:` URI straight to an AudioBuffer (no fetch, no cache) —
+ *  used by the commentary layer, which supplies its clips as inlined data URIs. */
+export async function decodeDataUri(ctx: AudioContext, uri: string): Promise<AudioBuffer | null> {
+  try {
+    return await ctx.decodeAudioData(dataUriToBytes(uri));
+  } catch {
+    return null;
+  }
+}
+
 /** Play a one-shot buffer through `out`. Returns the source so callers can stop it. */
 export function playSample(
   ctx: AudioContext,

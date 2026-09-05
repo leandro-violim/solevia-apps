@@ -20,8 +20,9 @@ rights (see `audio-parked/README.md`).
 
 ## 1) Cap-movement foley  (metallic bottle-cap slide/knock)  — 7 files
 Replaces the synthetic "flick"/"clack". A bottle cap is the ball, flicked across a
-hard pitch. **Recommendation: keep this FREE (core game feel), not a reward** — every
-player benefits and early play shouldn't sound worse. Confirm if you'd rather gate it.
+hard pitch. **DECIDED: FREE, not a reward** (owner, this session) — it's core game
+feel; every player gets it from the start, and each kick/collision picks a random
+variant so the flicking never sounds repetitive.
 
 **Prompt (Higgsfield text-to-audio) — cap SLIDE, generate 4 takes:**
 > Foley: a single small metal bottle-cap being flicked and skidding across a smooth

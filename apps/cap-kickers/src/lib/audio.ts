@@ -12,17 +12,28 @@ import {
   loadSample,
   cachedSample,
   playSample,
+  decodeDataUri,
   CROWD_FILES,
   FREE_SFX_FILES,
   AMBIENCE_FILE,
   packFiles,
   type CrowdSfx,
 } from "./samples";
+import { loadVoLang, type VoLang } from "./vo-data";
 
 export type SfxName = "flick" | "clack" | "whistle" | "horn" | "cheer" | "ohh";
 export type AudioSettings = { sound: boolean; music: boolean; ambience: boolean };
 /** Which unlocked audio packs may play (from the Trophy Cabinet inventory). */
-export type AudioPacks = { crowd: boolean; stadium: boolean };
+export type AudioPacks = { crowd: boolean; stadium: boolean; commentary: boolean };
+/** A match beat the commentator reacts to. */
+export type VoMoment = "goal" | "final" | "near";
+// Which VO clips can fire for each moment; a random one is picked per event
+// (never repeating the last), so goals/matches don't all sound identical.
+const VO_CLIPS: Record<VoMoment, string[]> = {
+  goal: ["goal-1", "goal-2", "goal-3", "big-1"],
+  final: ["final-1"],
+  near: ["near-1", "near-2"],
+};
 
 // Minimal WebAudio surface we rely on (lets tests inject a mock in a node env).
 type Ctx = AudioContext;
@@ -38,8 +49,15 @@ export class GameAudio {
   private ambienceGain: GainNode | null = null;
   private ambienceSrc: AudioBufferSourceNode | null = null;
   private settings: AudioSettings = { sound: true, music: true, ambience: true };
-  private packs: AudioPacks = { crowd: false, stadium: false };
+  private packs: AudioPacks = { crowd: false, stadium: false, commentary: false };
   private inGame = false; // true while a match is on-screen (ambience plays)
+  // Commentary VO: the current language, its decoded clips, and the last clip
+  // played per moment (so a random pick never immediately repeats).
+  private voLang: VoLang = "en";
+  private voClips = new Map<string, AudioBuffer>();
+  private voLoadedLang: VoLang | null = null;
+  private voLoading = false;
+  private voLast: Partial<Record<VoMoment, string>> = {};
   private music: { stop: () => void } | null = null;
   private wantMusic = false; // true while on a menu-type screen
   private initialized = false;
@@ -107,7 +125,65 @@ export class GameAudio {
     this.packs = { ...p };
     if (p.crowd && this.settings.sound) this.prefetch("crowd");
     if (p.stadium && (this.settings.sound || this.settings.ambience)) this.prefetch("stadium");
+    if (p.commentary && this.settings.sound) void this.ensureVo();
     if (this.inGame) this.startAmbience();
+  }
+
+  /** Set the commentary language (from the app locale). Reloads clips if it changed. */
+  setVoiceLang(lang: VoLang): void {
+    if (lang === this.voLang) return;
+    this.voLang = lang;
+    if (this.packs.commentary && this.settings.sound) void this.ensureVo();
+  }
+
+  /** Decode the current language's commentary clips once (lazy; safe to re-call). */
+  private async ensureVo(): Promise<void> {
+    if (this.voLoadedLang === this.voLang || this.voLoading) return;
+    if (!this.ensure() || !this.ctx) return;
+    this.voLoading = true;
+    try {
+      const map = await loadVoLang(this.voLang);
+      const clips = new Map<string, AudioBuffer>();
+      await Promise.all(
+        Object.entries(map).map(async ([key, uri]) => {
+          const buf = await decodeDataUri(this.ctx!, uri);
+          if (buf) clips.set(key, buf);
+        }),
+      );
+      this.voClips = clips;
+      this.voLoadedLang = this.voLang;
+    } finally {
+      this.voLoading = false;
+    }
+  }
+
+  /**
+   * Play a commentator line for a match beat — a random clip for that moment,
+   * layered over the crowd like a broadcast. No-op unless the Commentary pack is
+   * unlocked and SFX are on; if the clips aren't decoded yet it kicks the load and
+   * skips this one (so the first call right after unlocking may be silent).
+   */
+  vo(moment: VoMoment): void {
+    if (!this.settings.sound || !this.packs.commentary) return;
+    if (!this.ctx || !this.sfxGain) return;
+    const avail = (VO_CLIPS[moment] ?? []).filter((k) => this.voClips.has(k));
+    if (avail.length === 0) {
+      void this.ensureVo();
+      return;
+    }
+    let pick = avail[Math.floor(Math.random() * avail.length)];
+    if (avail.length > 1 && pick === this.voLast[moment]) {
+      pick = avail[(avail.indexOf(pick) + 1) % avail.length];
+    }
+    this.voLast[moment] = pick;
+    const buf = this.voClips.get(pick);
+    if (!buf) return;
+    if (this.ctx.state !== "running") this.ctx.resume().catch(() => {});
+    try {
+      playSample(this.ctx, this.sfxGain, buf, 1);
+    } catch {
+      /* never let audio break gameplay */
+    }
   }
 
   private prefetch(pack: string): void {
@@ -242,6 +318,23 @@ export class GameAudio {
       /* already stopped */
     }
     this.ambienceSrc = null;
+  }
+
+  /** Play one commentary line for the Cabinet preview button (loads the clips if
+   *  needed; goes through master so it's heard even with SFX muted). */
+  async previewVo(): Promise<void> {
+    if (!this.ensure() || !this.ctx || !this.master) return;
+    await this.unlock();
+    await this.ensureVo();
+    const avail = VO_CLIPS.goal.filter((k) => this.voClips.has(k));
+    if (avail.length === 0) return;
+    const buf = this.voClips.get(avail[Math.floor(Math.random() * avail.length)]);
+    if (!buf) return;
+    try {
+      playSample(this.ctx, this.master, buf, 0.9);
+    } catch {
+      /* ignore */
+    }
   }
 
   /** Play ~1.5 s of a sample at low volume for a Cabinet preview button. */

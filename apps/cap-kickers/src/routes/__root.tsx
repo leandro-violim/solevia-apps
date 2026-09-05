@@ -13,12 +13,11 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { gameAudio } from "../lib/audio";
+import { syncAudioPacks } from "../lib/audio-sync";
 import { loadSettings } from "../game/settings/storage";
-import { loadOwned } from "../game/economy/inventory";
-import { loadProgress } from "../game/campaign/storage";
-import { isAudioPackUnlocked } from "../game/economy/catalog";
 import { initAds, showBanner, hideBanner } from "../lib/ads";
 import { initAnalytics, trackGameReady, trackScreen } from "../lib/analytics";
+import { useLocale } from "../lib/i18n";
 
 function NotFoundComponent() {
   return (
@@ -137,6 +136,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const locale = useLocale();
 
   // Audio: load persisted settings + install the first-gesture unlock and the
   // foreground resume that recovers sound after an ad/call interruption (#13).
@@ -144,20 +144,19 @@ function RootComponent() {
   useEffect(() => {
     const settings = loadSettings();
     gameAudio.setSettings(settings);
-    // Tell the audio engine which sample packs the player has unlocked, so it can
-    // lazy-load them and play real crowd/ambience in front of the synth baseline.
-    const owned = loadOwned();
-    const completed = loadProgress().completed;
-    gameAudio.setPacks({
-      crowd: isAudioPackUnlocked("crowd", owned, completed),
-      stadium: isAudioPackUnlocked("stadium", owned, completed),
-    });
     gameAudio.init();
     void initAds();
     // Analytics honours the persisted opt-in before anything is logged. Events
     // fired during startup buffer inside the module and flush once this resolves.
     void initAnalytics(settings.analytics).then(trackGameReady);
   }, []);
+
+  // Tell the audio engine which sample packs the player has unlocked (so it plays
+  // real crowd/commentary/ambience in front of the synth baseline) and which
+  // commentary language to use. Re-runs when the language changes.
+  useEffect(() => {
+    syncAudioPacks();
+  }, [locale]);
 
   // Banner shows on menu screens only — hidden during a game so it never covers
   // the pitch.
