@@ -16,7 +16,15 @@ import whistle from "../assets/audio/whistle.m4a?inline";
 import cheerGoal from "../assets/audio/cheer-goal.m4a?inline";
 import cheerWin from "../assets/audio/cheer-win.m4a?inline";
 import cheerNear from "../assets/audio/cheer-near.m4a?inline";
-import ambCrowd from "../assets/audio/amb-crowd.m4a?inline";
+import ambStadium from "../assets/audio/amb-stadium.m4a?inline";
+import ambChant from "../assets/audio/amb-chant.m4a?inline";
+import flick1 from "../assets/audio/flick-1.m4a?inline";
+import flick2 from "../assets/audio/flick-2.m4a?inline";
+import flick3 from "../assets/audio/flick-3.m4a?inline";
+import flick4 from "../assets/audio/flick-4.m4a?inline";
+import clack1 from "../assets/audio/clack-1.m4a?inline";
+import clack2 from "../assets/audio/clack-2.m4a?inline";
+import clack3 from "../assets/audio/clack-3.m4a?inline";
 
 /** Sample id (as used across the audio code) → base64 `data:` URI of its bytes. */
 export const SAMPLE_DATA: Record<string, string> = {
@@ -24,7 +32,15 @@ export const SAMPLE_DATA: Record<string, string> = {
   "cheer-goal": cheerGoal,
   "cheer-win": cheerWin,
   "cheer-near": cheerNear,
-  "amb-crowd": ambCrowd,
+  "amb-stadium": ambStadium,
+  "amb-chant": ambChant,
+  "flick-1": flick1,
+  "flick-2": flick2,
+  "flick-3": flick3,
+  "flick-4": flick4,
+  "clack-1": clack1,
+  "clack-2": clack2,
+  "clack-3": clack3,
 };
 
 /** Decode a base64 `data:` URI to raw bytes — no fetch, works under any scheme. */

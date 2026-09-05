@@ -15,7 +15,10 @@ import {
   decodeDataUri,
   CROWD_FILES,
   FREE_SFX_FILES,
-  AMBIENCE_FILE,
+  SFX_VARIANTS,
+  FLICK_FILES,
+  CLACK_FILES,
+  STADIUM_BEDS,
   packFiles,
   type CrowdSfx,
 } from "./samples";
@@ -58,6 +61,9 @@ export class GameAudio {
   private voLoadedLang: VoLang | null = null;
   private voLoading = false;
   private voLast: Partial<Record<VoMoment, string>> = {};
+  // Last free-foley variant played per sfx name, so a random pick never repeats.
+  private sfxLast: Partial<Record<SfxName, string>> = {};
+  private ambienceBed = ""; // the bed chosen for the current match (random per match)
   private music: { stop: () => void } | null = null;
   private wantMusic = false; // true while on a menu-type screen
   private initialized = false;
@@ -252,15 +258,18 @@ export class GameAudio {
   enterGame(): void {
     this.wantMusic = false;
     this.inGame = true;
+    this.ambienceBed = ""; // re-pick a random bed for this match
     this.stopMusic();
     this.prefetchFree();
     this.startAmbience();
   }
 
-  /** Warm the always-free match recordings so the first whistle/goal plays real. */
+  /** Warm the always-free match recordings so the first whistle/goal/flick plays
+   *  real — the free one-shots plus every cap-foley variant. */
   private prefetchFree(): void {
     if (!this.settings.sound || !this.ensure() || !this.ctx) return;
     for (const id of Object.values(FREE_SFX_FILES)) void loadSample(this.ctx, id);
+    for (const id of [...FLICK_FILES, ...CLACK_FILES]) void loadSample(this.ctx, id);
   }
 
   // ---- SFX -------------------------------------------------------------
@@ -271,10 +280,28 @@ export class GameAudio {
     // A non-running context (post-interruption) would swallow the sound — nudge it.
     if (this.ctx.state !== "running") this.ctx.resume().catch(() => {});
     try {
+      // Free cap foley (flick / clack): a real bottle-cap recording, a different
+      // random take each time so the caps never sound copy-pasted. Falls back to
+      // the synth until the takes finish decoding.
+      const variants = SFX_VARIANTS[name];
+      if (variants) {
+        const loaded = variants.filter((id) => cachedSample(id));
+        if (loaded.length > 0) {
+          let pick = loaded[Math.floor(Math.random() * loaded.length)];
+          if (loaded.length > 1 && pick === this.sfxLast[name]) {
+            pick = loaded[(loaded.indexOf(pick) + 1) % loaded.length];
+          }
+          this.sfxLast[name] = pick;
+          playSample(this.ctx, this.sfxGain, cachedSample(pick)!);
+        } else {
+          for (const id of variants) void loadSample(this.ctx, id); // warm for next time
+          synth(this.ctx, this.sfxGain, name);
+        }
+        return;
+      }
       // Sample layer IN FRONT of the synth: a real crowd recording when the buffer
       // is already decoded, else the synth baseline. The crowd pack covers every
-      // one-shot; without it, the free whistle + goal roar still play real. flick/
-      // clack are in neither map, so they always stay synthesised.
+      // one-shot; without it, the free whistle + goal roar still play real.
       const file = this.packs.crowd
         ? CROWD_FILES[name as CrowdSfx]
         : FREE_SFX_FILES[name as CrowdSfx];
@@ -296,10 +323,14 @@ export class GameAudio {
     if (!this.settings.ambience || !this.packs.stadium || !this.inGame) return;
     if (this.ambienceSrc) return; // already looping — never start a second (cf. startMusic)
     if (!this.ensure() || !this.ctx || !this.ambienceGain) return;
-    const buf = cachedSample(AMBIENCE_FILE);
+    // Pick a random bed for this match (kept across a mid-match resume) so no two
+    // matches share the same background murmur.
+    if (!this.ambienceBed) this.ambienceBed = STADIUM_BEDS[Math.floor(Math.random() * STADIUM_BEDS.length)];
+    const bed = this.ambienceBed;
+    const buf = cachedSample(bed);
     if (!buf) {
       // Lazy-load once, then start if still in a match.
-      void loadSample(this.ctx, AMBIENCE_FILE).then(() => {
+      void loadSample(this.ctx, bed).then(() => {
         if (this.inGame) this.startAmbience();
       });
       return;

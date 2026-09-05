@@ -1,10 +1,9 @@
 # Cap Kickers — foley & ambience spec
 
-9 files that could NOT be generated in this session. Higgsfield's SFX model
-(`mirelo_text_to_audio`) and music model (`sonilo_music`) are both restricted to
-its game-generation pipeline and are not usable for standalone audio; its
-text-to-audio tool is speech-only. Nothing here was substituted with a speech
-model — these are still to source.
+> **RESOLVED 2026-09-05.** All 9 files were generated with ElevenLabs Sound
+> Effects and are in this folder. See `PROVENANCE.md` for prompts, takes,
+> processing and loop-seam measurements. The sourcing notes below are kept
+> for reference if these ever need regenerating.
 
 Target for every file: **mono, 44.1 kHz, AAC .m4a**, dropped in this folder.
 Match the VO chain already used here:

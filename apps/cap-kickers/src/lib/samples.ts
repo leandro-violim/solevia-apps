@@ -95,19 +95,32 @@ export const FREE_SFX_FILES: Partial<Record<CrowdSfx, string>> = {
   horn: "cheer-goal",
 };
 
-/** The "stadium" pack: one seamless-looping murmur bed under matches. */
-export const AMBIENCE_FILE = "amb-crowd";
+/**
+ * FREE cap foley — real bottle-cap recordings that replace the synth "flick"/
+ * "clack". Each has several takes; a random one plays per flick/collision (never
+ * the same twice running) so the caps never sound copy-pasted. Everyone gets these.
+ */
+export const FLICK_FILES = ["flick-1", "flick-2", "flick-3", "flick-4"];
+export const CLACK_FILES = ["clack-1", "clack-2", "clack-3"];
+export const SFX_VARIANTS: Record<string, string[]> = {
+  flick: FLICK_FILES,
+  clack: CLACK_FILES,
+};
+
+/** The "stadium" pack: seamless-looping ambience beds. A random one plays per
+ *  match so no two matches share the same background. */
+export const STADIUM_BEDS = ["amb-stadium", "amb-chant"];
 
 /** All files a pack needs, for prefetching once it's unlocked. */
 export const packFiles = (packId: string): string[] => {
   if (packId === "crowd") return Object.values(CROWD_FILES);
-  if (packId === "stadium") return [AMBIENCE_FILE];
+  if (packId === "stadium") return STADIUM_BEDS;
   return [];
 };
 
 /** The representative clip to play when previewing a pack in the Cabinet. */
 export const packPreviewFile = (packId: string): string | null => {
   if (packId === "crowd") return CROWD_FILES.cheer;
-  if (packId === "stadium") return AMBIENCE_FILE;
+  if (packId === "stadium") return STADIUM_BEDS[0];
   return null;
 };
