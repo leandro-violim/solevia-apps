@@ -514,6 +514,12 @@ async function showRewardedInterstitial(): Promise<boolean> {
  * Nth change and not within the shared ad gap — it shows a skippable rewarded
  * interstitial. Returns the Caps to grant (0 if skipped, not shown, or off-cadence).
  * Never blocks: it only shows an ad that's already loaded.
+ *
+ * Testing note: it's the SECOND qualifying tap that fires (PHASES_PER_AD = 2), and
+ * only when > 90s (INTERSTITIAL_MIN_MS) have passed since ANY other ad — the shared
+ * anti-stack gap. So right after a casual interstitial or a rewarded video, a couple
+ * of phase changes will correctly show nothing. To see it: wait ~90s after any ad,
+ * then change phase twice.
  */
 export async function notifyPhaseChange(): Promise<number> {
   if (!IS_NATIVE || !riUnitId()) return 0;
