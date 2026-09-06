@@ -70,22 +70,23 @@ const TEST_IDS = {
 };
 
 // Live Cap Kickers ad units (AdMob account pub-9628521678374705, created 2026-08-26).
-// ⚠️ rewardInterstitial: the owner must create a "Rewarded interstitial" unit in the
-// AdMob console for each platform and paste its id below. Until then it's empty and
-// the between-phases rewarded-interstitial silently no-ops in LIVE builds (test
-// builds still work via the Google test ids above).
+// rewardInterstitial units created 2026-09-06 as "CapKickers <platform> Rewarded
+// Interstitial" (reward: 5 Caps). New units can take up to an hour to start
+// serving. The three entry points (preloadRewardedInterstitial,
+// showRewardedInterstitial, notifyPhaseChange) all guard on a non-empty id, so
+// clearing one here disables the format cleanly rather than crashing.
 const LIVE_IDS = {
   ios: {
     banner: "ca-app-pub-9628521678374705/3371706669",
     interstitial: "ca-app-pub-9628521678374705/2058624991",
     rewarded: "ca-app-pub-9628521678374705/4750086149",
-    rewardInterstitial: "", // TODO(owner): paste the iOS rewarded-interstitial unit id
+    rewardInterstitial: "ca-app-pub-9628521678374705/3205796533",
   },
   android: {
     banner: "ca-app-pub-9628521678374705/6237543151",
     interstitial: "ca-app-pub-9628521678374705/2101083525",
     rewarded: "ca-app-pub-9628521678374705/9139038667",
-    rewardInterstitial: "", // TODO(owner): paste the Android rewarded-interstitial unit id
+    rewardInterstitial: "ca-app-pub-9628521678374705/6209670726",
   },
 };
 
