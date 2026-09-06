@@ -8,6 +8,8 @@ import {
   rewardedEarnsLeft,
   recordRewardedEarn,
   REWARDED_DAILY_CAP,
+  chestAvailable,
+  claimChest,
   type StorageLike,
 } from "./currency";
 
@@ -93,5 +95,21 @@ describe("currency — daily bonuses", () => {
     expect(recordRewardedEarn("2026-09-05", s)).toBe(false);
     // Moving forward again past the stored date works normally.
     expect(firstWinAvailable("2026-09-11", s)).toBe(true);
+  });
+
+  it("the daily Mystery Chest opens once per day and resets the next day", () => {
+    const s = fakeStorage();
+    expect(chestAvailable("2026-09-01", s)).toBe(true);
+    expect(claimChest("2026-09-01", s)).toBe(true);
+    expect(chestAvailable("2026-09-01", s)).toBe(false);
+    expect(claimChest("2026-09-01", s)).toBe(false); // already opened today
+    // Next day — a fresh chest.
+    expect(chestAvailable("2026-09-02", s)).toBe(true);
+    // Independent of the other dailies (opening the chest didn't consume them).
+    expect(firstWinAvailable("2026-09-02", s)).toBe(true);
+    expect(rewardedEarnsLeft("2026-09-02", s)).toBe(REWARDED_DAILY_CAP);
+    // Clock set back → refused.
+    claimChest("2026-09-02", s);
+    expect(chestAvailable("2026-09-01", s)).toBe(false);
   });
 });

@@ -23,6 +23,7 @@ import {
   BannerAdSize,
   InterstitialAdPluginEvents,
   RewardAdPluginEvents,
+  RewardInterstitialAdPluginEvents,
   type BannerAdOptions,
 } from "@capacitor-community/admob";
 
@@ -58,25 +59,33 @@ const TEST_IDS = {
     banner: "ca-app-pub-3940256099942544/2934735716",
     interstitial: "ca-app-pub-3940256099942544/4411468910",
     rewarded: "ca-app-pub-3940256099942544/1712485313",
+    rewardInterstitial: "ca-app-pub-3940256099942544/6978759866",
   },
   android: {
     banner: "ca-app-pub-3940256099942544/6300978111",
     interstitial: "ca-app-pub-3940256099942544/1033173712",
     rewarded: "ca-app-pub-3940256099942544/5224354917",
+    rewardInterstitial: "ca-app-pub-3940256099942544/5354046379",
   },
 };
 
 // Live Cap Kickers ad units (AdMob account pub-9628521678374705, created 2026-08-26).
+// ⚠️ rewardInterstitial: the owner must create a "Rewarded interstitial" unit in the
+// AdMob console for each platform and paste its id below. Until then it's empty and
+// the between-phases rewarded-interstitial silently no-ops in LIVE builds (test
+// builds still work via the Google test ids above).
 const LIVE_IDS = {
   ios: {
     banner: "ca-app-pub-9628521678374705/3371706669",
     interstitial: "ca-app-pub-9628521678374705/2058624991",
     rewarded: "ca-app-pub-9628521678374705/4750086149",
+    rewardInterstitial: "", // TODO(owner): paste the iOS rewarded-interstitial unit id
   },
   android: {
     banner: "ca-app-pub-9628521678374705/6237543151",
     interstitial: "ca-app-pub-9628521678374705/2101083525",
     rewarded: "ca-app-pub-9628521678374705/9139038667",
+    rewardInterstitial: "", // TODO(owner): paste the Android rewarded-interstitial unit id
   },
 };
 
@@ -135,10 +144,12 @@ export async function initAds(): Promise<void> {
     setupRewardedListeners();
     void preloadInterstitial();
     void preloadRewarded();
+    void preloadRewardedInterstitial();
     if (typeof window !== "undefined") {
       window.addEventListener("online", () => {
         void preloadInterstitial();
         void preloadRewarded();
+        void preloadRewardedInterstitial();
       });
     }
   } catch (e) {
@@ -389,6 +400,7 @@ export async function showRewarded(): Promise<boolean> {
       settled = true;
       if (timer) clearTimeout(timer);
       rewardedReady = false;
+      lastInterstitialAt = now(); // count this as a "recent ad" so nothing stacks on it
       handles.forEach((h) => h.remove());
       // Bring game sound back after the rewarded ad (see the interstitial note).
       gameAudio.resumeIfSuspended();
@@ -410,4 +422,107 @@ export async function showRewarded(): Promise<boolean> {
       })
       .catch(finish);
   });
+}
+
+// ── Rewarded interstitial: the gentler "between phases" ad ───────────────────
+// A full-screen the player can SKIP, with a small Caps reward if they watch it —
+// shown at a campaign phase change on a cadence, in place of a forced interstitial.
+// No-ops (and grants nothing) when its ad unit id isn't set — see LIVE_IDS.
+const REWARD_INTERSTITIAL_CAPS = 5; // Caps granted when the player watches it through
+const PHASES_PER_AD = 2; // show at most every Nth phase change …
+let phasesSinceAd = 0;
+let riReady = false;
+let riLoading = false;
+let riInflight: Promise<void> | null = null;
+let riListenersAdded = false;
+
+const riUnitId = (): string => (USE_TEST_ADS ? TEST_IDS : LIVE_IDS)[PLATFORM === "android" ? "android" : "ios"].rewardInterstitial;
+
+function setupRewardInterstitialListeners() {
+  if (riListenersAdded) return;
+  riListenersAdded = true;
+  AdMob.addListener(RewardInterstitialAdPluginEvents.Loaded, () => {
+    riReady = true;
+    riLoading = false;
+  }).catch(() => {});
+  AdMob.addListener(RewardInterstitialAdPluginEvents.FailedToLoad, () => {
+    riReady = false;
+    riLoading = false;
+  }).catch(() => {});
+}
+
+export function preloadRewardedInterstitial(): Promise<void> {
+  if (!IS_NATIVE || !riUnitId() || riReady || (!isOnline() && !TEST_CREATIVES)) return Promise.resolve();
+  if (riInflight) return riInflight;
+  setupRewardInterstitialListeners();
+  riLoading = true;
+  riInflight = (async () => {
+    try {
+      await AdMob.prepareRewardInterstitialAd({ adId: riUnitId(), isTesting: TEST_CREATIVES });
+      riReady = true;
+    } catch (e) {
+      riReady = false;
+      console.warn("[ads] rewarded interstitial preload failed:", e);
+    } finally {
+      riLoading = false;
+      riInflight = null;
+    }
+  })();
+  return riInflight;
+}
+
+/** Show a rewarded interstitial; resolves true only if the reward was earned. */
+async function showRewardedInterstitial(): Promise<boolean> {
+  if (!IS_NATIVE || !riUnitId()) return false;
+  if (!riReady) await preloadRewardedInterstitial();
+  if (!riReady) return false;
+  return await new Promise<boolean>((resolve) => {
+    const handles: PluginListenerHandle[] = [];
+    let earned = false;
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      riReady = false;
+      handles.forEach((h) => h.remove());
+      gameAudio.resumeIfSuspended();
+      resolve(earned);
+      void preloadRewardedInterstitial();
+    };
+    timer = setTimeout(finish, 60000);
+    Promise.all([
+      AdMob.addListener(RewardInterstitialAdPluginEvents.Rewarded, () => {
+        earned = true;
+      }),
+      AdMob.addListener(RewardInterstitialAdPluginEvents.Dismissed, finish),
+      AdMob.addListener(RewardInterstitialAdPluginEvents.FailedToShow, finish),
+    ])
+      .then((hs) => {
+        handles.push(...hs);
+        if (settled) hs.forEach((h) => h.remove());
+        return AdMob.showRewardInterstitialAd();
+      })
+      .catch(finish);
+  });
+}
+
+/**
+ * Call at a campaign phase change (the "Next phase" tap). On its cadence — every
+ * Nth change and not within the shared ad gap — it shows a skippable rewarded
+ * interstitial. Returns the Caps to grant (0 if skipped, not shown, or off-cadence).
+ * Never blocks: it only shows an ad that's already loaded.
+ */
+export async function notifyPhaseChange(): Promise<number> {
+  if (!IS_NATIVE || !riUnitId()) return 0;
+  phasesSinceAd += 1;
+  if (phasesSinceAd >= PHASES_PER_AD && now() - lastInterstitialAt > INTERSTITIAL_MIN_MS && riReady) {
+    phasesSinceAd = 0;
+    lastInterstitialAt = now();
+    const earned = await showRewardedInterstitial();
+    return earned ? REWARD_INTERSTITIAL_CAPS : 0;
+  }
+  void preloadRewardedInterstitial();
+  return 0;
 }

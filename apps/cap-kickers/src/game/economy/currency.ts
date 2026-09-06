@@ -90,8 +90,8 @@ export const spend = (amount: number, storage: StorageLike | null = defaultStora
 
 // ── Daily bonuses (first win of the day, rewarded-earn cap) ───────────────────
 
-type Daily = { date: string; firstWinClaimed: boolean; rewardedCount: number };
-const EMPTY_DAILY: Daily = { date: "", firstWinClaimed: false, rewardedCount: 0 };
+type Daily = { date: string; firstWinClaimed: boolean; rewardedCount: number; chestOpened: boolean };
+const EMPTY_DAILY: Daily = { date: "", firstWinClaimed: false, rewardedCount: 0, chestOpened: false };
 
 const loadDaily = (storage: StorageLike | null): Daily => {
   if (!storage) return { ...EMPTY_DAILY };
@@ -103,6 +103,7 @@ const loadDaily = (storage: StorageLike | null): Daily => {
       date: typeof p.date === "string" ? p.date : "",
       firstWinClaimed: typeof p.firstWinClaimed === "boolean" ? p.firstWinClaimed : false,
       rewardedCount: asCount(p.rewardedCount, 0),
+      chestOpened: typeof p.chestOpened === "boolean" ? p.chestOpened : false,
     };
   } catch {
     return { ...EMPTY_DAILY };
@@ -127,7 +128,8 @@ const saveDaily = (d: Daily, storage: StorageLike | null): void => {
  */
 const resolveDaily = (stored: Daily, today: string): { day: Daily; blocked: boolean } => {
   if (stored.date === today) return { day: stored, blocked: false };
-  if (today > stored.date) return { day: { date: today, firstWinClaimed: false, rewardedCount: 0 }, blocked: false };
+  if (today > stored.date)
+    return { day: { date: today, firstWinClaimed: false, rewardedCount: 0, chestOpened: false }, blocked: false };
   return { day: stored, blocked: true };
 };
 
@@ -157,5 +159,23 @@ export const recordRewardedEarn = (today: string, storage: StorageLike | null = 
   const { day, blocked } = resolveDaily(loadDaily(storage), today);
   if (blocked || day.rewardedCount >= REWARDED_DAILY_CAP) return false;
   saveDaily({ ...day, rewardedCount: day.rewardedCount + 1 }, storage);
+  return true;
+};
+
+/** Caps a freshly-opened daily Mystery Chest can award (inclusive range). */
+export const CHEST_MIN_CAPS = 25;
+export const CHEST_MAX_CAPS = 60;
+
+/** Is the once-a-day Mystery Chest still unopened for `today`? */
+export const chestAvailable = (today: string, storage: StorageLike | null = defaultStorage()): boolean => {
+  const { day, blocked } = resolveDaily(loadDaily(storage), today);
+  return !blocked && !day.chestOpened;
+};
+
+/** Mark today's Mystery Chest opened. Returns true if it was newly opened. */
+export const claimChest = (today: string, storage: StorageLike | null = defaultStorage()): boolean => {
+  const { day, blocked } = resolveDaily(loadDaily(storage), today);
+  if (blocked || day.chestOpened) return false;
+  saveDaily({ ...day, chestOpened: true }, storage);
   return true;
 };

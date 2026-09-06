@@ -6,7 +6,17 @@ import { loadProgress } from "../game/campaign/storage";
 import { loadOwned } from "../game/economy/inventory";
 import { rewardView, type RewardView } from "../game/campaign/reward-display";
 import { styleById } from "../game/caps/styles";
+import { earn, chestAvailable, claimChest, CHEST_MIN_CAPS, CHEST_MAX_CAPS } from "../game/economy/currency";
+import { showRewardedNow } from "../lib/ads";
+import { trackRewardedOffered, trackRewardedWatched, trackRewardedSkipped, trackCurrencyEarned } from "../lib/analytics";
 import { useT } from "../lib/i18n";
+
+/** Local (not UTC) YYYY-MM-DD — the day boundary the daily chest uses. */
+const localToday = (): string => {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
 
 export const Route = createFileRoute("/campaign")({
   head: () => ({
@@ -56,6 +66,33 @@ function CampaignPage() {
   const grandCap = styleById("gold-legendary");
   const campaignDone = isCompleted(LAST_LEVEL_ID, progress);
 
+  // Daily Mystery Chest — an opt-in rewarded ad that drops a handful of Caps, once
+  // a day. A gentle recurring bonus tied to the road, never forced.
+  const today = localToday();
+  const [chestOpen, setChestOpen] = useState(() => chestAvailable(today));
+  const [chestBusy, setChestBusy] = useState(false);
+  const [chestWon, setChestWon] = useState<number | null>(null);
+  const openChest = async () => {
+    if (chestBusy || !chestOpen) return;
+    setChestBusy(true);
+    trackRewardedOffered();
+    try {
+      const earned = await showRewardedNow();
+      if (earned && claimChest(today)) {
+        const amount = CHEST_MIN_CAPS + Math.floor(Math.random() * (CHEST_MAX_CAPS - CHEST_MIN_CAPS + 1));
+        earn(amount);
+        trackCurrencyEarned("daily_chest", amount);
+        trackRewardedWatched();
+        setChestWon(amount);
+        setChestOpen(false);
+      } else if (!earned) {
+        trackRewardedSkipped();
+      }
+    } finally {
+      setChestBusy(false);
+    }
+  };
+
   return (
     <div
       className="relative flex screen flex-col items-center px-4 pb-6"
@@ -98,7 +135,33 @@ function CampaignPage() {
           </div>
         )}
 
-        <div className="mt-6 flex w-full flex-col gap-3 pb-1">
+        {/* Daily Mystery Chest — opt-in rewarded bonus Caps, once a day. */}
+        <div className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-[#fff2c9] px-4 py-3 shadow-[0_4px_0_#e0b84e] ring-1 ring-[#e0b84e]/45">
+          <span className="text-3xl">{chestOpen ? "🎁" : "📦"}</span>
+          <div className="flex flex-1 flex-col items-start text-left">
+            <span className="font-display text-lg uppercase leading-tight text-foreground">
+              {t("campaign.chestTitle")}
+            </span>
+            <span className="text-xs font-semibold text-muted-foreground">
+              {chestWon != null
+                ? t("campaign.chestWon", { n: chestWon })
+                : chestOpen
+                  ? t("campaign.chestBody")
+                  : t("campaign.chestDone")}
+            </span>
+          </div>
+          {chestOpen && (
+            <button
+              onClick={openChest}
+              disabled={chestBusy}
+              className="arcade-btn arcade-btn--gold px-4 py-2 text-sm shadow-[0_4px_0_#d8a400] disabled:opacity-60"
+            >
+              {chestBusy ? t("cabinet.watchLoading") : t("campaign.chestOpen")}
+            </button>
+          )}
+        </div>
+
+        <div className="mt-4 flex w-full flex-col gap-3 pb-1">
           {LEVELS.map((level, index) => {
             const unlocked = isUnlocked(level.id, progress);
             const completed = isCompleted(level.id, progress);

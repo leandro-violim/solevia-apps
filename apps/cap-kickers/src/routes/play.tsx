@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
@@ -31,7 +31,13 @@ import { syncAudioPacks } from "../lib/audio-sync";
 import { type Vec2 } from "../game/physics/vec";
 import { type MatchState } from "../game/rules/match";
 import { gameAudio } from "../lib/audio";
-import { notifyMatchEnded, notifyCasualStart, showRewardedNow } from "../lib/ads";
+import {
+  notifyMatchEnded,
+  notifyCasualStart,
+  showRewardedNow,
+  notifyPhaseChange,
+  preloadRewardedInterstitial,
+} from "../lib/ads";
 import { t as tRaw, useT } from "../lib/i18n";
 import {
   trackCampaignComplete,
@@ -152,6 +158,7 @@ function PlayPage() {
         ? "solo_ai"
         : "practice";
   const t = useT();
+  const nav = useNavigate();
 
   // Cap styles: the player's chosen cap vs a contrasting opponent cap. Side 0
   // (human/Player 1) uses the chosen style; side 1 (Player 2 / AI) the opponent.
@@ -190,6 +197,12 @@ function PlayPage() {
   // The cosmetic just awarded for clearing this phase (pitch/audio), shown as a
   // big "Unlocked!" celebration over the win screen. null = nothing to celebrate.
   const [unlockedReward, setUnlockedReward] = useState<PhaseReward | null>(null);
+  // Rewarded "double your Caps" on the win screen: how many Caps this win paid, and
+  // whether the player has already doubled them (button hides after) or a watch is
+  // in flight.
+  const [winCaps, setWinCaps] = useState(0);
+  const [capsDoubled, setCapsDoubled] = useState(false);
+  const [doublingCaps, setDoublingCaps] = useState(false);
   // Analytics: wall-clock start of the current match, and a latch so match_end
   // fires exactly once per match even though the effect re-runs on every state
   // change while the win overlay is up.
@@ -251,6 +264,10 @@ function PlayPage() {
   useEffect(() => {
     flippedRef.current = flipped;
   }, [flipped]);
+  const campaignRef = useRef(campaign);
+  useEffect(() => {
+    campaignRef.current = campaign;
+  }, [campaign]);
   // Accumulates elapsed time while it's the AI's turn, so the AI "thinks" for
   // a visible beat before flicking rather than reacting instantly.
   const aiThinkRef = useRef(0);
@@ -278,6 +295,8 @@ function PlayPage() {
     recordedRef.current = false;
     matchStartedAtRef.current = Date.now();
     endLoggedRef.current = false;
+    setWinCaps(0);
+    setCapsDoubled(false);
     trackMatchStart(analyticsMode, mode === "ai" ? difficulty : undefined);
     revealStartHint();
   }, [mode, difficulty, goals, analyticsMode, revealStartHint]);
@@ -519,7 +538,10 @@ function PlayPage() {
               // its own screen; no "what a match" over the opponent beating you).
               if (report.match.winner === 0) gameAudio.vo("final");
               showBanner(tRaw("play.playerWins", { n: report.match.winner! + 1 }));
-              void notifyMatchEnded(); // a match finished -> maybe an interstitial
+              // Campaign phase changes use the gentler rewarded interstitial (on the
+              // "Next phase" tap); casual matches keep the frequency-capped forced one.
+              if (campaignRef.current) void preloadRewardedInterstitial();
+              else void notifyMatchEnded();
             } else {
               gameAudio.vo("goal"); // commentator calls the goal, over the crowd
               // A scored goal holds on a big centre score card, then pops the next
@@ -692,10 +714,13 @@ function PlayPage() {
       const idx = levelIndex(campaign);
       trackLevelComplete(idx >= 0 ? idx + 1 : 0);
       // Caps: the main campaign earn, plus a one-off bonus the first time a level
-      // is cleared (rewards progress, not grinding the same level).
+      // is cleared (rewards progress, not grinding the same level). Track the total
+      // so the win screen can offer a rewarded "double your Caps".
+      let earnedThisWin = EARN.campaignWin;
       earn(EARN.campaignWin);
       trackCurrencyEarned("campaign", EARN.campaignWin);
       if (firstClear) {
+        earnedThisWin += EARN.firstLevelClear;
         earn(EARN.firstLevelClear);
         trackCurrencyEarned("first_level_clear", EARN.firstLevelClear);
         // Award this phase's cosmetic (pitch surface or audio pack), if any, the
@@ -712,10 +737,13 @@ function PlayPage() {
       }
       if (!nextLevelId(campaign)) {
         trackCampaignComplete();
+        earnedThisWin += EARN.campaignComplete;
         earn(EARN.campaignComplete);
         trackCurrencyEarned("campaign_complete", EARN.campaignComplete);
         if (firstClear) trackItemUnlocked("cap-gold-legendary", "cap", "progress");
       }
+      setWinCaps(earnedThisWin);
+      setCapsDoubled(false);
     }
   }, [campaign, match.phase, match.winner]);
 
@@ -860,6 +888,41 @@ function PlayPage() {
   // just cleared is already granted, so it's skipped.)
   const upNext = won && campaign && match.winner === 0 ? upcomingReward(campaign, loadOwned()) : null;
   const upNextView = upNext ? rewardView(upNext.reward) : null;
+
+  // Rewarded "double your Caps": watch an opt-in ad to earn this win's Caps again.
+  const handleDoubleCaps = async () => {
+    if (doublingCaps || capsDoubled || winCaps <= 0) return;
+    setDoublingCaps(true);
+    trackRewardedOffered();
+    try {
+      const earned = await showRewardedNow();
+      if (earned) {
+        earn(winCaps);
+        trackCurrencyEarned("reward_double", winCaps);
+        trackRewardedWatched();
+        setCapsDoubled(true);
+      } else {
+        trackRewardedSkipped();
+      }
+    } finally {
+      setDoublingCaps(false);
+    }
+  };
+
+  // "Next phase": on the cadence, offer a skippable rewarded interstitial (small
+  // Caps if watched) at the phase break, then move on to the next phase.
+  const handleNextPhase = async () => {
+    if (!nextLevel) return;
+    const bonus = await notifyPhaseChange();
+    if (bonus > 0) {
+      earn(bonus);
+      trackCurrencyEarned("reward_interstitial", bonus);
+    }
+    void nav({
+      to: "/play",
+      search: { mode: "ai", difficulty: nextLevel.difficulty, goals: nextLevel.goalsToWin, campaign: nextLevel.id },
+    });
+  };
 
   return (
     <div
@@ -1041,6 +1104,23 @@ function PlayPage() {
                 {nextLevel ? t("play.levelComplete") : t("play.campaignComplete")}
               </div>
 
+              {/* Rewarded "double your Caps" — opt-in, at the win beat. */}
+              {winCaps > 0 && !capsDoubled && (
+                <button
+                  onClick={handleDoubleCaps}
+                  disabled={doublingCaps}
+                  className="arcade-btn arcade-btn--gold flex items-center gap-2 px-6 py-3 text-lg shadow-[0_6px_0_#d8a400] disabled:opacity-60"
+                >
+                  <span>▶</span>
+                  {doublingCaps ? t("cabinet.watchLoading") : t("play.doubleCaps", { n: winCaps })}
+                </button>
+              )}
+              {capsDoubled && (
+                <div className="font-display rounded-full bg-[#1fb457] px-5 py-2 text-sm uppercase tracking-wide text-white shadow-[0_3px_0_#128040]">
+                  {t("play.capsDoubled", { n: winCaps * 2 })}
+                </div>
+              )}
+
               {/* "Up next" teaser — the next prize on the road, to pull the player on. */}
               {upNext && upNextView && (
                 <div className="flex items-center gap-3 rounded-2xl bg-[#fff7e0] px-4 py-3 shadow-[0_4px_0_#e8cf88]">
@@ -1067,18 +1147,12 @@ function PlayPage() {
 
               <div className="flex gap-3">
                 {nextLevel && (
-                  <Link
-                    to="/play"
-                    search={{
-                      mode: "ai",
-                      difficulty: nextLevel.difficulty,
-                      goals: nextLevel.goalsToWin,
-                      campaign: nextLevel.id,
-                    }}
+                  <button
+                    onClick={handleNextPhase}
                     className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98]"
                   >
                     {t("play.nextLevel")}
-                  </Link>
+                  </button>
                 )}
                 <Link
                   to="/campaign"
