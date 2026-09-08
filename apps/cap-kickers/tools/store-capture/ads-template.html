@@ -1,0 +1,55 @@
+<!doctype html>
+<!-- Composed marketing images: Play feature graphic + Google Ads image assets.
+     Rendered by ads.mjs at exact pixel sizes. Query params: ?w=&h=&locale=&art=
+     Swap ART_DEFAULT below (or pass --art) when the new key art lands. -->
+<html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{--green:#1fa04b;--dark:#10281a;--cream:#f7f3e8;--yellow:#f5c53a}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center;
+       font-family:"Barlow Condensed","Barlow","Helvetica Neue",Arial,sans-serif;
+       background:var(--dark)}
+  .frame{position:relative;width:100%;height:100%;overflow:hidden;
+         background:var(--green) center/cover no-repeat}
+  .art{position:absolute;inset:0;background-position:center;background-size:cover;opacity:.95}
+  /* Scrim keeps the wordmark legible over whatever art we drop in later. */
+  .scrim{position:absolute;inset:0;
+         background:linear-gradient(180deg,rgba(6,26,14,.30) 0%,rgba(6,26,14,.10) 30%,rgba(6,26,14,.86) 100%)}
+  .stack{position:relative;height:100%;display:flex;flex-direction:column;
+         align-items:center;justify-content:flex-end;text-align:center;
+         padding:6% 7% 7%;gap:.35em}
+  .word{font-weight:800;letter-spacing:-.01em;line-height:.92;color:#fff;
+        text-shadow:0 .06em 0 rgba(0,0,0,.35)}
+  .word .k{color:var(--yellow)}
+  .tag{font-family:"Barlow","Helvetica Neue",Arial,sans-serif;color:#eafbf0;font-weight:500;
+       line-height:1.15;max-width:26ch;text-shadow:0 .04em .12em rgba(0,0,0,.55)}
+  .rule{width:12%;height:.055em;background:var(--yellow);border-radius:99px;margin:.35em 0}
+  /* Type scales off the canvas so one template serves 1024x500 and 1200x1500. */
+  body[data-shape="wide"]   .word{font-size:12.5vh}  body[data-shape="wide"]   .tag{font-size:4.2vh}
+  body[data-shape="square"] .word{font-size:11vh}    body[data-shape="square"] .tag{font-size:3.6vh}
+  body[data-shape="tall"]   .word{font-size:8.6vh}   body[data-shape="tall"]   .tag{font-size:2.9vh}
+</style></head><body>
+<div class="frame"><div class="art"></div><div class="scrim"></div>
+  <div class="stack">
+    <div class="word">CAP <span class="k">KICKERS</span></div>
+    <div class="rule"></div>
+    <div class="tag" id="tag"></div>
+  </div>
+</div>
+<script>
+  const ART_DEFAULT = '/hero/home-hero.jpg'; // PLACEHOLDER - swap for new key art
+  const TAGS = {
+    'en':    'Flick bottle caps across the pitch and score.',
+    'pt-BR': 'Dê petelecos nas tampinhas e faça o gol.',
+    'es':    'Da un toque a las chapas y marca el gol.',
+  };
+  const q = new URLSearchParams(location.search);
+  const w = +q.get('w') || innerWidth, h = +q.get('h') || innerHeight;
+  document.body.dataset.shape = w / h > 1.4 ? 'wide' : (w / h > 0.9 ? 'square' : 'tall');
+  document.getElementById('tag').textContent = TAGS[q.get('locale')] || TAGS.en;
+  document.querySelector('.art').style.backgroundImage = `url(${q.get('art') || ART_DEFAULT})`;
+</script></body></html>

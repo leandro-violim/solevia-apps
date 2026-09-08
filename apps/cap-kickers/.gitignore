@@ -33,3 +33,8 @@ src/routeTree.gen.ts
 *.njsproj
 *.sln
 *.sw?
+
+# Store-listing capture output — large and regenerable via tools/store-capture
+# (one command against any build). Kept on disk only long enough to upload.
+store-assets/screenshots-1.2/
+store-assets/ads-1.2/
