@@ -54,13 +54,24 @@ So **IARC, Play Data safety, and Apple App Privacy do not need updating** for 1.
    screenshots for the listing + Google Ads and Apple Ads image creatives).
 4. **"What's New" in 3 languages** — approved; text ready in `RELEASE-NOTES-1.2.md` (EN/PT/ES).
 
+## Resolved since 2026-09-06
+- **Audio rights — CLEARED (2026-09-08).** ElevenLabs SFX/VO/ambience confirmed clear against the
+  Sound Effects Terms + ToS (paid plan, commercial use, no Studio-Games exclusion for SFX). The
+  menu theme "Arena of Glory" (ElevenLabs Music, Studio-Games-excluded) was **replaced** with
+  "Brazil Football Carnival Samba Music" (Pixabay 260573, Pixabay Content License). Full write-up
+  in `src/assets/audio/LICENCES.md`; the old track is parked at `store-assets/audio-hold/`.
+  ⚠️ Content ID note: don't score a YouTube ad creative with the new menu track without checking.
+- **Screenshots + ad creatives — PRODUCED.** 45 screenshots (`store-assets/screenshots-1.2/`) and
+  12 ad images (`store-assets/ads-1.2/`), regenerable via `tools/store-capture`. These dirs are
+  git-ignored (122 MB) — they live on disk for the upload only.
+
 ## Still outstanding before submitting
-- **Screenshots + ad creatives** — Cowork to produce per `COWORK-CAPTURE-BRIEF.md`, then upload
-  to both listings (the biggest reviewer-risk item if the old screenshots stay).
-- **Audio rights** — confirm the ElevenLabs foley/VO/ambience and the "Arena of Glory" menu theme
-  are cleared for commercial use (flagged in `src/assets/audio/LICENCES.md`).
-- **Legal declarations at submit** — IARC Terms, export-compliance, Play policy checkboxes are
-  Leandro's to tick at submission (per the release-check skill's constraints).
+- **Store uploads + listing metadata + ad campaigns** — Cowork's (upload the produced assets +
+  the `RELEASE-NOTES-1.2.md` "What's New").
+- **Legal declarations at submit** — IARC Terms, export-compliance, Play policy checkboxes, and
+  pressing Submit are **Leandro's alone**.
+- **Release branch merge** — this work is on `feat/project-c-graphics`; merge it onto the release
+  line before building the store binaries (see below).
 
 ## AdMob note (rewarded interstitial)
 The new rewarded-interstitial units are created and wired (iOS `…/3205796533`,
