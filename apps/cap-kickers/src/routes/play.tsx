@@ -113,6 +113,49 @@ const easeOutBack = (p: number): number => {
   return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
 };
 
+/**
+ * First-run nudge: rings the MIDDLE cap in blinking gold (the same "this cap" cue the
+ * tutorial uses) and floats a small arrow in the gap just above it, pointing down —
+ * so a new player learns to open with the middle cap. Drawn in base-screen space
+ * (inside the camera transform), so it tracks the cap. `r` is the on-screen radius;
+ * the caps sit close together, so the arrow is sized to fit the gap without covering
+ * its neighbour.
+ */
+const drawStartArrow = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number): void => {
+  const t = performance.now();
+  const blink = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t / 220)); // pulse 0.45 → 1
+  ctx.save();
+  ctx.globalAlpha = blink;
+  // Blinking ring around the middle cap — unambiguous, even when caps are packed.
+  ctx.strokeStyle = "#ffcf33";
+  ctx.lineWidth = Math.max(2, r * 0.16);
+  ctx.beginPath();
+  ctx.arc(x, y, r * 1.34, 0, Math.PI * 2);
+  ctx.stroke();
+  // A small arrow bobbing in the gap above, pointing down at the ringed cap.
+  const bob = Math.sin(t / 300) * r * 0.12;
+  const tipY = y - r * 1.02 + bob; // tip just above the cap's top edge
+  const head = r * 0.5;
+  const stemW = r * 0.2;
+  const stemH = r * 0.42;
+  ctx.fillStyle = "#ffcf33";
+  ctx.strokeStyle = "rgba(74,54,0,0.5)";
+  ctx.lineWidth = Math.max(1, r * 0.06);
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(x, tipY);
+  ctx.lineTo(x - head, tipY - head);
+  ctx.lineTo(x - stemW, tipY - head);
+  ctx.lineTo(x - stemW, tipY - head - stemH);
+  ctx.lineTo(x + stemW, tipY - head - stemH);
+  ctx.lineTo(x + stemW, tipY - head);
+  ctx.lineTo(x + head, tipY - head);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+};
+
 /** Local (not UTC) YYYY-MM-DD — the day boundary the daily Caps bonus uses. */
 const localToday = (): string => {
   const d = new Date();
@@ -231,9 +274,15 @@ function PlayPage() {
   // missed a shot in vs-AI. Gates the AI + input until resolved. Mirrored to a
   // ref for the rAF loop's AI driver.
   const [showStartHint, setShowStartHint] = useState(false);
+  // True for a new player's first few MATCHES. The text pill hides after 5s, but the
+  // blinking middle-cap arrow keys off this ref instead — so it reappears at every
+  // opening touch of the match and only vanishes once they flick (touch advances).
+  const hintEligibleRef = useRef(false);
   const hintTimerRef = useRef<number | null>(null);
   const revealStartHint = useCallback(() => {
+    hintEligibleRef.current = false;
     if (bumpGamesPlayed() > HINT_GAMES) return;
+    hintEligibleRef.current = true;
     setShowStartHint(true);
     if (hintTimerRef.current !== null) window.clearTimeout(hintTimerRef.current);
     hintTimerRef.current = window.setTimeout(() => setShowStartHint(false), 5000);
@@ -474,6 +523,14 @@ function PlayPage() {
       const attacker = (session.match.attacker % 2) as 0 | 1;
       const capStyle = attacker === 0 ? playerStyle : oppStyle;
       const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 180);
+      // First-games nudge: a blinking arrow over the MIDDLE cap (c1) at the very
+      // start of the human's turn, so new players learn to open with it.
+      const showMidArrow =
+        hintEligibleRef.current &&
+        session.phase === "aiming" &&
+        session.match.touch === 1 &&
+        !goalFrozenRef.current &&
+        (modeRef.current !== "ai" || session.match.attacker === 0);
       for (const cap of session.caps()) {
         const c = pitchToScreen(cap.position, pres);
         const r = cap.radius * scale;
@@ -492,6 +549,7 @@ function PlayPage() {
           angle,
           sprite: capSpriteReady(capStyle.id),
         });
+        if (showMidArrow && cap.id === "c1") drawStartArrow(ctx, c.x, c.y, r);
       }
       // Impact dust puffs sit on top of the caps (base-screen space).
       drawDust(ctx, fx);

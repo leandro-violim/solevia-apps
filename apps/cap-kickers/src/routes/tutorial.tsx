@@ -191,6 +191,12 @@ function drawTutorialScene(
   pitch: PitchStyle,
 ) {
   ctx.clearRect(0, 0, SCENE_W, SCENE_H);
+  // Centre the whole illustration in the scene. The field is 182 wide in a 210 scene;
+  // drawn at x:4 it left-shifts, leaving a lopsided right margin (the goal protrudes
+  // into it). Shift everything right so the field sits centred in the white card,
+  // with the goal reaching the right edge. One translate keeps caps/goal/arrows aligned.
+  ctx.save();
+  ctx.translate(10, 0);
   const field: { x: number; y: number; w: number; h: number } = { x: 4, y: 4, w: 182, h: 122 };
   const scale = 0.5;
   drawPitch(ctx, field, scale, pitch);
@@ -274,6 +280,7 @@ function drawTutorialScene(
       break;
     }
   }
+  ctx.restore();
 }
 
 const SCENE_LABEL: Record<string, string> = {
