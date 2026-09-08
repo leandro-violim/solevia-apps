@@ -44,20 +44,23 @@ Diffed against 1.1. None of the re-declaration triggers fired:
 
 So **IARC, Play Data safety, and Apple App Privacy do not need updating** for 1.2.
 
-## ⚠️ Needs Leandro's input before submitting
-1. **Version number** — I chose **1.2**; confirm or override (it's a native-only bump).
-2. **Release countries / UMP** — the UMP consent form is still **OFF**. That's fine for US /
-   Brazil / India, but **do NOT add any EEA / UK / Switzerland country** without re-enabling
-   UMP first (Google mandates a certified CMP there). Confirm the country list is unchanged.
-3. **New store screenshots** — the graphics changed completely; the current listing screenshots
-   now misrepresent the app. **New captures are needed** for both stores (and per locale) before
-   this goes live. (Old screenshots were rendered headless from the web build — same method works.)
-4. **"What's New" release notes** — needed in **en-US + pt-BR** (Play) and **EN/PT/ES** (Apple).
-   Draft from the "What's in 1.2" list above.
-5. **Audio rights** — the ElevenLabs foley/VO/ambience and the "Arena of Glory" menu theme:
-   confirm their commercial-use terms before release (flagged in `src/assets/audio/LICENCES.md`).
-6. **Legal declarations at submit** — IARC Terms, export-compliance, Play policy checkboxes are
-   Leandro's to tick at submission (per the release-check skill's constraints).
+## Confirmed by Leandro (2026-09-06)
+1. **Version 1.2** — confirmed. ✅
+2. **Release countries — unchanged from 1.1**: USA, Canada, New Zealand, Australia, Brazil,
+   India, and LatAm Spanish-speaking countries. **None are EEA/UK/Switzerland → UMP stays OFF,
+   compliant.** ✅ Guard rail: keep **Spain excluded** from the Spanish set (Spain is EEA and
+   would force UMP re-enable).
+3. **New captures + ads** — approved; briefed for Cowork in `COWORK-CAPTURE-BRIEF.md` (store
+   screenshots for the listing + Google Ads and Apple Ads image creatives).
+4. **"What's New" in 3 languages** — approved; text ready in `RELEASE-NOTES-1.2.md` (EN/PT/ES).
+
+## Still outstanding before submitting
+- **Screenshots + ad creatives** — Cowork to produce per `COWORK-CAPTURE-BRIEF.md`, then upload
+  to both listings (the biggest reviewer-risk item if the old screenshots stay).
+- **Audio rights** — confirm the ElevenLabs foley/VO/ambience and the "Arena of Glory" menu theme
+  are cleared for commercial use (flagged in `src/assets/audio/LICENCES.md`).
+- **Legal declarations at submit** — IARC Terms, export-compliance, Play policy checkboxes are
+  Leandro's to tick at submission (per the release-check skill's constraints).
 
 ## AdMob note (rewarded interstitial)
 The new rewarded-interstitial units are created and wired (iOS `…/3205796533`,
