@@ -166,7 +166,7 @@ function SettingsPage() {
 
         <div className="mt-2 h-px w-full bg-border" />
 
-        <NavRow to="/caps" label={t("settings.yourCap")} value={cap.name} />
+        <NavRow to="/caps" label={t("settings.yourCap")} value={t(`cap.${cap.id}`)} />
 
         <div className="mt-2 h-px w-full bg-border" />
 

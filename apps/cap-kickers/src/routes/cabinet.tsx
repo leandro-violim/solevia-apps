@@ -236,8 +236,8 @@ function CabinetPage() {
                 : "cabinet.packStadium",
           )
         : item.type === "pitch"
-          ? pitchStyleById(item.styleId).name
-          : styleById(item.styleId).name;
+          ? t(`pitch.${item.styleId}`)
+          : t(`cap.${item.styleId}`);
     const affordable = item.unlock.kind === "coins" && balance >= item.unlock.cost;
 
     return (

@@ -85,7 +85,7 @@ function CapsPage() {
           >
             <Swatch styleId={s.id} size={58} />
             <span className="font-display text-xs uppercase tracking-wide text-foreground">
-              {s.name}
+              {t(`cap.${s.id}`)}
             </span>
           </button>
         ))}

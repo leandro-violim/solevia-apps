@@ -118,7 +118,10 @@ function CampaignPage() {
                 {rewardName(nextReward.view)}
               </span>
               <span className="text-xs font-semibold text-muted-foreground">
-                {t("campaign.nextRewardCta", { n: nextReward.index + 1, name: nextReward.level.name })}
+                {t("campaign.nextRewardCta", {
+                  n: nextReward.index + 1,
+                  name: t(`campaign.level.${nextReward.level.id}`),
+                })}
               </span>
             </div>
             <span className="text-2xl">🎁</span>
@@ -199,7 +202,7 @@ function CampaignPage() {
                   </span>
                   <span className="flex flex-1 flex-col items-start text-left">
                     <span className="font-display text-lg uppercase leading-none tracking-wide text-muted-foreground">
-                      {level.name}
+                      {t(`campaign.level.${level.id}`)}
                     </span>
                     <span className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground/70">
                       {t("campaign.locked")}
@@ -236,7 +239,7 @@ function CampaignPage() {
 
                 <span className="flex flex-1 flex-col items-start text-left">
                   <span className="font-display text-lg uppercase leading-none tracking-wide text-foreground">
-                    {level.name}
+                    {t(`campaign.level.${level.id}`)}
                   </span>
                   <span
                     className="mt-1 text-xs font-semibold uppercase tracking-wide"
@@ -282,7 +285,7 @@ function CampaignPage() {
                 {t("campaign.grandPrize")}
               </span>
               <span className="font-display text-lg uppercase leading-none tracking-wide text-foreground">
-                {grandCap.name}
+                {t(`cap.${grandCap.id}`)}
               </span>
               <span className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {campaignDone ? t("campaign.done") : t("campaign.grandPrizeCta")}

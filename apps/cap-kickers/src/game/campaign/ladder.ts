@@ -6,7 +6,7 @@ export type PhaseReward = { type: "pitch" | "audio"; styleId: string; itemId: st
 
 export type CampaignLevel = {
   id: string;
-  name: string; // shown as-is (rank names read across locales)
+  name: string; // English reference label; the UI shows the localized `campaign.level.<id>` key
   difficulty: Difficulty;
   goalsToWin: number;
   reward?: PhaseReward;

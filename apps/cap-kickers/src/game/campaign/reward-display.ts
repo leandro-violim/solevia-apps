@@ -17,7 +17,7 @@ export const rewardView = (r: PhaseReward): RewardView => {
     const s = pitchStyleById(r.styleId);
     return {
       kindKey: "reward.pitch",
-      name: s.name,
+      nameKey: `pitch.${s.id}`, // localized (was the hardcoded English s.name)
       img: s.photo ? `/pitch-textures/${s.photo}` : undefined,
       emoji: "🏟️",
     };

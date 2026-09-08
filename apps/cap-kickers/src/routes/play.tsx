@@ -1197,7 +1197,10 @@ function PlayPage() {
                       {upNextView.nameKey ? t(upNextView.nameKey) : upNextView.name}
                     </span>
                     <span className="text-xs font-semibold text-muted-foreground">
-                      {t("campaign.nextRewardCta", { n: upNext.index + 1, name: upNext.level.name })}
+                      {t("campaign.nextRewardCta", {
+                        n: upNext.index + 1,
+                        name: t(`campaign.level.${upNext.level.id}`),
+                      })}
                     </span>
                   </div>
                 </div>
@@ -1276,7 +1279,7 @@ function PlayPage() {
             )}
             <span className="font-display text-2xl uppercase tracking-wide text-foreground">
               {unlockedReward.type === "pitch"
-                ? pitchStyleById(unlockedReward.styleId).name
+                ? t(`pitch.${unlockedReward.styleId}`)
                 : unlockedReward.styleId === "crowd"
                   ? t("cabinet.packCrowd")
                   : unlockedReward.styleId === "commentary"
