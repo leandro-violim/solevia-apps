@@ -785,3 +785,270 @@
     scroll-behavior: auto !important;
   }
 }
+
+
+/* =====================================================================
+   Game-style shell (Project C, v1.3) — LOCKED palette from
+   store-assets/PROJECT-C-DESIGN.md §11. Render-layer only. These tokens +
+   reusable component classes drive Home, the world/phase map and menus.
+   Positions/sizes/asset URLs are passed inline from JSX (Vite-hashed assets);
+   this file owns colour, gloss, bevel and shape. Ambient animations sit under
+   the global reduced-motion guard at the top of this file.
+   ===================================================================== */
+:root {
+  --gs-green-1: #8fe36b;
+  --gs-green-2: #4fbf3f;
+  --gs-green-edge: #379a2c;
+  --gs-blue-1: #6db8ff;
+  --gs-blue-2: #3d8ef0;
+  --gs-blue-edge: #2b6fc4;
+  --gs-purple-1: #b58bf0;
+  --gs-purple-2: #8a5fe0;
+  --gs-pink-1: #ff9ec4;
+  --gs-pink-2: #f062a0;
+  --gs-gold-1: #ffd76a;
+  --gs-gold-2: #f0a93a;
+  --gs-gold-edge: #c77f22;
+  --gs-aqua: #33e0c6;
+  --gs-coral: #f062a0;
+  --gs-ink: #26304a;
+  --gs-ink-soft: #5b6472;
+  --gs-navy: #2a2350;
+  --gs-panel: rgba(255, 255, 255, 0.92);
+}
+
+.gs-home {
+  color: var(--gs-ink);
+  font-family: var(--font-sans);
+}
+.gs-home ::selection { background: transparent; }
+
+/* 1 — Glossy primary button ------------------------------------------------ */
+.gs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  border: 3px solid #fff;
+  border-radius: 20px;
+  background: linear-gradient(var(--gs-green-1), var(--gs-green-2));
+  color: #fff;
+  font-weight: 900;
+  line-height: 1.05;
+  text-shadow: 0 1px 2px rgba(0, 60, 20, 0.45);
+  box-shadow: 0 6px 0 var(--gs-green-edge), 0 11px 16px rgba(0, 0, 0, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.55);
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
+}
+.gs-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--gs-green-edge), 0 5px 9px rgba(0, 0, 0, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.55);
+}
+.gs-btn--hero { outline: 3px solid rgba(255, 120, 200, 0.6); outline-offset: 3px; }
+
+/* 2 — Icon tile ------------------------------------------------------------ */
+.gs-tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 18px;
+  background: linear-gradient(var(--gs-purple-1), var(--gs-purple-2));
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18), 0 8px 12px rgba(0, 0, 0, 0.22),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+.gs-tile--blue { background: linear-gradient(var(--gs-blue-1), var(--gs-blue-2)); }
+.gs-tile--pink { background: linear-gradient(var(--gs-pink-1), var(--gs-pink-2)); }
+.gs-tile--gold { background: linear-gradient(var(--gs-gold-1), var(--gs-gold-2)); }
+.gs-tile__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ff4d6d;
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+}
+
+/* 3 — Resource pill -------------------------------------------------------- */
+.gs-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  background: rgba(40, 30, 70, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+}
+.gs-pill__plus {
+  position: absolute;
+  left: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(var(--gs-green-1), var(--gs-green-2));
+  border: 2px solid #fff;
+  color: #fff;
+  font-weight: 900;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* 4 — Hex map node --------------------------------------------------------- */
+.gs-node { position: relative; display: grid; place-items: center; }
+.gs-hex {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%);
+  background: linear-gradient(180deg, #cfefff, #8fbfe0);
+  box-shadow: 0 8px 14px rgba(0, 120, 180, 0.4);
+}
+.gs-node.is-done .gs-hex { background: linear-gradient(180deg, #9fffe9, var(--gs-aqua)); }
+.gs-node.is-current .gs-hex { background: linear-gradient(180deg, #ffffff, #d9f6ff); }
+.gs-node.is-locked .gs-hex { background: linear-gradient(180deg, #d7dbe4, #aab2c2); box-shadow: 0 6px 10px rgba(0,0,0,.2); }
+.gs-node__num {
+  position: relative;
+  color: #fff;
+  font-weight: 900;
+  font-size: 15px;
+  text-shadow: 0 2px 2px rgba(0, 60, 90, 0.6);
+}
+.gs-node.is-current .gs-node__num { color: var(--gs-blue-2); text-shadow: none; }
+.gs-node.is-locked .gs-node__num { color: #fff; opacity: 0.9; }
+.gs-node__glow {
+  position: absolute;
+  width: 165%;
+  height: 165%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(150, 240, 255, 0.7), transparent 70%);
+  z-index: -1;
+  animation: gsGlow 2.2s ease-in-out infinite;
+}
+.gs-node__here {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: linear-gradient(#ff8fbf, var(--gs-coral));
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* 5 — Bottom nav ----------------------------------------------------------- */
+.gs-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: linear-gradient(180deg, #eaf0ff, #d7def5);
+  border-top: 2px solid rgba(255, 255, 255, 0.6);
+}
+.gs-nav__btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  color: var(--gs-ink);
+  background: linear-gradient(#fff, #e7ecfa);
+  box-shadow: 0 3px 0 rgba(120, 130, 170, 0.35);
+}
+.gs-nav__btn--home {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  margin-top: -20px;
+  background: linear-gradient(#c7f0a8, var(--gs-green-1));
+  border: 3px solid #fff;
+  box-shadow: 0 5px 0 var(--gs-green-2);
+}
+.gs-nav__btn[aria-current="page"] { outline: 2px solid var(--gs-aqua); outline-offset: 1px; }
+
+/* 6 — Bubble-wrap teaser --------------------------------------------------- */
+.gs-teaser { position: relative; }
+.gs-teaser__patch {
+  position: relative;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  box-shadow: 0 10px 20px rgba(30, 60, 90, 0.35);
+  background-color: #dfeee9;
+  background-size: cover;
+  background-position: center;
+  animation: gsInvite 2.6s ease-in-out infinite;
+}
+.gs-popspot {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  transform: translate(-50%, -50%);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 1px 2px rgba(60, 90, 85, 0.5));
+  opacity: 0;
+  animation: gsPopspot 4.4s ease-in-out infinite;
+}
+.gs-ribbon {
+  margin: 7px auto 0;
+  width: max-content;
+  background: linear-gradient(#ff8fbf, var(--gs-coral));
+  color: #fff;
+  font-weight: 900;
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+/* 7 — Island (real bubble-wrap platform image) ----------------------------- */
+.gs-island { filter: drop-shadow(0 10px 12px rgba(120, 90, 40, 0.35)); }
+
+/* 8 — Mascot --------------------------------------------------------------- */
+.gs-mascot { filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.22)); animation: gsFloat 5s ease-in-out infinite; }
+
+/* ambient float bubble (cheap CSS, no image) */
+.gs-float {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.3) 40%, rgba(200, 240, 235, 0.25) 70%, rgba(255, 255, 255, 0.05));
+  box-shadow: inset 0 -3px 6px rgba(120, 180, 170, 0.3), inset 0 3px 5px rgba(255, 255, 255, 0.9), 0 3px 6px rgba(60, 90, 120, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  animation: gsFloat 6s ease-in-out infinite;
+}
+
+@keyframes gsPopspot {
+  0%, 60% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+  66% { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
+  72%, 90% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes gsInvite { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+@keyframes gsFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes gsGlow { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }

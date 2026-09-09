@@ -1,16 +1,24 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { fadeMusicIn, fadeMusicOut } from "../lib/music";
-import bubbleImg from "../assets/bubbles/real-bubble-full.webp";
 import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
 import { DailyBonus } from "../components/DailyBonus";
 import { CoinBalance } from "../components/CoinBalance";
 import { StreakBadge } from "../components/StreakBadge";
-import { DailyChallengeCard } from "../components/DailyChallengeCard";
 import { t } from "../lib/i18n";
 import { unlockAudio } from "../lib/pop-sound";
 import { trackModeSelected } from "../lib/mode";
-import { TrophyIcon } from "../components/icons";
+import {
+  IconTile,
+  ResourcePill,
+  HexNode,
+  Island,
+  Mascot,
+  WrapTeaser,
+  BottomNav,
+  FloatBubble,
+} from "../components/gameshell";
+import sky from "../assets/scene/sky.webp";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -31,123 +39,168 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+// Step 3 (game-style Home): the world/phase shown on the play button. Real
+// per-session persistence + an interactive map land in step 4; for now the
+// current node defaults to World 1 · Phase 1.
+const CURRENT_WORLD = 1;
+const CURRENT_PHASE = 1;
+
 function Home() {
-  // Calm piano on the home screen (F7); fades out when leaving.
+  const navigate = useNavigate();
+
+  // Calm piano on the home screen (fades out when leaving).
   useEffect(() => {
     fadeMusicIn();
     return () => fadeMusicOut();
   }, []);
+
+  const startZen = () => {
+    unlockAudio();
+    trackModeSelected("zen");
+    navigate({ to: "/play", search: { mode: "zen", phase: 1, difficulty: "normal", daily: 0 } });
+  };
+
   return (
     <div
-      className="screen-fade relative flex min-h-dvh flex-col items-center justify-between px-6 pt-14 text-center"
-      style={{ paddingTop: "calc(env(safe-area-inset-top) + 40px)" }}
+      className="gs-home screen-fade relative flex min-h-dvh flex-col overflow-hidden"
+      style={{
+        backgroundImage: `url(${sky})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+      }}
     >
       {/* Once-a-day pre-game daily bonus pop-up (self-manages whether to show). */}
       <DailyBonus />
 
-      {/* Top bar: streak (left) + coins→shop pill (right). F3: a FIXED app bar
-          with a navy backdrop + safe-area top padding, so its chips always sit
-          below the OS status bar / notch / Dynamic Island and content scrolls
-          UNDER it — never the other way around. */}
+      {/* soft water wash at the bottom of the sky */}
       <div
-        className="fixed inset-x-0 top-0 z-40 flex items-center justify-between px-5 pb-3"
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%]"
+        style={{ background: "linear-gradient(180deg, rgba(120,110,230,0.10), rgba(110,95,220,0.42))" }}
+      />
+
+      {/* ---- top bar ---- */}
+      <div
+        className="relative z-20 flex items-center gap-2 px-3"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+      >
+        <Link to="/achievements" aria-label={t("home.achievements")}>
+          <IconTile variant="gold" size={44}>🫧</IconTile>
+        </Link>
+        <Link to="/achievements" aria-label={t("home.achievements")} className="ml-1">
+          <ResourcePill icon="🔥" plus={false}>
+            <StreakBadge />
+          </ResourcePill>
+        </Link>
+        <Link to="/shop" aria-label={t("home.shop")} className="ml-auto">
+          <ResourcePill icon="🪙" plus>
+            <CoinBalance />
+          </ResourcePill>
+        </Link>
+        <Link to="/settings" aria-label={t("nav.settings")}>
+          <IconTile variant="blue" size={44}>⚙️</IconTile>
+        </Link>
+      </div>
+
+      {/* ---- scene (events + teaser + map) ---- */}
+      <div className="relative z-10 min-h-0 flex-1">
+        {/* left event tiles */}
+        <div className="absolute left-3 top-3 flex flex-col gap-3">
+          <EventTile to="/play" search={{ mode: "time-attack", phase: 1, difficulty: "normal", daily: 1 }}
+            variant="blue" icon="🗓️" label={t("home.daily")} />
+          <EventTile to="/achievements" variant="gold" icon="🏆" label={t("home.achievements")} />
+          <EventTile to="/records" variant="pink" icon="📊" label={t("home.viewRecords")} />
+        </div>
+
+        {/* bubble-wrap teaser (upper-right) */}
+        <div className="absolute right-4 top-4" style={{ transform: "rotate(4deg)" }}>
+          <WrapTeaser ribbon={t("home.teaser")} onClick={startZen} width={132} />
+        </div>
+
+        {/* ambient float bubbles */}
+        <FloatBubble size={20} style={{ top: "34%", left: "58%" }} />
+        <FloatBubble size={12} style={{ top: "42%", left: "70%" }} />
+        <FloatBubble size={22} style={{ top: "62%", left: "12%" }} />
+
+        {/* world/phase map preview (interactive map = step 4) */}
+        <div className="absolute inset-x-0" style={{ top: "46%" }}>
+          <div className="relative mx-auto" style={{ width: "min(320px, 92%)", height: 210 }}>
+            <Island variant="trees" width={240} style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)" }} />
+            <Mascot size={66} style={{ position: "absolute", left: "50%", bottom: 96, transform: "translateX(-50%)" }} />
+            <HexNode n={CURRENT_PHASE - 1} state="done" size={46}
+              style={{ position: "absolute", left: "14%", bottom: 74 }} />
+            <HexNode n={CURRENT_PHASE} state="current" hereLabel={t("home.here")} size={54}
+              style={{ position: "absolute", left: "50%", bottom: 118, transform: "translateX(-50%)" }} />
+            <HexNode n={CURRENT_PHASE + 1} state="locked" size={46}
+              style={{ position: "absolute", right: "14%", bottom: 74 }} />
+          </div>
+        </div>
+      </div>
+
+      {/* ---- main play button ---- */}
+      <div className="relative z-20 px-5 pb-2 text-center">
+        <div aria-hidden className="mb-[-4px] text-2xl drop-shadow">🫧</div>
+        <Link
+          to="/play"
+          search={{ mode: "time-attack", phase: CURRENT_PHASE, difficulty: "normal", daily: 0 }}
+          onClick={() => {
+            unlockAudio();
+            trackModeSelected("time-attack");
+          }}
+          className="gs-btn gs-btn--hero mx-auto w-full max-w-xs flex-col gap-0.5 px-4 py-2.5"
+        >
+          <span style={{ fontSize: 20 }}>
+            {t("home.worldPhase", { world: CURRENT_WORLD, phase: CURRENT_PHASE })}
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.95 }}>{t("home.tapToPlay")}</span>
+        </Link>
+      </div>
+
+      {/* ---- bottom nav + ad ---- */}
+      <div className="relative z-20">
+        <BottomNav active="home" />
+        <AdBannerSpacer />
+        <AdBanner />
+      </div>
+    </div>
+  );
+}
+
+/** An event: soft-3D icon tile + a small glossy caption, links somewhere. */
+function EventTile({
+  to,
+  search,
+  variant,
+  icon,
+  label,
+}: {
+  to: string;
+  search?: Record<string, unknown>;
+  variant: "purple" | "blue" | "pink" | "gold";
+  icon: string;
+  label: string;
+}) {
+  return (
+    <Link
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      to={to as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      search={search as any}
+      className="flex w-[76px] flex-col items-center gap-1"
+      aria-label={label}
+    >
+      <IconTile variant={variant} size={64}>{icon}</IconTile>
+      <span
+        className="w-full rounded-lg px-1.5 py-0.5 text-center text-[10px] font-extrabold leading-tight text-white"
         style={{
-          paddingTop: "calc(env(safe-area-inset-top) + 12px)",
-          background: "linear-gradient(to bottom, var(--bg-0) 55%, transparent)",
+          background: "linear-gradient(var(--gs-green-1), var(--gs-green-2))",
+          border: "2px solid #fff",
+          boxShadow: "0 3px 0 var(--gs-green-edge)",
+          textShadow: "0 1px 1px rgba(0,0,0,.25)",
         }}
       >
-        <Link
-          to="/achievements"
-          aria-label={t("home.achievements")}
-          className="glass-chip px-3 py-1.5"
-        >
-          <TrophyIcon size={15} className="text-gold" />
-          <StreakBadge />
-        </Link>
-        <Link
-          to="/shop"
-          aria-label={t("home.shop")}
-          className="glass-chip px-3 py-1.5 text-sm font-semibold"
-        >
-          <CoinBalance />
-        </Link>
-      </div>
-
-      {/* Adaptive, no-scroll: everything below is sized in viewport units / small
-          responsive gaps so the whole screen fits any phone (notch, Dynamic
-          Island, SE) without a scroll. */}
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center pb-3">
-        <div className="relative">
-          <img
-            src={bubbleImg}
-            alt=""
-            aria-hidden
-            width={176}
-            height={176}
-            className="animate-[bubbleFloat_5s_ease-in-out_infinite] drop-shadow-xl"
-            style={{ height: "clamp(84px, 15vh, 150px)", width: "clamp(84px, 15vh, 150px)" }}
-          />
-        </div>
-        <h1
-          className="wordmark mt-3 leading-tight"
-          style={{ fontSize: "clamp(2rem, 7vh, 2.6rem)" }}
-        >
-          {t("home.title")}
-        </h1>
-        <p className="mt-2 max-w-xs text-sm text-muted-foreground">{t("home.tagline")}</p>
-
-        <div className="mt-4 flex w-full max-w-xs flex-col gap-2.5">
-          {/* Pop Challenge — the daily timed mode; the HERO button (most emphasis,
-              first) because it's what brings players back. */}
-          <DailyChallengeCard />
-
-          {/* Pop for Fun — casual, endless; quieter (ghost) so the Challenge leads. */}
-          <Link
-            to="/play"
-            search={{ mode: "zen", phase: 1, difficulty: "normal", daily: 0 }}
-            // Warm audio inside this user gesture so iOS unlocks and the pop
-            // samples decode before the first tap (no silent first pop).
-            onClick={() => {
-              unlockAudio();
-              trackModeSelected("zen");
-            }}
-            className="btn btn-ghost w-full py-3.5 text-base"
-          >
-            {t("home.zen")}
-          </Link>
-
-          <Link
-            to="/records"
-            className="mt-1 text-center text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
-            {t("home.viewRecords")}
-          </Link>
-        </div>
-
-        <nav
-          aria-label="Legal"
-          className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground"
-        >
-          <Link to="/settings" className="hover:underline">
-            {t("nav.settings")}
-          </Link>
-          <span aria-hidden>·</span>
-          <Link to="/about" className="hover:underline">
-            {t("nav.about")}
-          </Link>
-          <span aria-hidden>·</span>
-          <Link to="/privacy" className="hover:underline">
-            {t("nav.privacy")}
-          </Link>
-          <span aria-hidden>·</span>
-          <Link to="/terms" className="hover:underline">
-            {t("nav.terms")}
-          </Link>
-        </nav>
-      </div>
-
-      <AdBannerSpacer />
-      <AdBanner />
-    </div>
+        {label}
+      </span>
+    </Link>
   );
 }

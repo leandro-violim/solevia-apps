@@ -53,11 +53,60 @@ Default clear bubble is free. Paid **collectible skins = color + a distinct pop 
 Cowork generates in Higgsfield and delivers the transparent WebP; Code downloads (Code has normal network to the CDN; the sandboxed device VM does not), converts/verifies WebP + budget, and wires the two files in. Locked source URLs are recorded above by job id.
 
 ## Progress log
-- 2026-09-09 — Direction locked = A/realism-first. Diagnosed current look. Generated + reviewed ~30 Higgsfield options. **Locked: full bubble `501368a3` (tall inflated clear), ROUND popped `17c819f1` (opt 61), board `b2ae83f5` (opt 75, aqua-tint).** Confirmed full-game restyle scope (Home/menus/colors/imagery — retention goal). North star locked. Next: Code branch `feat/pop-zen-1.3`, wire Phase 1 (bubble) + Phase 2 (board), validate on device; then Phases 3–5 (FX, full UI restyle, map + skins).
-- 2026-09-09 — **Phases 1–2 wired on `feat/pop-zen-1.3` (render layer only; all 39 tests green, tsc clean).**
-  - **Assets:** downloaded the 3 locked source PNGs; processed with `sharp` (bun). Bubbles cut off white via **border flood-fill** (preserves the near-white dome body, stops at the gray rim → clean round alpha), 3×3 alpha feather, auto-trim, WebP 512². Board resized to WebP 1280². Sizes: **full 18 KB, popped 23 KB, board 84 KB** (~125 KB total; starter ≪ 1 MB, resident ≪ 15 MB).
-  - **Tone cleanup (render-layer art fix):** the Higgsfield domes carried crease/shadow regions that smeared as "dirt" at game size. Full bubble → radial *interiorBrighten* (clean bright dome, rim ring preserved, smoothstep-feathered so no boundary ring). Popped → gentle *shadowLift* (kills the charcoal crease, keeps the crinkle texture). Script kept at `scratchpad/process.mjs` if a re-run/tune is needed.
-  - **Files replaced:** `src/assets/bubbles/real-bubble-full.webp`, `…/real-bubble-popped.webp`, `src/assets/scene/field-sheet.webp`. `Bubble.tsx` unchanged (already swaps full→popped).
-  - **Board overlay relaxed** (`src/routes/play.tsx`): the old sheet was *tiled* (repeat, size tied to bubble size) + dimmed/blurred (opacity .6, `blur(2px) brightness(.62)`) + a 20% black veil. New asset is a single composed sheet → shown as **one continuous image** (`cover`, no-repeat), opacity 1, `blur(1px) brightness(.92)`; container veil changed from `rgba(0,0,0,.2)` to a soft aqua `#cfeceb`. Aqua realism now reads; crisp shadowed poppable bubbles still stand out on top.
-  - **Verified in browser (mobile viewport):** full domes read as clean clear bubbles with defined rims; popping swaps to the deflated/crinkled sprite (visibly distinct); board reads as one bright aqua sheet; no console errors. `build:mobile` + `cap sync ios`/`android` done.
-  - **Pending — on-device validation (Leandro):** simulator graphics are broken on this Mac, so Phases 1–2 need a real-device check (archive iOS / run Android from the synced native projects). Then Phase 3 (FX).
+- 2026-09-09 — Direction locked = A/realism-first. Diagnosed current look. Generated + reviewed ~30 Higgsfield options. **Locked: full bubble `501368a3` (tall inflated clear), ROUND popped `17c819f1` (opt 61).** Confirmed full-game restyle scope. North star locked.
+- 2026-09-09 (redo) — **Phase 1–2 REDONE after Leandro flagged the bubbles looked flat/low-quality and lost the real bubble-wrap feel.** Root cause: wrong sources + an over-aggressive interior-brighten flattened the full bubble, and the light board hid the clear bubbles. Fix: switched to the §11 LOCKED already-transparent sources (full `a67d910d`, popped `fe5e3ba2`), processed minimally at 768²/q90 (no tone-flattening; only a gentle deep-shadow lift on popped to kill a charcoal crease). Board → real continuous bubble-wrap sheet, **soft aqua-teal tint** (Leandro picked "D" from 5 options) so clear bubbles read with contrast. Commits `5910d7b`, `9b31d76`.
+- 2026-09-09 (Step 1+3) — **Game-style shell foundation + Home built.** Design tokens (§11 palette) + 8 reusable components in `src/components/gameshell.tsx` (GlossyButton, IconTile, ResourcePill, HexNode, BottomNav, WrapTeaser, Island, Mascot) with `.gs-*` classes in styles.css. Shell art cut/exported (sky, wrap-sheet, mascot-idle, island-trees, island-hex, wrap-patch) via a colour-distance flood-fill + largest-component (translucent mascot needed tol 22). New game-style Home (`src/routes/index.tsx`): sky bg, top bar (avatar/streak/coins/gear), 3 event tiles, "¡Toca y revienta!" teaser (real sheet + auto-pop), island + bubble-buddy mascot + hex nodes (done/current "you are here"/locked) map PREVIEW, big glossy "Mundo X · Fase Y" play button, rounded 5-tab bottom nav. i18n keys added (en/pt/es). Tests green, tsc clean, verified in browser. **Deferred:** mascot-cheer (near-transparent glass, hard cut — do in step 5 finish screen); interactive map + phase/world persistence (step 4); menu restyle (step 5); app icon (step 6).
+- 2026-09-09 (cont.) — **Meta look pivoted to a juicy "game-style shell" (Candy-Crush-inspired, not copied) — see §11.** Realistic gameplay board + realistic bubble-wrap Home teaser stay; the shell (Home/map/menus) becomes glossy, rounded, playful. Added a **bubble-buddy mascot** (+ app icon). Full art set generated. Next: Code builds the shell from §11 spec + wires Phases 1–2 bubbles/board, validate on device.
+
+---
+
+## 11. Game-style shell — LOCKED (v1.3 meta look) + assets + Code build spec
+
+**The concept (locked):** realism *where you play and where you're tempted to play*; juicy game-feel *everywhere else*. i.e. **realistic clear bubbles on the gameplay board** + a **realistic bubble-wrap "¡Toca y revienta!" teaser on Home** + a **juicy, rounded, glossy game-style shell** (Home, world/phase map, menus) + a **bubble-buddy mascot**. Inspired by Candy Crush's meta layer, themed to bubble wrap — not a copy.
+
+**Reference mockups (in this folder, open in a browser — the CDN images only render outside the sandbox):** `zen-gamestyle-home.html` (the Home + map + teaser + mascot + nav), `zen-ui-restyle-mockup.html` (flat calm variant, superseded for the shell but keeps useful component ideas), `zen-menu-colors.html` (accent explorations).
+
+### Palette (locked)
+- **Sky/home background:** warm sunset clouds (top) → serene purple → blue water (bottom). Kept as Leandro liked it.
+- **Primary CTA:** glossy green — `#8fe36b`→`#4fbf3f`, bottom edge `#379a2c`, white bold text (the "go" convention).
+- **Brand aqua** `#33E0C6` for bubble/aqua accents; **coral** `#f062a0` for ribbons/highlights; **gold** `#F5C451` coins; frosted-white panels; dark-navy phone frame `#2a2350`.
+- Bubbles themselves stay **pure clear** (no color) — color is the paid-skin upsell.
+
+### Components (build these as reusable pieces)
+1. **Glossy primary button** — rounded 20–22px, top highlight, 6–7px bottom bevel, soft drop shadow; green default; used for main play + event "Jugar/Diario/Abrir".
+2. **Icon tile** — rounded square, 3px white border, colored gradient face (purple/blue/pink), 4–5px bottom bevel; holds an icon; optional small green button under it; optional "+" badge.
+3. **Resource pill** — dark translucent rounded pill, icon + value, green "+" badge on the left (lives/timer, coins).
+4. **Hex map node** — hexagon; states: done (aqua + star), current (white + glow ring + "Continúa aquí" coral chip), locked (grey + lock).
+5. **Bottom nav** — light rounded bar, 5 tabs, center Home raised + green.
+6. **Bubble-wrap teaser** — a real bubble-wrap sheet (bundled asset) with 4–5 bubbles auto-popping on a loop (full→popped→reset via the real sprites), coral "¡Toca y revienta!" ribbon; taps into play. Reduced-motion: static.
+7. **Islands** — soft-iso platforms whose top surface is the real bubble-wrap sheet (bundled), warm sandy rim, small trees; carry the hex nodes + mascot.
+8. **Mascot (bubble-buddy)** — used on islands, celebrations, empty states, and the app icon.
+
+### Home layout (see `zen-gamestyle-home.html`)
+Top bar (avatar · lives/timer pill · coins pill · gear) → left column of 3 event tiles → floating bubble-wrap teaser (upper-right) → world/phase map (hex nodes on bubble-wrap islands, mascot, "you are here") → big glossy "Mundo X · Fase Y — Toca para jugar" button → bottom nav. **Continue lands on the map at the current node** (persisted).
+
+### Asset set (Higgsfield-generated; all on white/transparent → Code cuts alpha + exports WebP, decode-once, lazy)
+| Asset | Use | Source URL |
+|---|---|---|
+| Gameplay bubble — FULL (transparent) | tappable bubble | `.../hf_20260909_195614_a67d910d-50c0-4db6-b769-abd616872461.png` |
+| Gameplay bubble — POPPED round (transparent) | popped state + teaser pops | `.../hf_20260909_210055_fe5e3ba2-bb16-4b79-9a66-53974b27eeab.png` |
+| Bubble-wrap SHEET | board surface + Home teaser + island tops | `.../hf_20260909_194624_9286ac86-695f-4c25-ab08-393f0bfa1fb7.png` |
+| Bubble-wrap PATCH (alt) | small teaser/thumbnail | `.../hf_20260909_204449_de69de52-c6f4-4de9-967e-4eb228f7ec26.png` |
+| Mascot — idle | home/app icon | `.../hf_20260909_211332_c4f73dd8-7bf1-4c0c-b2b3-c3d74c2e5ca3.png` |
+| Mascot — cheering | celebrations/finish | `.../hf_20260909_211332_7dc21cb6-456e-48ef-a0a9-9d31057962f1.png` |
+| Island — with trees | map platforms | `.../hf_20260909_211333_6f97e5d5-a7a9-45c8-84b7-6f78637b75f3.png` |
+| Island — hex tile | map nodes/platforms | `.../hf_20260909_211333_1e817e06-c09f-452a-a850-e6eb5619e843.png` |
+| Sky background | home/map backdrop | `.../hf_20260909_211332_8e9db252-59a9-4c24-aa8e-d14d8ec439c2.png` |
+
+(Base: `https://d8j0ntlcm91z4.cloudfront.net/user_3Gy9Lu8BGRS2LbDJBYp8Mtuafy2/`. Code fetches these directly — it has normal network; the sandbox/preview does not, which is why mockups show a fallback.)
+
+**Gameplay board (still open, low-stakes):** recommend the realistic bubble-wrap sheet on a **deep-teal ground** for contrast (so clear bubbles pop) — Leandro to confirm deep-teal vs light when validating Phase 2 on device.
+
+### Code build order (render-layer only, tests green)
+1. **Design tokens** — commit the palette above as CSS variables; build the 8 components as reusable pieces.
+2. **Bubbles/board (Phases 1–2 already handed off)** — full+popped sprites; brightened realistic board.
+3. **Game-style Home** — sky bg, top bar, event tiles, teaser (real sheet + auto-pop), bottom nav, big play button.
+4. **World/phase map + persistence** — hex nodes on bubble-wrap islands, land-on-node, persist current phase/world (reuse cap-kickers reward-road `51b31fa`).
+5. **Menus restyle** — Tienda, Ajustes, Records, finish to the same components.
+6. **Mascot + app icon**; then paid color/effect skins.
+Validate each step on device before the next. Keep image memory in budget (decode-once, lazy, <~15MB resident).
