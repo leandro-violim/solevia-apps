@@ -953,10 +953,10 @@ function PlayPage() {
           }}
         >
           {/* v1.3 (Project C) playfield: a REAL continuous bubble-wrap sheet,
-              deep-teal tinted (tint + darkening baked into the asset) so the clear
-              poppable bubbles read with contrast. Shown as one image (cover, no
-              tiling); a faint 1px blur keeps the static backdrop behind the crisp
-              poppable bubbles. Inset past the clip so cover has no soft edge. */}
+              soft aqua-teal tinted (baked into the asset) so the clear poppable
+              bubbles read with contrast. Shown crisply as one image (cover, no
+              tiling, NO blur — the foreground bubbles separate via their own
+              shadows). Inset past the clip so cover has no soft edge. */}
           <div
             aria-hidden
             className="pointer-events-none absolute"
@@ -967,7 +967,6 @@ function PlayPage() {
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center",
               opacity: 1,
-              filter: "blur(1px)",
             }}
           />
           {bubbles.map((b) => (
