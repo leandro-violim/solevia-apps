@@ -946,9 +946,10 @@ function PlayPage() {
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10"
           style={{
             isolation: "isolate",
-            // v1.3 (Project C): deep-teal ground behind the real bubble-wrap sheet
-            // so the CLEAR poppable bubbles pop with contrast (§11 recommendation).
-            background: "#12484c",
+            // v1.3 (Project C): soft aqua-teal ground behind the real bubble-wrap
+            // sheet (Leandro's pick "D") — gentle mood, texture stays visible, and
+            // the clear poppable bubbles still read via their rims + shadows.
+            background: "#7fb8b4",
           }}
         >
           {/* v1.3 (Project C) playfield: a REAL continuous bubble-wrap sheet,
