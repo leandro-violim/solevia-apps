@@ -946,27 +946,28 @@ function PlayPage() {
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10"
           style={{
             isolation: "isolate",
-            // Leandro's pick: a soft 20% black veil over the app's navy shell,
-            // with the real bubble-wrap on top. rgba(0,0,0,0.20).
-            background: "rgba(0, 0, 0, 0.2)",
+            // v1.3 (Project C): soft aqua-tinted ground behind the real sheet, so
+            // any sub-pixel gap at the rounded corners reads aqua, not navy.
+            background: "#cfeceb",
           }}
         >
-          {/* Locked "dimblur-neutral" playfield (Leandro's pick), applied to all
-              modes: the REAL bubble-wrap tiled so each pocket matches the CURRENT
-              phase's bubble size and fills the whole square for every size, then
-              dimmed + softly blurred so the poppable bubbles read on top. The
-              layer is inset past the clip so the blur has no soft edge. */}
+          {/* v1.3 (Project C) playfield: the real aqua-tinted bubble-wrap sheet
+              shown as ONE continuous image (cover, no tiling) so its realism reads.
+              Relaxed the old dim/blur (was opacity .6, blur 2px, brightness .62):
+              a light brightness knock-back + faint 1px blur push the static sheet
+              behind the crisp, shadowed poppable bubbles without dimming the aqua.
+              Inset past the clip so cover has no soft edge. */}
           <div
             aria-hidden
             className="pointer-events-none absolute"
             style={{
               inset: "-14px",
               backgroundImage: `url(${fieldSheet})`,
-              backgroundSize: `${Math.round((bubbles[0]?.size ?? cfg.size) * 10)}px auto`,
-              backgroundRepeat: "repeat",
+              backgroundSize: "cover",
+              backgroundRepeat: "no-repeat",
               backgroundPosition: "center",
-              opacity: 0.6,
-              filter: "blur(2px) brightness(0.62)",
+              opacity: 1,
+              filter: "blur(1px) brightness(0.92)",
             }}
           />
           {bubbles.map((b) => (
