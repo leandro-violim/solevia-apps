@@ -1,7 +1,11 @@
 # Release checklist — run this before EVERY store update
 
 Sole Via Entertainment · Cap Kickers / Zen Bubbles
-Last verified: 2026-09-01
+Last verified: 2026-09-08
+
+**Cap Kickers 1.2 SHIPPED 2026-09-08** — Android live (versionName 1.2 / versionCode 4),
+iOS 1.2 / build 3 in Apple review. Declarations diffed against 1.1: no re-declaration needed
+(no new SDK / IAP / data / locale). Next release: Android versionCode 5, iOS build 4.
 
 The point of this file: most of the store paperwork is **declarations**, not code. A declaration
 that was true for 1.0 and is no longer true for 1.1 is a policy violation even when the app itself
