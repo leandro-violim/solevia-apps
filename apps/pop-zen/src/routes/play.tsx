@@ -946,17 +946,16 @@ function PlayPage() {
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10"
           style={{
             isolation: "isolate",
-            // v1.3 (Project C): soft aqua-tinted ground behind the real sheet, so
-            // any sub-pixel gap at the rounded corners reads aqua, not navy.
-            background: "#cfeceb",
+            // v1.3 (Project C): deep-teal ground behind the real bubble-wrap sheet
+            // so the CLEAR poppable bubbles pop with contrast (§11 recommendation).
+            background: "#12484c",
           }}
         >
-          {/* v1.3 (Project C) playfield: the real aqua-tinted bubble-wrap sheet
-              shown as ONE continuous image (cover, no tiling) so its realism reads.
-              Relaxed the old dim/blur (was opacity .6, blur 2px, brightness .62):
-              a light brightness knock-back + faint 1px blur push the static sheet
-              behind the crisp, shadowed poppable bubbles without dimming the aqua.
-              Inset past the clip so cover has no soft edge. */}
+          {/* v1.3 (Project C) playfield: a REAL continuous bubble-wrap sheet,
+              deep-teal tinted (tint + darkening baked into the asset) so the clear
+              poppable bubbles read with contrast. Shown as one image (cover, no
+              tiling); a faint 1px blur keeps the static backdrop behind the crisp
+              poppable bubbles. Inset past the clip so cover has no soft edge. */}
           <div
             aria-hidden
             className="pointer-events-none absolute"
@@ -967,7 +966,7 @@ function PlayPage() {
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center",
               opacity: 1,
-              filter: "blur(1px) brightness(0.92)",
+              filter: "blur(1px)",
             }}
           />
           {bubbles.map((b) => (
