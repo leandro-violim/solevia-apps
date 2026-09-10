@@ -38,21 +38,58 @@ function MapPage() {
     return () => fadeMusicOut();
   }, []);
 
-  // Land on the current node once progress is known.
+  // Land on the current node: quickly pan from the top (over the passed phases)
+  // down to where the mascot is now. Reduced-motion → jump straight there.
   useEffect(() => {
-    currentRef.current?.scrollIntoView({ block: "center", behavior: "auto" });
+    const el = currentRef.current;
+    if (!el) return;
+    const targetY =
+      el.getBoundingClientRect().top +
+      window.scrollY -
+      window.innerHeight / 2 +
+      el.offsetHeight / 2;
+    const reduce =
+      typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || targetY <= 0) {
+      window.scrollTo(0, Math.max(0, targetY));
+      return;
+    }
+    window.scrollTo(0, 0);
+    let raf = 0;
+    const start = performance.now();
+    const dur = 950;
+    const step = (now: number) => {
+      const p = Math.min(1, (now - start) / dur);
+      const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      window.scrollTo(0, targetY * e);
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    const timer = setTimeout(() => {
+      raf = requestAnimationFrame(step);
+    }, 140);
+    return () => {
+      clearTimeout(timer);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, [reached]);
 
   const playStage = (stage: number) => {
     unlockAudio();
     trackModeSelected("time-attack");
-    navigate({ to: "/play", search: { phase: stage, mode: "time-attack", difficulty: "normal", daily: 0 } });
+    navigate({
+      to: "/play",
+      search: { phase: stage, mode: "time-attack", difficulty: "normal", daily: 0 },
+    });
   };
 
   return (
     <div
       className="gs-home relative min-h-dvh"
-      style={{ backgroundImage: `url(${sky})`, backgroundSize: "cover", backgroundPosition: "center top" }}
+      style={{
+        backgroundImage: `url(${sky})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+      }}
     >
       {/* header */}
       <div
@@ -62,7 +99,12 @@ function MapPage() {
           background: "linear-gradient(to bottom, rgba(255,225,200,0.9), rgba(255,225,200,0))",
         }}
       >
-        <Link to="/" aria-label={t("home.title")} className="gs-nav__btn" style={{ width: 42, height: 42 }}>
+        <Link
+          to="/"
+          aria-label={t("home.title")}
+          className="gs-nav__btn"
+          style={{ width: 42, height: 42 }}
+        >
           ←
         </Link>
         <h1 className="text-lg font-extrabold" style={{ color: "var(--gs-ink)" }}>
@@ -87,9 +129,19 @@ function MapPage() {
             >
               {/* world header */}
               <div className="mb-2 flex items-center gap-2">
-                <img src={islandHex} alt="" aria-hidden width={40} height={40} style={{ filter: "drop-shadow(0 3px 4px rgba(120,90,40,.3))" }} />
+                <img
+                  src={islandHex}
+                  alt=""
+                  aria-hidden
+                  width={40}
+                  height={40}
+                  style={{ filter: "drop-shadow(0 3px 4px rgba(120,90,40,.3))" }}
+                />
                 <div>
-                  <div className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--gs-ink-soft)" }}>
+                  <div
+                    className="text-[11px] font-bold uppercase tracking-wider"
+                    style={{ color: "var(--gs-ink-soft)" }}
+                  >
                     {t("world.label")} {world}
                   </div>
                   <div className="text-sm font-extrabold" style={{ color: "var(--gs-ink)" }}>
@@ -132,7 +184,12 @@ function MapPage() {
                           type="button"
                           onClick={() => playStage(stage)}
                           aria-label={`${t("world.label")} ${world} · ${p}`}
-                          style={{ border: 0, background: "transparent", padding: 0, cursor: "pointer" }}
+                          style={{
+                            border: 0,
+                            background: "transparent",
+                            padding: 0,
+                            cursor: "pointer",
+                          }}
                         >
                           {node}
                         </button>

@@ -1067,20 +1067,25 @@ function PlayPage() {
           )}
 
           {state === "timeup" && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/70 px-4 backdrop-blur-sm">
-              <div className="zb-dialog">
-                <div className="text-3xl font-extrabold text-accent">{t("play.timeUp")}</div>
+            <div
+              className="absolute inset-0 flex items-center justify-center px-4"
+              style={{ background: "rgba(10,30,35,0.35)", backdropFilter: "blur(4px)" }}
+            >
+              <div className="gs-panel w-full max-w-xs p-6 text-center">
+                <div className="text-3xl font-extrabold" style={{ color: "var(--gs-coral)" }}>
+                  {t("play.timeUp")}
+                </div>
                 {canRevive && (
-                  <p className="mx-auto mt-2 max-w-[15rem] text-sm text-muted-foreground">
+                  <p className="mx-auto mt-2 max-w-[15rem] text-sm gs-muted">
                     {t("play.timeUpLine")}
                   </p>
                 )}
-                <div className="mt-5 flex flex-col gap-2">
+                <div className="mt-5 flex flex-col gap-2.5">
                   {canRevive && (
                     <button
                       onClick={onRevive}
                       disabled={reviveBusy}
-                      className="btn btn-primary w-full gap-1.5"
+                      className="gs-btn w-full gap-1.5 py-3"
                     >
                       <PlayIcon size={16} />
                       {t("play.revive", { s: CONFIG.ads.rewarded.reviveSeconds })}
@@ -1089,7 +1094,7 @@ function PlayPage() {
                   <button
                     onClick={() => goFinish("timeout")}
                     disabled={reviveBusy || advancing}
-                    className="btn btn-ghost w-full text-sm"
+                    className="gs-btn gs-btn--ghost w-full py-2.5 text-sm"
                   >
                     {t("play.endRun")}
                   </button>
@@ -1099,23 +1104,29 @@ function PlayPage() {
           )}
 
           {state === "done" && result && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/70 px-4 backdrop-blur-sm">
-              <div className="zb-dialog">
-                <div className="text-xs uppercase tracking-widest text-muted-foreground">
+            <div
+              className="absolute inset-0 flex items-start justify-center overflow-y-auto px-4 py-6"
+              style={{ background: "rgba(10,30,35,0.35)", backdropFilter: "blur(4px)" }}
+            >
+              <div className="gs-panel my-auto w-full max-w-xs p-6 text-center">
+                <div className="text-xs uppercase tracking-widest gs-muted">
                   {t("play.phaseComplete", { phase })}
                 </div>
-                <div className="mt-2 text-5xl font-extrabold text-primary">
+                <div className="mt-2 text-5xl font-extrabold" style={{ color: "var(--gs-blue-2)" }}>
                   <CountUp to={result.score} onTick={playCoinTick} />
                 </div>
-                <div className="mt-1 text-sm text-muted-foreground">
+                <div className="mt-1 text-sm gs-muted">
                   {t("play.time", { time: formatTime(result.timeMs) })}
                 </div>
                 {result.comboBonus > 0 && (
-                  <div className="mt-1 text-sm font-semibold text-accent">
+                  <div className="mt-1 text-sm font-bold" style={{ color: "var(--gs-coral)" }}>
                     {t("play.comboBonus", { n: result.maxCombo, pts: result.comboBonus })}
                   </div>
                 )}
-                <div className="mt-3 rounded-lg bg-muted p-2 text-xs text-muted-foreground">
+                <div
+                  className="mt-3 rounded-xl p-2 text-xs gs-muted"
+                  style={{ background: "rgba(0,0,0,0.05)" }}
+                >
                   {isNewBestScore ? t("play.newBestScore") : ""}
                   {isNewBestTime ? t("play.newBestTime") : ""}
                   {!isNewBestScore && !isNewBestTime
@@ -1126,9 +1137,11 @@ function PlayPage() {
                     : null}
                 </div>
                 {!isZen && objectivesRef.current.length > 0 && (
-                  // How close you are to the challenge goals, after each phase.
-                  <div className="mt-3 rounded-lg bg-white/5 p-3">
-                    <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">
+                  <div
+                    className="mt-3 rounded-xl p-3 text-left"
+                    style={{ background: "rgba(0,0,0,0.04)" }}
+                  >
+                    <div className="mb-2 text-[11px] uppercase tracking-widest gs-muted">
                       {t("challenge.progressTitle")}
                     </div>
                     <ChallengeGoals
@@ -1140,25 +1153,28 @@ function PlayPage() {
                   </div>
                 )}
                 {isLast && (
-                  <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs italic text-foreground">
+                  <div
+                    className="mt-3 rounded-xl p-3 text-xs italic"
+                    style={{ background: "rgba(51,224,198,0.12)", color: "var(--gs-ink)" }}
+                  >
                     “{finaleQuote}”
                   </div>
                 )}
-                {/* Candy-Crush-style pre-next-stage restock: buy power-ups (or
-                    watch a video for coins) before heading into the next stage. */}
+                {/* Pre-next-stage restock: buy power-ups (or watch a video for
+                    coins) before heading into the next stage. */}
                 {!isZen && !isLast && (
-                  <div className="mt-3 rounded-lg bg-white/5 p-3">
+                  <div className="mt-3 rounded-xl p-3" style={{ background: "rgba(0,0,0,0.04)" }}>
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                      <span className="text-[11px] uppercase tracking-widest gs-muted">
                         {t("items.restock")}
                       </span>
-                      <CoinBalance className="text-xs font-semibold text-foreground" />
+                      <CoinBalance className="text-xs font-bold text-[color:var(--gs-ink)]" />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => buyItem("bomb")}
                         disabled={getCoins() < priceOfConsumable("bomb")}
-                        className="btn btn-secondary w-full justify-between gap-1 py-2 text-xs disabled:opacity-40"
+                        className="gs-btn gs-btn--ghost w-full justify-between gap-1 px-2 py-2 text-xs disabled:opacity-40"
                       >
                         <span className="inline-flex items-center gap-1">
                           <span aria-hidden>{CONSUMABLE_EMOJI.bomb}</span>×{getCount("bomb")}
@@ -1171,7 +1187,7 @@ function PlayPage() {
                       <button
                         onClick={() => buyItem("freeze")}
                         disabled={getCoins() < priceOfConsumable("freeze")}
-                        className="btn btn-secondary w-full justify-between gap-1 py-2 text-xs disabled:opacity-40"
+                        className="gs-btn gs-btn--ghost w-full justify-between gap-1 px-2 py-2 text-xs disabled:opacity-40"
                       >
                         <span className="inline-flex items-center gap-1">
                           <span aria-hidden>{CONSUMABLE_EMOJI.freeze}</span>×{getCount("freeze")}
@@ -1186,7 +1202,7 @@ function PlayPage() {
                       <button
                         onClick={watchForCoins}
                         disabled={adBusy}
-                        className="btn btn-ghost mt-2 w-full gap-1 py-2 text-xs text-accent disabled:opacity-40"
+                        className="gs-btn gs-btn--ghost mt-2 w-full gap-1 py-2 text-xs disabled:opacity-40"
                       >
                         <PlayIcon size={13} />
                         {t("shop.watchEarn", { coins: CONFIG.ads.rewarded.coinReward })}
@@ -1194,18 +1210,18 @@ function PlayPage() {
                     )}
                   </div>
                 )}
-                <div className="mt-4 flex flex-col gap-2">
+                <div className="mt-4 flex flex-col gap-2.5">
                   <button
                     onClick={() => (isLast ? goFinish() : nextPhase())}
                     disabled={advancing}
-                    className="btn btn-primary w-full"
+                    className="gs-btn w-full py-3.5"
                   >
                     {isLast ? t("play.finish") : t("play.nextPhase")}
                   </button>
                   <button
                     onClick={restart}
                     disabled={advancing}
-                    className="btn btn-ghost w-full text-sm"
+                    className="gs-btn gs-btn--ghost w-full py-2.5 text-sm"
                   >
                     {t("play.replayPhase")}
                   </button>

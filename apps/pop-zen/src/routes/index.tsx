@@ -11,7 +11,6 @@ import { trackModeSelected } from "../lib/mode";
 import {
   IconTile,
   ResourcePill,
-  HexNode,
   Island,
   Mascot,
   WrapTeaser,
@@ -46,7 +45,10 @@ function Home() {
   // v1.3 §11 step 4: real world/phase progress. Read after mount (SSR/prerender
   // has no localStorage). The play button "continues" to the map at the current
   // node; the mini-map preview mirrors nearby nodes.
-  const [{ world: CURRENT_WORLD, phase: CURRENT_PHASE }, setProgress] = useState({ world: 1, phase: 1 });
+  const [{ world: CURRENT_WORLD, phase: CURRENT_PHASE }, setProgress] = useState({
+    world: 1,
+    phase: 1,
+  });
   useEffect(() => {
     setProgress(currentWorldPhase());
   }, []);
@@ -79,72 +81,85 @@ function Home() {
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%]"
-        style={{ background: "linear-gradient(180deg, rgba(120,110,230,0.10), rgba(110,95,220,0.42))" }}
+        style={{
+          background: "linear-gradient(180deg, rgba(120,110,230,0.10), rgba(110,95,220,0.42))",
+        }}
       />
 
-      {/* ---- top bar ---- */}
+      {/* ---- top bar: status only (nav lives in the bottom bar, no duplicates) ---- */}
       <div
         className="relative z-20 flex items-center gap-2 px-3"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
       >
-        <Link to="/achievements" aria-label={t("home.achievements")}>
-          <IconTile variant="gold" size={44}>🫧</IconTile>
-        </Link>
-        <Link to="/achievements" aria-label={t("home.achievements")} className="ml-1">
-          <ResourcePill icon="🔥" plus={false}>
-            <StreakBadge />
-          </ResourcePill>
-        </Link>
+        <IconTile variant="gold" size={44}>
+          🫧
+        </IconTile>
+        <ResourcePill icon="🔥" plus={false}>
+          <StreakBadge />
+        </ResourcePill>
         <Link to="/shop" aria-label={t("home.shop")} className="ml-auto">
           <ResourcePill icon="🪙" plus>
             <CoinBalance />
           </ResourcePill>
         </Link>
-        <Link to="/settings" aria-label={t("nav.settings")}>
-          <IconTile variant="blue" size={44}>⚙️</IconTile>
-        </Link>
       </div>
 
-      {/* ---- scene (events + teaser + map) ---- */}
+      {/* ---- scene ---- */}
       <div className="relative z-10 min-h-0 flex-1">
-        {/* left event tiles */}
-        <div className="absolute left-3 top-3 z-20 flex flex-col gap-3">
-          <EventTile to="/play" search={{ mode: "time-attack", phase: 1, difficulty: "normal", daily: 1 }}
-            variant="blue" icon="🗓️" label={t("home.daily")} />
-          <EventTile to="/achievements" variant="gold" icon="🏆" label={t("home.achievements")} />
-          <EventTile to="/records" variant="pink" icon="📊" label={t("home.viewRecords")} />
+        {/* left: the daily challenge (the one event not in the bottom nav) */}
+        <div className="absolute left-3 top-3 z-20">
+          <EventTile
+            to="/play"
+            search={{ mode: "time-attack", phase: 1, difficulty: "normal", daily: 1 }}
+            variant="blue"
+            icon="🗓️"
+            label={t("home.daily")}
+          />
         </div>
 
-        {/* bubble-wrap teaser (upper-right) */}
+        {/* bubble-wrap teaser (upper-right) → Pop for Fun */}
         <div className="absolute right-4 top-4 z-20" style={{ transform: "rotate(4deg)" }}>
           <WrapTeaser ribbon={t("home.teaser")} onClick={startZen} width={132} />
         </div>
 
         {/* ambient float bubbles */}
-        <FloatBubble size={20} style={{ top: "34%", left: "58%" }} />
-        <FloatBubble size={12} style={{ top: "42%", left: "70%" }} />
-        <FloatBubble size={22} style={{ top: "62%", left: "12%" }} />
+        <FloatBubble size={20} style={{ top: "30%", left: "60%" }} />
+        <FloatBubble size={12} style={{ top: "38%", left: "72%" }} />
+        <FloatBubble size={22} style={{ top: "26%", left: "16%" }} />
 
-        {/* world/phase map preview (interactive map = step 4). Island widened to
-            fill the width; current node sits left-of-centre so the "you are here"
-            chip + number never cover the mascot (which sits to its right). */}
-        <div className="absolute inset-x-0 z-0" style={{ top: "46%" }}>
-          <div className="relative mx-auto" style={{ width: "min(300px, 82%)", height: 215 }}>
-            <Island variant="trees" width={280} style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)" }} />
-            <HexNode n={CURRENT_PHASE - 1} state="done" size={44}
-              style={{ position: "absolute", left: "17%", bottom: 66 }} />
-            <HexNode n={CURRENT_PHASE} state="current" hereLabel={t("home.here")} size={52}
-              style={{ position: "absolute", left: "40%", bottom: 116, transform: "translateX(-50%)" }} />
-            <HexNode n={CURRENT_PHASE + 1} state="locked" size={44}
-              style={{ position: "absolute", right: "12%", bottom: 104 }} />
-            <Mascot size={60} style={{ position: "absolute", left: "58%", bottom: 62, transform: "translateX(-50%)" }} />
+        {/* island brought DOWN to the bottom of the scene (clear of the left tile),
+            with the bubble-buddy mascot as the centred hero on top. The full
+            interactive world map lives on /map (the play button below). */}
+        <div className="absolute inset-x-0 bottom-0 z-0">
+          <div className="relative mx-auto" style={{ width: "min(320px, 88%)", height: 210 }}>
+            <Island
+              variant="trees"
+              width={300}
+              style={{
+                position: "absolute",
+                left: "50%",
+                bottom: 0,
+                transform: "translateX(-50%)",
+              }}
+            />
+            <Mascot
+              size={96}
+              style={{
+                position: "absolute",
+                left: "50%",
+                bottom: 74,
+                transform: "translateX(-50%)",
+              }}
+            />
           </div>
         </div>
       </div>
 
       {/* ---- main play button ---- */}
       <div className="relative z-20 px-5 pb-2 text-center">
-        <div aria-hidden className="mb-[-4px] text-2xl drop-shadow">🫧</div>
+        <div aria-hidden className="mb-[-4px] text-2xl drop-shadow">
+          🫧
+        </div>
         <Link
           to="/map"
           aria-label={t("home.worldPhase", { world: CURRENT_WORLD, phase: CURRENT_PHASE })}
@@ -153,7 +168,9 @@ function Home() {
           <span style={{ fontSize: 20 }}>
             {t("home.worldPhase", { world: CURRENT_WORLD, phase: CURRENT_PHASE })}
           </span>
-          <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.95 }}>{t("home.tapToPlay")}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.95 }}>
+            {t("home.tapToPlay")}
+          </span>
         </Link>
       </div>
 
@@ -190,7 +207,9 @@ function EventTile({
       className="flex w-[76px] flex-col items-center gap-1"
       aria-label={label}
     >
-      <IconTile variant={variant} size={64}>{icon}</IconTile>
+      <IconTile variant={variant} size={64}>
+        {icon}
+      </IconTile>
       <span
         className="w-full rounded-lg px-1.5 py-0.5 text-center text-[10px] font-extrabold leading-tight text-white"
         style={{
