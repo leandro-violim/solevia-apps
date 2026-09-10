@@ -1029,6 +1029,20 @@ function PlayPage() {
         {t("play.bubblesLeft", { n: remaining, best: record?.bestScore ?? 0 })}
       </div>
 
+      {/* Power-up toolbar ABOVE the field so it never covers the (tiny) bubbles. */}
+      {!isZen && (state === "ready" || state === "playing") && !showWorldIntro && (
+        <div className="px-4 pb-2">
+          <ItemHud
+            bombCount={getCount("bomb")}
+            freezeCount={getCount("freeze")}
+            bombArmed={bombArmed}
+            onBomb={armBomb}
+            onFreeze={freezeTime}
+            freezeDisabled={state !== "playing" || deadline === null}
+          />
+        </div>
+      )}
+
       <div
         className="relative flex flex-1 px-2 pb-2"
         style={{
@@ -1102,18 +1116,6 @@ function PlayPage() {
 
           {/* Candy-Crush-style "entering World N" flourish (worlds 2–4). */}
           {showWorldIntro && <WorldIntro round={round} onDone={() => setShowWorldIntro(false)} />}
-
-          {/* Consumable power-ups (Pop Challenge only): Bomb + Time Freeze. */}
-          {!isZen && (state === "ready" || state === "playing") && !showWorldIntro && (
-            <ItemHud
-              bombCount={getCount("bomb")}
-              freezeCount={getCount("freeze")}
-              bombArmed={bombArmed}
-              onBomb={armBomb}
-              onFreeze={freezeTime}
-              freezeDisabled={state !== "playing" || deadline === null}
-            />
-          )}
 
           {/* Power-up flash ("+2s", "Bomb armed"). */}
           {itemFlash && (
