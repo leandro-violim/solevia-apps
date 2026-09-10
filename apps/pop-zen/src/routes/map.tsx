@@ -17,39 +17,57 @@ import world3 from "../assets/scene/world-3.webp";
 import world4 from "../assets/scene/world-4.webp";
 
 const WORLD_BG = [world1, world2, world3, world4];
-// Serpentine node anchors (% of the world section) laid over the painted island
-// scenery — 8 phases per world. They trace a single winding trail down the
-// island so the buddy visibly walks the pathway from phase to phase.
-const NODE_XY: [number, number][] = [
-  [32, 14],
-  [55, 21],
-  [70, 33],
-  [48, 44],
-  [28, 55],
-  [50, 65],
-  [71, 75],
-  [47, 86],
+// Per-world node anchors (% of the world SECTION, i.e. after the cover-crop) —
+// placed ON the painted beige pads of each island, ordered along the painted
+// rope so the phases sit on the stepping-stones and the buddy walks pad-to-pad.
+// Where an island has fewer than 8 pads, the extra phases sit between two pads,
+// on the rope. One array per world (index 0 = World 1 … 3 = World 4).
+const WORLD_NODES: [number, number][][] = [
+  // World 1 — trees; pads spread across a wide island.
+  [
+    [24, 22],
+    [27, 42],
+    [40, 55],
+    [53, 68],
+    [66, 61],
+    [79, 53],
+    [72, 40],
+    [64, 27],
+  ],
+  // World 2 — palms; 8 pads in a loop.
+  [
+    [33, 30],
+    [44, 36],
+    [51, 46],
+    [41, 58],
+    [26, 45],
+    [66, 39],
+    [73, 33],
+    [77, 48],
+  ],
+  // World 3 — sunset; pad loop in the centre-lower interior.
+  [
+    [65, 31],
+    [53, 34],
+    [66, 49],
+    [50, 60],
+    [39, 62],
+    [28, 64],
+    [25, 46],
+    [23, 36],
+  ],
+  // World 4 — aurora; pad loop, island centred.
+  [
+    [63, 28],
+    [54, 35],
+    [66, 53],
+    [56, 56],
+    [45, 59],
+    [36, 53],
+    [26, 46],
+    [25, 34],
+  ],
 ];
-
-// A smooth Catmull-Rom spline (as an SVG path) through the node anchors — the
-// visible "rope" trail the mascot travels. Constant, so build it once.
-function splinePath(pts: readonly [number, number][]): string {
-  if (pts.length < 2) return "";
-  const d = [`M ${pts[0][0]} ${pts[0][1]}`];
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] ?? pts[i];
-    const p1 = pts[i];
-    const p2 = pts[i + 1];
-    const p3 = pts[i + 2] ?? pts[i + 1];
-    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
-    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
-    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
-    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
-    d.push(`C ${c1x} ${c1y} ${c2x} ${c2y} ${p2[0]} ${p2[1]}`);
-  }
-  return d.join(" ");
-}
-const TRAIL_D = splinePath(NODE_XY);
 
 // `auto=1` means we arrived here between phases: the mascot HOPS from the phase
 // just cleared to the new one, the new node's lock is removed on arrival, and we
@@ -258,37 +276,8 @@ function MapPage() {
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0"
-                style={{ background: "rgba(255,255,255,0.32)" }}
+                style={{ background: "rgba(255,255,255,0.14)" }}
               />
-              {/* The winding trail linking the 8 nodes — a rope the buddy walks.
-                  preserveAspectRatio=none maps the 0–100 viewBox straight onto the
-                  section; non-scaling strokes keep the rope an even width. */}
-              <svg
-                aria-hidden
-                className="pointer-events-none absolute inset-0 h-full w-full"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-              >
-                <path
-                  d={TRAIL_D}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.85)"
-                  strokeWidth={7}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  vectorEffect="non-scaling-stroke"
-                />
-                <path
-                  d={TRAIL_D}
-                  fill="none"
-                  stroke="rgba(184,138,94,0.9)"
-                  strokeWidth={4}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeDasharray="0.1 7"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </svg>
               {/* world name chip */}
               <div className="absolute left-3 top-3 z-10">
                 <span
@@ -310,7 +299,7 @@ function MapPage() {
                 // locked — then the lock is removed with a pop.
                 const showLocked = isCurrent && auto && !arrived;
                 const state = showLocked ? "locked" : baseState;
-                const [x, y] = NODE_XY[pi];
+                const [x, y] = WORLD_NODES[wi][pi];
                 const node = (
                   <HexNode
                     n={p}
