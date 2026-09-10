@@ -18,9 +18,9 @@ import mascotHop2 from "../assets/shell/mascot-hop-2.webp";
 import mascotHop3 from "../assets/shell/mascot-hop-3.webp";
 import islandTrees from "../assets/shell/island-trees.webp";
 import islandHex from "../assets/shell/island-hex.webp";
-import nodeDone from "../assets/shell/node-done.webp";
-import nodeCurrent from "../assets/shell/node-current.webp";
-import nodeLocked from "../assets/shell/node-locked.webp";
+import nodeDone from "../assets/shell/node-done-oval.webp";
+import nodeCurrent from "../assets/shell/node-current-oval.webp";
+import nodeLocked from "../assets/shell/node-locked-oval.webp";
 import sky from "../assets/scene/sky.webp";
 
 /* 1 — Glossy primary button (actions). Navigation uses <Link className="gs-btn">. */
@@ -113,7 +113,6 @@ export function HexNode({
   state = "locked",
   hereLabel,
   size = 54,
-  stretch = false,
   style,
 }: {
   n: number;
@@ -121,9 +120,6 @@ export function HexNode({
   hereLabel?: string;
   /** px (number) or any CSS length, e.g. "100%" to fill a sized wrapper. */
   size?: number | string;
-  /** When true the tile FILLS its box (matches a non-square footprint like a pad)
-   *  instead of preserving its own aspect ratio (contain). */
-  stretch?: boolean;
   style?: CSSProperties;
 }) {
   const tile = state === "done" ? nodeDone : state === "current" ? nodeCurrent : nodeLocked;
@@ -134,12 +130,7 @@ export function HexNode({
         src={tile}
         alt=""
         aria-hidden
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: stretch ? "fill" : "contain",
-          display: "block",
-        }}
+        style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
       />
       {state === "current" && (
         <span

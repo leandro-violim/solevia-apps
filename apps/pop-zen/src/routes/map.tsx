@@ -19,11 +19,15 @@ import world3 from "../assets/scene/world-3.webp";
 import world4 from "../assets/scene/world-4.webp";
 
 const WORLD_BG = [world1, world2, world3, world4];
-// The baked tan pads are all the same isometric-oval footprint: ~PAD_W% wide ×
-// ~PAD_H% tall of the SQUARE island image (measured from world-1.webp). Markers
-// use exactly this box so each sits on its pad at the pad's own size and shape.
+// The baked tan pads are all the same isometric-oval footprint: ~12.6% wide ×
+// ~10.4% tall of the SQUARE island image (measured from world-1.webp).
 const PAD_W = 12.6;
-const PAD_H = 10.4;
+// The oval node sprites (node-*-oval.webp) are 512² squares whose disc fills ~0.91
+// of the canvas width. Sizing a SQUARE marker box to PAD_W / OVAL_FILL renders the
+// disc at exactly PAD_W wide (and, at the sprite's 1.21 aspect, ~10.4% tall) — so
+// it lands on the pad at the pad's own size.
+const OVAL_FILL = 0.91;
+const NODE_BOX = +(PAD_W / OVAL_FILL).toFixed(2); // ≈ 13.85
 // Per-world node anchors (x%, y% of the SQUARE world image) — Cowork baked the 8
 // tan pads at exactly these coordinates in each island (world-maps v3), so the
 // phase markers sit dead-centre on the pads, ordered pad1→pad8 along the rope.
@@ -345,14 +349,14 @@ function MapPage() {
                 const showLocked = isCurrent && auto && !arrived;
                 const state = showLocked ? "locked" : baseState;
                 const [x, y] = WORLD_NODES[wi][pi];
-                // Marker box matches the baked pad's own FOOTPRINT (an isometric
-                // oval ~PAD_W% × PAD_H% of the square island), and the tile is
-                // stretched to fill it — so each marker is exactly the pad's size
-                // and shape, sitting dead-centre on it, never crowding neighbours.
+                // The oval node sprite is a SQUARE image whose disc fills OVAL_FILL
+                // of the canvas width. Sizing the square box to PAD_W / OVAL_FILL
+                // renders that disc at exactly the pad's footprint (PAD_W × PAD_H),
+                // so each marker sits dead-centre on its pad at the pad's own size.
                 const node = (
                   // "You are here" rides above the mascot's head (overlay below),
-                  // not the node, so no hereLabel here. Fills the pad-shaped wrapper.
-                  <HexNode n={p} state={state} size="100%" stretch />
+                  // not the node, so no hereLabel here. Fills the square wrapper.
+                  <HexNode n={p} state={state} size="100%" />
                 );
                 const interactive = state !== "locked";
                 return (
@@ -363,8 +367,8 @@ function MapPage() {
                     style={{
                       left: `${x}%`,
                       top: `${y}%`,
-                      width: `${PAD_W}%`,
-                      aspectRatio: `${PAD_W} / ${PAD_H}`,
+                      width: `${NODE_BOX}%`,
+                      aspectRatio: "1 / 1",
                     }}
                   >
                     {interactive ? (
