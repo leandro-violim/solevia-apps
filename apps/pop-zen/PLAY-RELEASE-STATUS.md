@@ -1,7 +1,48 @@
 # Zen Bubbles — Google Play release status & handoff
 
-**Last updated: 2026-08-21 (by Cowork / Claude in the Claude app, driving Play Console via Chrome).**
+**Last updated: 2026-09-10 (added the v1.3 in-development section). Android launch facts below are as of 2026-08-21 (by Cowork / Claude in the Claude app, driving Play Console via Chrome).**
 This file is the source of truth for where the Android / Google Play launch stands. Read it before touching anything Android.
+
+---
+
+## v1.3 "Project C" — IN DEVELOPMENT (branch `feat/pop-zen-1.3`, NOT yet built/submitted)
+
+A big visual + features update, still on the feature branch. **Not** built to an AAB, not
+on Play, not on the App Store. When it ships it goes out via the normal update flow (see
+"What Claude Code should / should NOT do" → bump `versionCode`, same upload keystore).
+
+**Visual overhaul (Project C):**
+- New game-style shell + Home screen; realistic clay/3D bubbles and deep-teal board.
+- Photoreal, measured-seamless **bubble-wrap gameplay background** (transparent, same size
+  as the poppable bubbles) — re-encoded with the project's native sharp.
+- **"Your journey" world map** with 4 island worlds (v3 art), 8 baked pads each + a baked
+  portal past pad 8; the mascot **hops** node→node between phases (no auto-start — waits for
+  a tap); a **sad mascot** on the "Time's Up" screen.
+
+**Gameplay / features:**
+- **Equip power-ups per phase:** tapping a phase on the journey opens a "Gear up" popup —
+  the player equips bombs / snowflakes they OWN; only equipped ones appear on the board
+  (no more random bomb/snowflake spawns). Includes a rewarded-ad "free boost" option.
+- **Pop Challenge** (comeback booster, once every 3 hours): a random mission + random reward
+  (big coins, or bombs, or snowflakes); pays out on win OR miss; reward popup → interstitial.
+  Home tile shows a live cooldown when locked. (Replaces the old date-seeded daily tile.)
+- **Snowflake bubble** pauses the Time-Attack countdown 2s when popped.
+- Progress gating verified: players only advance phases/worlds by winning.
+
+**Localization:** full **EN / ES / PT** coverage (parity-tested) + an in-app **language
+switcher in Settings** (persists + reloads).
+
+**Ads / compliance:** AdMob **"Google-served ads obscuring content" fix** — the banner no
+longer overlaps UI (routes reserve `--ad-banner-h`; banner hidden on full-screen routes).
+
+**Analytics upgrade:** GA4 (`G-0MY4L3KEDF`) screen-view tracking, a phase-by-phase
+progression funnel, abandonment, onboarding funnel, monetization + ad-reliability events,
+and user properties. Documented in `EVENTS.md`; GA4 console setup handed to Cowork.
+
+**Open items on the branch:**
+- Oval journey **node sprites** — brief for Cowork at `store-assets/COWORK-BRIEF-node-sprites.md`
+  (markers are temporarily stretched hex tiles until the oval discs land).
+- GA4 console dimensions/key-events/funnels setup (Cowork, per `EVENTS.md`).
 
 ---
 
