@@ -105,7 +105,7 @@ function Home() {
       {/* ---- scene (events + teaser + map) ---- */}
       <div className="relative z-10 min-h-0 flex-1">
         {/* left event tiles */}
-        <div className="absolute left-3 top-3 flex flex-col gap-3">
+        <div className="absolute left-3 top-3 z-20 flex flex-col gap-3">
           <EventTile to="/play" search={{ mode: "time-attack", phase: 1, difficulty: "normal", daily: 1 }}
             variant="blue" icon="🗓️" label={t("home.daily")} />
           <EventTile to="/achievements" variant="gold" icon="🏆" label={t("home.achievements")} />
@@ -113,7 +113,7 @@ function Home() {
         </div>
 
         {/* bubble-wrap teaser (upper-right) */}
-        <div className="absolute right-4 top-4" style={{ transform: "rotate(4deg)" }}>
+        <div className="absolute right-4 top-4 z-20" style={{ transform: "rotate(4deg)" }}>
           <WrapTeaser ribbon={t("home.teaser")} onClick={startZen} width={132} />
         </div>
 
@@ -122,17 +122,19 @@ function Home() {
         <FloatBubble size={12} style={{ top: "42%", left: "70%" }} />
         <FloatBubble size={22} style={{ top: "62%", left: "12%" }} />
 
-        {/* world/phase map preview (interactive map = step 4) */}
-        <div className="absolute inset-x-0" style={{ top: "46%" }}>
-          <div className="relative mx-auto" style={{ width: "min(320px, 92%)", height: 210 }}>
-            <Island variant="trees" width={240} style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)" }} />
-            <Mascot size={66} style={{ position: "absolute", left: "50%", bottom: 96, transform: "translateX(-50%)" }} />
-            <HexNode n={CURRENT_PHASE - 1} state="done" size={46}
-              style={{ position: "absolute", left: "14%", bottom: 74 }} />
-            <HexNode n={CURRENT_PHASE} state="current" hereLabel={t("home.here")} size={54}
-              style={{ position: "absolute", left: "50%", bottom: 118, transform: "translateX(-50%)" }} />
-            <HexNode n={CURRENT_PHASE + 1} state="locked" size={46}
-              style={{ position: "absolute", right: "14%", bottom: 74 }} />
+        {/* world/phase map preview (interactive map = step 4). Island widened to
+            fill the width; current node sits left-of-centre so the "you are here"
+            chip + number never cover the mascot (which sits to its right). */}
+        <div className="absolute inset-x-0 z-0" style={{ top: "46%" }}>
+          <div className="relative mx-auto" style={{ width: "min(300px, 82%)", height: 215 }}>
+            <Island variant="trees" width={280} style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)" }} />
+            <HexNode n={CURRENT_PHASE - 1} state="done" size={44}
+              style={{ position: "absolute", left: "17%", bottom: 66 }} />
+            <HexNode n={CURRENT_PHASE} state="current" hereLabel={t("home.here")} size={52}
+              style={{ position: "absolute", left: "40%", bottom: 116, transform: "translateX(-50%)" }} />
+            <HexNode n={CURRENT_PHASE + 1} state="locked" size={44}
+              style={{ position: "absolute", right: "12%", bottom: 104 }} />
+            <Mascot size={60} style={{ position: "absolute", left: "58%", bottom: 62, transform: "translateX(-50%)" }} />
           </div>
         </div>
       </div>
