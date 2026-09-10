@@ -24,17 +24,17 @@ const WORLD_BG = [world1, world2, world3, world4];
 // phase markers sit dead-centre on the pads, ordered pad1→pad8 along the rope.
 // The section is shown SQUARE (full image, no crop) so these percentages map 1:1.
 const WORLD_NODES: [number, number][][] = [
-  // World 1 — daytime, green trees. (pads 6 & 7 are baked a touch close together,
-  // so they're nudged apart slightly to keep the two markers from overlapping.)
+  // World 1 — daytime, green trees. Coordinates are the MEASURED centres of the 8
+  // baked pads (detected from world-1.webp), so each marker sits on its pad.
   [
-    [37.0, 33.0],
-    [50.3, 35.1],
-    [63.0, 39.0],
-    [51.0, 44.5],
-    [40.3, 50.9],
-    [50.5, 54.5],
-    [61.0, 64.0],
-    [45.0, 66.0],
+    [37.4, 32.8],
+    [49.0, 34.5],
+    [59.6, 38.4],
+    [51.8, 44.0],
+    [42.0, 49.9],
+    [50.9, 55.4],
+    [57.7, 62.0],
+    [45.8, 65.6],
   ],
   // World 2 — tropical, palms
   [
@@ -95,7 +95,9 @@ export const Route = createFileRoute("/map")({
 type Pos = { left: number; top: number };
 
 function MapPage() {
-  const { auto } = Route.useSearch();
+  // `auto` is a numeric search param (0/1); coerce to a real boolean so
+  // `{auto && …}` never renders a stray "0" on the screen.
+  const auto = Route.useSearch({ select: (s) => s.auto === 1 });
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
   const curNodeRef = useRef<HTMLDivElement>(null);
