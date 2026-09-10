@@ -62,7 +62,7 @@ const R = (a: number, b: number) => a + Math.random() * (b - a);
 // Clarity of a plain bubble: <1 makes the milky dome see-through so the bubble-wrap
 // shows through it and it reads as clear plastic (Leandro). Specials (bomb/golden/
 // frozen) stay fully opaque so their power-up art stays unmistakable.
-const BUBBLE_CLARITY = 0.65;
+const BUBBLE_CLARITY = 0.4;
 
 /**
  * One real bubble-wrap bubble. Unpopped shows the full plump sprite; popping
