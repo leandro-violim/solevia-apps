@@ -893,7 +893,9 @@ function PlayPage() {
   // dense phases, big bubbles on phase 1). Pitch = displayed bubble size + the
   // layout's 6px padding; the tile is 3 bubbles wide (see wrap-tile.webp).
   const bubblePx = bubbles[0]?.size ?? cfg.size;
-  const bgTile = (bubblePx + 6) * 3;
+  // The wrap tile is a seamless block 3 bubbles wide × 2 tall, so it renders at
+  // (3·pitch) × (2·pitch) to keep the bubbles round and matched to the phase size.
+  const bgPitch = bubblePx + 6;
 
   return (
     <div
@@ -990,7 +992,7 @@ function PlayPage() {
           {/* v1.3 (Project C) playfield: a REAL, CLEAR bubble-wrap sheet (de-tinted
               from the photo so it reads as transparent plastic, encoded crisp with
               native sharp — no blur). Tiled — NOT cover — so the background bubbles
-              are drawn at the SAME size as this phase's poppable bubbles (bgTile
+              are drawn at the SAME size as this phase's poppable bubbles (bgPitch
               tracks cfg.size). The board then reads as one continuous sheet where
               the poppable bubbles stand out via their rims + shadows, instead of
               big background bubbles behind tiny poppable ones on dense phases. */}
@@ -1000,7 +1002,7 @@ function PlayPage() {
             style={{
               inset: 0,
               backgroundImage: `url(${wrapTile})`,
-              backgroundSize: `${bgTile}px ${bgTile}px`,
+              backgroundSize: `${bgPitch * 3}px ${bgPitch * 2}px`,
               backgroundRepeat: "repeat",
               backgroundPosition: "center",
               opacity: 1,
