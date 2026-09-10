@@ -1086,3 +1086,18 @@
 .gs-topwash {
   background: linear-gradient(to bottom, rgba(255, 231, 205, 0.92), rgba(255, 231, 205, 0));
 }
+
+/* Game-style dialog overlay (v1.3): soft scrim + blur so a frosted .gs-panel
+   card reads over the bright shell. Mirrors .zb-dialog-overlay's layout. */
+.gs-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(20, 30, 55, 0.34);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}

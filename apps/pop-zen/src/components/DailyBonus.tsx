@@ -82,18 +82,32 @@ export function DailyBonus() {
       overlayRef={overlayRef}
       onClose={dismiss}
       closeLabel={t("bonus.close")}
+      overlayClassName="gs-dialog-overlay"
+      panelClassName="gs-panel relative w-full max-w-xs p-6 text-center"
+      closeClassName="text-[color:var(--gs-ink-soft)] hover:text-[color:var(--gs-ink)]"
       afterCard={<PopParticles fieldRef={overlayRef} />}
     >
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gold/15 text-gold">
+      <div
+        className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl text-white"
+        style={{
+          background: "linear-gradient(var(--gs-gold-1), var(--gs-gold-2))",
+          border: "3px solid #fff",
+          boxShadow: "0 5px 0 var(--gs-gold-edge), 0 8px 12px rgba(0,0,0,.22)",
+        }}
+      >
         <GiftIcon size={30} />
       </div>
-      <div className="mt-3 text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+      <div className="mt-3 text-[11px] uppercase tracking-[0.25em] gs-muted">
         {t("bonus.title")}
       </div>
-      <div className="mt-1 text-3xl font-extrabold text-primary">{t("bonus.day", { n: day })}</div>
-      <div className="mt-1 text-lg font-semibold text-accent">{t("bonus.reward", { coins })}</div>
-      <p className="mx-auto mt-2 max-w-[15rem] text-sm text-muted-foreground">{t("bonus.line")}</p>
-      <button ref={claimBtnRef} onClick={claim} className="btn btn-primary mt-5 w-full">
+      <div className="mt-1 text-3xl font-extrabold" style={{ color: "var(--gs-ink)" }}>
+        {t("bonus.day", { n: day })}
+      </div>
+      <div className="mt-1 text-lg font-bold" style={{ color: "var(--gs-coral)" }}>
+        {t("bonus.reward", { coins })}
+      </div>
+      <p className="mx-auto mt-2 max-w-[15rem] text-sm gs-muted">{t("bonus.line")}</p>
+      <button ref={claimBtnRef} onClick={claim} className="gs-btn mt-5 w-full py-3.5">
         {t("bonus.claim")}
       </button>
     </Modal>

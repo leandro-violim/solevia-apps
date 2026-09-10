@@ -13,6 +13,9 @@ export function Modal({
   closeLabel,
   overlayRef,
   afterCard,
+  overlayClassName = "zb-dialog-overlay",
+  panelClassName = "zb-dialog",
+  closeClassName = "text-muted-foreground hover:text-foreground",
 }: {
   children: ReactNode;
   onClose?: () => void;
@@ -21,6 +24,10 @@ export function Modal({
   overlayRef?: RefObject<HTMLDivElement | null>;
   /** Extra nodes rendered inside the overlay, above the card (e.g. particles). */
   afterCard?: ReactNode;
+  /** Style overrides so callers can theme the surface (defaults = dark glass). */
+  overlayClassName?: string;
+  panelClassName?: string;
+  closeClassName?: string;
 }) {
   useEffect(() => {
     if (!onClose) return;
@@ -32,18 +39,18 @@ export function Modal({
   return (
     <div
       ref={overlayRef}
-      className="zb-dialog-overlay"
+      className={overlayClassName}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
       onClick={(e) => {
         if (onClose && e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="zb-dialog">
+      <div className={panelClassName}>
         {onClose && (
           <button
             onClick={onClose}
             aria-label={closeLabel}
-            className="absolute right-3 top-3 text-muted-foreground transition-colors hover:text-foreground"
+            className={`absolute right-3 top-3 transition-colors ${closeClassName}`}
           >
             <CloseIcon size={18} />
           </button>
