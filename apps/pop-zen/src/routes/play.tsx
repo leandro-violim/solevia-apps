@@ -777,8 +777,15 @@ function PlayPage() {
       interAdsRef.current += 1;
       await maybeShowInterstitial("phase_break");
     }
-    navigate({ to: "/play", search: { phase: next, mode, difficulty, daily } });
-  }, [navigate, phase, mode, difficulty, daily, isZen]);
+    // v1.3 §11 step 4: on the MAIN journey, hop through the world map (it pans
+    // the mascot to the new node) before the next phase. Zen / daily go straight.
+    if (!isZen && !isDaily) {
+      noteStageReached(next);
+      navigate({ to: "/map", search: { auto: 1 } });
+    } else {
+      navigate({ to: "/play", search: { phase: next, mode, difficulty, daily } });
+    }
+  }, [navigate, phase, mode, difficulty, daily, isZen, isDaily]);
 
   // End of a Time Attack run: total the phases, award coins (§1), fire the
   // run-end interstitial (§2 — a natural break, capped), then celebrate.

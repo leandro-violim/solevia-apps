@@ -162,6 +162,7 @@ function Home() {
         </div>
         <Link
           to="/map"
+          search={{ auto: 0 }}
           aria-label={t("home.worldPhase", { world: CURRENT_WORLD, phase: CURRENT_PHASE })}
           className="gs-btn gs-btn--hero mx-auto w-full max-w-xs flex-col gap-0.5 px-4 py-2.5"
         >

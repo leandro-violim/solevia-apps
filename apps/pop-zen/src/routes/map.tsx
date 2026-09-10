@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { z } from "zod";
 import { TOTAL_ROUNDS, PHASES_PER_ROUND } from "../lib/game-config";
 import { reachedStage, stageState } from "../lib/progress";
 import { HexNode } from "../components/gameshell";
@@ -12,7 +13,12 @@ import { ResourcePill } from "../components/gameshell";
 import sky from "../assets/scene/sky.webp";
 import islandHex from "../assets/shell/island-hex.webp";
 
+// `auto=1` means we arrived here between phases: pan to the new node, then
+// continue into the phase automatically (tap anywhere to skip the wait).
+const searchSchema = z.object({ auto: z.coerce.number().optional().default(0) });
+
 export const Route = createFileRoute("/map")({
+  validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [{ title: "Your journey — Zen Bubbles" }],
   }),
@@ -23,6 +29,7 @@ export const Route = createFileRoute("/map")({
 const ZIG = [-66, -20, 40, 74, 40, -20, -66, -94];
 
 function MapPage() {
+  const { auto } = Route.useSearch();
   const navigate = useNavigate();
   const currentRef = useRef<HTMLDivElement>(null);
   // Read progress AFTER mount: on the server (SSR/dev) there is no localStorage,
@@ -73,24 +80,47 @@ function MapPage() {
     };
   }, [reached]);
 
-  const playStage = (stage: number) => {
-    unlockAudio();
-    trackModeSelected("time-attack");
-    navigate({
-      to: "/play",
-      search: { phase: stage, mode: "time-attack", difficulty: "normal", daily: 0 },
-    });
+  const playStage = useCallback(
+    (stage: number) => {
+      unlockAudio();
+      trackModeSelected("time-attack");
+      navigate({
+        to: "/play",
+        search: { phase: stage, mode: "time-attack", difficulty: "normal", daily: 0 },
+      });
+    },
+    [navigate],
+  );
+
+  // Between-phases (auto): after the pan lands on the new node, continue into the
+  // phase; a tap anywhere skips the short wait.
+  useEffect(() => {
+    if (!auto) return;
+    const id = setTimeout(() => playStage(reached), 1650);
+    return () => clearTimeout(id);
+  }, [auto, reached, playStage]);
+  const skipContinue = () => {
+    if (auto) playStage(reached);
   };
 
   return (
     <div
       className="gs-home relative min-h-dvh"
+      onClick={skipContinue}
       style={{
         backgroundImage: `url(${sky})`,
         backgroundSize: "cover",
         backgroundPosition: "center top",
       }}
     >
+      {auto && (
+        <div
+          className="pointer-events-none fixed inset-x-0 z-30 flex justify-center"
+          style={{ bottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+        >
+          <span className="gs-ribbon">{t("home.tapToPlay")} →</span>
+        </div>
+      )}
       {/* header */}
       <div
         className="sticky top-0 z-20 flex items-center gap-2 px-3 pb-2"
