@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { APP_VERSION, useSoundSetting, useVibrationSetting } from "../lib/settings";
 import { usePhaseRecords } from "../lib/records";
 import { track, setAnalyticsEnabled, isAnalyticsEnabled } from "../lib/analytics";
-import { t } from "../lib/i18n";
+import { t, LANG, setLang, type Lang } from "../lib/i18n";
 import { HowToPlay } from "../components/Onboarding";
 import { PlayIcon } from "../components/icons";
 import { ScreenShell } from "../components/gameshell";
@@ -94,6 +94,38 @@ function SettingsPage() {
   return (
     <ScreenShell title={t("settings.title")} nav="settings">
       <div className="space-y-4 pt-2">
+        <section className="gs-panel p-4">
+          <div className="text-sm font-bold" style={ink}>
+            {t("settings.language")}
+          </div>
+          <div className="text-xs gs-muted">{t("settings.languageDesc")}</div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {(["en", "pt", "es"] as Lang[]).map((lng) => {
+              const active = LANG === lng;
+              return (
+                <button
+                  key={lng}
+                  type="button"
+                  onClick={() => {
+                    if (active) return;
+                    track("setting_changed", { key: "language", value: lng });
+                    setLang(lng); // persists + reloads so all t() pick it up
+                  }}
+                  aria-pressed={active}
+                  className="rounded-xl py-2 text-sm font-bold"
+                  style={{
+                    background: active ? "var(--gs-green-2)" : "rgba(0,0,0,0.05)",
+                    color: active ? "#fff" : "var(--gs-ink)",
+                    border: active ? "2px solid var(--gs-green-2)" : "2px solid transparent",
+                  }}
+                >
+                  {t(`lang.${lng}` as "lang.en")}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         <section className="gs-panel p-4">
           <ToggleRow
             label={t("settings.popSound")}

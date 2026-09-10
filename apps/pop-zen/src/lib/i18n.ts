@@ -1,11 +1,12 @@
 /**
  * Tiny in-app localization — no dependency.
  *
- * Language is detected ONCE at module load, synchronously, from the device
+ * Language is resolved ONCE at module load, synchronously: a saved user choice
+ * (Settings → Language, in localStorage) wins; otherwise it follows the device
  * language (in the Capacitor webview `navigator.language` reflects the device
- * setting). pt-* → Portuguese, es-* → Spanish, everything else → English. There
- * is no runtime language switch: the app follows the device, so there's no flash
- * / hydration mismatch.
+ * setting). pt-* → Portuguese, es-* → Spanish, everything else → English.
+ * Changing the language in Settings persists the choice and reloads the app, so
+ * there's never a flash / hydration mismatch mid-session.
  *
  * `t(key, params?)` looks up STRINGS[LANG][key], falls back to the English
  * string, then to the key itself, and interpolates `{name}` placeholders from
@@ -15,14 +16,43 @@
 
 export type Lang = "en" | "pt" | "es";
 
-const NAV_LANG = (
-  typeof navigator !== "undefined" && navigator.language ? navigator.language : "en"
-).toLowerCase();
-export const LANG: Lang = NAV_LANG.startsWith("pt")
-  ? "pt"
-  : NAV_LANG.startsWith("es")
-    ? "es"
-    : "en";
+const LANG_KEY = "zb_lang";
+
+/** The device language, mapped to a supported Lang. */
+function deviceLang(): Lang {
+  const nav = (
+    typeof navigator !== "undefined" && navigator.language ? navigator.language : "en"
+  ).toLowerCase();
+  return nav.startsWith("pt") ? "pt" : nav.startsWith("es") ? "es" : "en";
+}
+
+/** The player's saved language choice (Settings), or null to follow the device. */
+export function savedLang(): Lang | null {
+  try {
+    const v = localStorage.getItem(LANG_KEY);
+    return v === "en" || v === "pt" || v === "es" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+// Saved choice wins over the device language. Resolved once at module load.
+export const LANG: Lang = savedLang() ?? deviceLang();
+
+/**
+ * Set the UI language from Settings: persist the choice and reload so every
+ * `t()` call (which reads the module-level LANG) picks it up cleanly. Passing the
+ * current language is a no-op. "System" is expressed by removing the override.
+ */
+export function setLang(lang: Lang): void {
+  if (lang === LANG && savedLang() !== null) return;
+  try {
+    localStorage.setItem(LANG_KEY, lang);
+  } catch {
+    /* storage blocked — can't persist a switch */
+  }
+  if (typeof window !== "undefined") window.location.reload();
+}
 
 // Reflect the UI language on <html lang> for accessibility / screen readers.
 if (typeof document !== "undefined") {
@@ -224,6 +254,11 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
 
     // Settings
     "settings.title": "Settings",
+    "settings.language": "Language",
+    "settings.languageDesc": "Choose the app language.",
+    "lang.en": "English",
+    "lang.pt": "Português",
+    "lang.es": "Español",
     "settings.popSound": "Pop sound",
     "settings.popSoundDesc": "Play a soft pop when a bubble bursts.",
     "settings.music": "Music",
@@ -335,7 +370,7 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
     "shop.equipped": "Equipado",
     "shop.watchDiscount": "−{pct}%",
     "shop.watchEarn": "Assista um vídeo · +{coins} moedas",
-    "shop.items": "Power-ups",
+    "shop.items": "Itens",
     "rarity.common": "Comum",
     "rarity.uncommon": "Incomum",
     "rarity.rare": "Raro",
@@ -461,6 +496,11 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
 
     // Settings
     "settings.title": "Ajustes",
+    "settings.language": "Idioma",
+    "settings.languageDesc": "Escolha o idioma do app.",
+    "lang.en": "English",
+    "lang.pt": "Português",
+    "lang.es": "Español",
     "settings.popSound": "Som ao estourar",
     "settings.popSoundDesc": "Toca um som suave ao estourar cada bolha.",
     "settings.music": "Música",
@@ -698,6 +738,11 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
 
     // Settings
     "settings.title": "Ajustes",
+    "settings.language": "Idioma",
+    "settings.languageDesc": "Elige el idioma de la app.",
+    "lang.en": "English",
+    "lang.pt": "Português",
+    "lang.es": "Español",
     "settings.popSound": "Sonido al reventar",
     "settings.popSoundDesc": "Reproduce un sonido suave al reventar cada burbuja.",
     "settings.music": "Música",
