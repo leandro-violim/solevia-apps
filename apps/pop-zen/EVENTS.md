@@ -1,4 +1,4 @@
-# Zen Bubbles — Analytics events (GA4, web data stream `G-0MY4L3KEDF`)
+# Zen Bubbles — Analytics events (GA4, web data stream `G-0MY4L3KEDF`, property `p552089130`)
 
 All events flow through `track(name, params)` in `src/lib/analytics.ts` (fire-and-forget,
 opt-out aware). Param names are **snake_case and stable** — register each as a GA4
@@ -82,17 +82,27 @@ registered — expected). Use DebugView for QA.
 | `highest_world` / `highest_phase` | on a new max reached |
 | `is_spender` | first coins spent on a purchase |
 
-## GA4 console setup (do once — hand to Cowork)
-1. **Custom definitions → custom dimensions (event-scoped):** `screen_name`, `previous_screen`,
-   `mode`, `difficulty`, `world`, `phase`, `phase_start`, `placement`, `item_id`, `rarity`,
-   `source`, `sink`, `reason`, `objective_id`, `achievement_id`, `milestone`, `type`,
-   `day_count`, `format`, `from_world`, `to_world`, `short_by`, `ended_by`,
-   `bombs`, `freeze`, `boost`, `mission_kind`, `reward_kind`, `reward_amount`, `success`.
-   **(user-scoped):** `app_language`, `highest_world`, `highest_phase`, `is_spender`.
-2. **Events → Mark as key event:** `run_start`, `phase_cleared`, `world_completed`,
-   `rewarded_watched`, `daily_bonus_claimed`, `skin_unlocked`, `first_run_completed`.
-3. **Data settings → Data retention → 14 months.**
-4. **Explore:** Path exploration on `screen_view`; Funnel on `phase_start` (phase 1→…);
-   onboarding funnel `first_open → screen_view(home) → run_start → first_run_completed`;
-   monetization `screen_view(shop) → shop_item_viewed → coins_spent`.
-5. Turn on Google signals (optional) and confirm the AdMob↔Firebase link for ad revenue.
+## GA4 console setup — ✅ DONE by Cowork (2026-09-10, property `p552089130`)
+1. ✅ **Custom dimensions — 30 registered** (26 event-scoped + 4 user-scoped): `screen_name`,
+   `previous_screen`, `mode`, `difficulty`, `world`, `phase`, `phase_start`, `placement`,
+   `item_id`, `rarity`, `source`, `sink`, `reason`, `objective_id`, `achievement_id`,
+   `milestone`, `type`, `day_count`, `format`, `from_world`, `to_world`, `short_by`,
+   `ended_by`, `bombs`, `freeze`, `boost` (event) + `app_language`, `highest_world`,
+   `highest_phase`, `is_spender` (user).
+   - Note: GA4 dimensions are NOT retroactive — e.g. the Phase-depth table shows `(not set)`
+     until new `phase_cleared` events arrive post-update. Expected; it self-heals.
+   - `mission_kind` / `reward_kind` / `reward_amount` / `success` (Pop Challenge) were added
+     to this doc after Cowork's pass — register these 4 when convenient so challenge events
+     are sliceable.
+2. ✅ **Key events — 5 of 7 marked:** `run_start`, `phase_cleared`, `rewarded_watched`,
+   `skin_unlocked`, `daily_bonus_claimed`.
+   - ⏳ **Follow-up:** `world_completed` and `first_run_completed` can only be starred once GA4
+     has actually received them (they need a player to finish a world / complete a first run
+     after the update, and GA4 only lets you mark events seen in the last 28 days). Star both
+     under **Events → Recent events** once they appear.
+3. ✅ **Data retention → 14 months** (event + user; was 2 months).
+4. ✅ **Explorations — 4 built:** Onboarding & progression funnel (already showing real
+   drop-off), Phase depth, Monetization funnel, Path exploration.
+5. ⚙️ **Google signals — left OFF (owner's call).** It enables cross-device/demographics but
+   carries LGPD/GDPR consent implications; flip on only if we add the consent handling.
+   Still to do when the app is live: confirm the **AdMob↔Firebase link** for ad revenue.
