@@ -324,9 +324,9 @@ function MapPage() {
                 const node = (
                   // "You are here" now rides above the mascot's head (see the
                   // overlay below), not the node, so we don't pass hereLabel.
-                  // Sized to fit the pads without markers overlapping on the more
-                  // crowded islands (World 1).
-                  <HexNode n={p} state={state} size={isCurrent ? 40 : 34} />
+                  // Sized to sit WITHIN the baked tan pads (~8% of the island) so
+                  // each star fits its pad and no two overlap (World 1 is crowded).
+                  <HexNode n={p} state={state} size={isCurrent ? 34 : 30} />
                 );
                 const interactive = state !== "locked";
                 return (
