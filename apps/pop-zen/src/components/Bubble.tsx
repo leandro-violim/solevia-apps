@@ -59,6 +59,11 @@ type Props = {
 
 const R = (a: number, b: number) => a + Math.random() * (b - a);
 
+// Clarity of a plain bubble: <1 makes the milky dome see-through so the bubble-wrap
+// shows through it and it reads as clear plastic (Leandro). Specials (bomb/golden/
+// frozen) stay fully opaque so their power-up art stays unmistakable.
+const BUBBLE_CLARITY = 0.65;
+
 /**
  * One real bubble-wrap bubble. Unpopped shows the full plump sprite; popping
  * swaps to the deflated sprite, keeps it ROUND, and scales it down with a tiny
@@ -168,6 +173,9 @@ export const Bubble = memo(function Bubble({
           inset: 0,
           backgroundImage: `url(${popped ? poppedSrc : fullSrc})`,
           ["--rot" as string]: rotRef.current,
+          // Plain bubbles are semi-transparent (clear plastic look); specials stay
+          // fully opaque so their power-up art reads.
+          opacity: special === "normal" ? BUBBLE_CLARITY : undefined,
           // The "shadow" readability look now comes from .zb's box-shadow (cheap),
           // not a per-bubble drop-shadow filter that repainted every float frame.
         }}
