@@ -155,15 +155,15 @@ function usableFieldHeight(el: HTMLElement): number {
 }
 
 /**
- * The background bubble-wrap: a 3×2 block of REAL bubbles (from the photographed
- * sheet, native-sharp, illumination-flattened + gutter-aligned so it tiles), so
- * the bubbles stay CONNECTED by the plastic between them — real wrap, not drawn.
- * Tiled at the poppable bubble size (3·size × 2·size) and aligned to the grid,
- * kept see-through, it sits behind the gameplay (see the `bg` math below).
+ * Background bubble-wrap: a PHOTOREAL, measured-seamless bubble-wrap texture
+ * (Higgsfield, illumination-flattened + edge-wrap blended → ~1% seam error;
+ * encoded straight from the 2048² source with native sharp — no reprocessing that
+ * could reintroduce a seam). It has ~7 real bubbles across, connected by the
+ * plastic weld, and tiles with no visible boundary. Rendered at the poppable
+ * bubble size and kept see-through, it fills the board behind the gameplay.
  */
 const WRAP_TILE = `url(${wrapTile})`;
-const WRAP_COLS = 3;
-const WRAP_ROWS = 2;
+const WRAP_BUBBLES_ACROSS = 7;
 
 /**
  * P1-T4 — isolated Time Attack countdown. Owns the 100ms interval so a tick
@@ -900,29 +900,12 @@ function PlayPage() {
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
   remainingRef.current = remaining; // keep the expiry-handler's live count fresh
 
-  // Background wrap sheet: a continuous, close-packed grid of the WRAP_TILE bubble
-  // filling the whole board BEHIND the poppable bubbles. Repeated at the poppable
-  // bubble SIZE (so the background bubbles are the same size as the ones you pop),
-  // and its origin is aligned to a poppable bubble so a background bubble sits
-  // squarely behind each poppable one while the rest fill the gaps — a full sheet,
-  // no seams, no ghost layer. Kept see-through (low opacity) so the poppable
-  // bubbles clearly read in front. Tracks the adaptive bubble size every level.
-  const bg = useMemo(() => {
-    const size = bubbles[0]?.size ?? cfg.size;
-    // Anchor a background bubble centre onto the top-left poppable bubble's centre.
-    let posX = 0;
-    let posY = 0;
-    const b0 = bubbles.reduce<BubbleState | null>(
-      (best, b) =>
-        !best || b.y < best.y - 1 || (Math.abs(b.y - best.y) <= 1 && b.x < best.x) ? b : best,
-      null,
-    );
-    if (b0) {
-      posX = b0.x + b0.size / 2 - size / 2;
-      posY = b0.y + b0.size / 2 - size / 2;
-    }
-    return { image: WRAP_TILE, sizeX: size * WRAP_COLS, sizeY: size * WRAP_ROWS, posX, posY };
-  }, [bubbles, cfg.size]);
+  // Background wrap sheet: the seamless photoreal WRAP_TILE tiled to fill the whole
+  // board BEHIND the poppable bubbles, scaled so its ~7 bubbles render at the
+  // poppable bubble SIZE (background bubbles ≈ the ones you pop). It's a truly
+  // seamless texture, so it just repeats — no per-bubble alignment, no seams, no
+  // ghost layer. Kept see-through so the poppable bubbles clearly read in front.
+  const bgSize = (bubbles[0]?.size ?? cfg.size) * WRAP_BUBBLES_ACROSS;
 
   return (
     <div
@@ -1017,20 +1000,18 @@ function PlayPage() {
           }}
         >
           {/* v1.3 (Project C) playfield: a continuous, see-through REAL bubble-wrap
-              sheet behind the gameplay — one cut-out photographed bubble (WRAP_TILE)
-              tiled at the poppable bubble size and aligned to the grid (see `bg`
-              above), so it looks like real wrap without seams or a ghost layer. The
-              poppable bubbles sit on top at the same size; the background fills the
-              board. */}
+              sheet behind the gameplay — the seamless photoreal WRAP_TILE tiled at
+              the poppable bubble size (see `bgSize`). No seams, no ghost layer; the
+              poppable bubbles sit on top and the wrap fills the board behind them. */}
           <div
             aria-hidden
             className="pointer-events-none absolute"
             style={{
               inset: 0,
-              backgroundImage: bg.image,
-              backgroundSize: `${bg.sizeX}px ${bg.sizeY}px`,
+              backgroundImage: WRAP_TILE,
+              backgroundSize: `${bgSize}px ${bgSize}px`,
               backgroundRepeat: "repeat",
-              backgroundPosition: `${bg.posX}px ${bg.posY}px`,
+              backgroundPosition: "center",
               // See-through so the wrap reads as gentle background plastic and the
               // poppable bubbles sit clearly in front of it.
               opacity: 0.55,
