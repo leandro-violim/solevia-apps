@@ -23,28 +23,34 @@ const WORLD_BG = [world1, world2, world3, world4];
 // ~10.4% tall of the SQUARE island image (measured from world-1.webp).
 const PAD_W = 12.6;
 // The oval node sprites (node-*-oval.webp) are 512² squares whose disc fills ~0.91
-// of the canvas width. Sizing a SQUARE marker box to PAD_W / OVAL_FILL renders the
-// disc at exactly PAD_W wide (and, at the sprite's 1.21 aspect, ~10.4% tall) — so
-// it lands on the pad at the pad's own size.
+// of the canvas width and is centred at ~47% of the canvas height (it sits high so
+// the baked drop shadow grounds it below). MARKER_SCALE keeps the marker a bit
+// smaller than the pad (Leandro's pick), and DISC_CY lets us nudge the box down so
+// the DISC — not the square canvas — lands exactly on the pad centre.
 const OVAL_FILL = 0.91;
-const NODE_BOX = +(PAD_W / OVAL_FILL).toFixed(2); // ≈ 13.85
+const MARKER_SCALE = 0.72; // ~28% smaller than a pad-sized marker (20% then a further 10%)
+const DISC_CY = 0.47; // disc's vertical centre as a fraction of the sprite canvas
+// Square box whose disc renders at MARKER_SCALE × the pad width.
+const NODE_BOX = +((PAD_W / OVAL_FILL) * MARKER_SCALE).toFixed(2); // ≈ 11.08
+// Downward nudge (island %) so the disc centre, not the canvas centre, sits on the pad.
+const NODE_Y_NUDGE = +((0.5 - DISC_CY) * NODE_BOX).toFixed(2); // ≈ 0.33
 // Per-world node anchors (x%, y% of the SQUARE world image) — Cowork baked the 8
 // tan pads at exactly these coordinates in each island (world-maps v3), so the
 // phase markers sit dead-centre on the pads, ordered pad1→pad8 along the rope.
 // The section is shown SQUARE (full image, no crop) so these percentages map 1:1.
 const WORLD_NODES: [number, number][][] = [
-  // World 1 — daytime, green trees. Coordinates are the MEASURED bounding-box
-  // centres of the 8 baked pads (detected from world-1.webp), so each marker sits
-  // dead-centre on its pad.
+  // World 1 — daytime, green trees. Coordinates are each pad's VISUAL centre
+  // (the whole 3D token, not just the raised top face), tuned against the baked
+  // world-1.webp art so the smaller oval markers sit dead-centre on every pad.
   [
-    [37.2, 33.3],
-    [49.2, 34.6],
-    [60.1, 37.8],
-    [51.5, 43.6],
-    [41.5, 50.6],
-    [51.1, 56.7],
-    [56.9, 61.9],
-    [46.5, 66.3],
+    [37.2, 35.1],
+    [49.2, 36.4],
+    [60.7, 39.6],
+    [51.5, 45.4],
+    [41.5, 52.3],
+    [51.1, 58.4],
+    [56.9, 63.6],
+    [46.5, 68.0],
   ],
   // World 2 — tropical, palms
   [
@@ -366,7 +372,8 @@ function MapPage() {
                     className="absolute -translate-x-1/2 -translate-y-1/2"
                     style={{
                       left: `${x}%`,
-                      top: `${y}%`,
+                      // Nudge down by the sprite's disc offset so the DISC centres on the pad.
+                      top: `${y + NODE_Y_NUDGE}%`,
                       width: `${NODE_BOX}%`,
                       aspectRatio: "1 / 1",
                     }}
