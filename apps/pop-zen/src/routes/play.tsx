@@ -56,6 +56,7 @@ import { ChallengeGoals } from "../components/ChallengeGoals";
 import { CoinBalance } from "../components/CoinBalance";
 import { CoinIcon, PlayIcon } from "../components/icons";
 import fieldSheet from "../assets/scene/field-sheet.webp";
+import sky from "../assets/scene/sky.webp";
 import {
   computeTimeAttackScore,
   formatCountdown,
@@ -1075,8 +1076,12 @@ function PlayPage() {
 
           {state === "timeup" && (
             <div
-              className="absolute inset-0 flex items-center justify-center px-4"
-              style={{ background: "rgba(10,30,35,0.35)", backdropFilter: "blur(4px)" }}
+              className="fixed inset-0 z-50 flex items-center justify-center px-4"
+              style={{
+                backgroundImage: `url(${sky})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center top",
+              }}
             >
               <div className="gs-panel w-full max-w-xs p-6 text-center">
                 <div className="text-3xl font-extrabold" style={{ color: "var(--gs-coral)" }}>
@@ -1112,8 +1117,12 @@ function PlayPage() {
 
           {state === "done" && result && (
             <div
-              className="absolute inset-0 flex items-start justify-center overflow-y-auto px-4 py-6"
-              style={{ background: "rgba(10,30,35,0.35)", backdropFilter: "blur(4px)" }}
+              className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 py-6"
+              style={{
+                backgroundImage: `url(${sky})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center top",
+              }}
             >
               <div className="gs-panel my-auto w-full max-w-xs p-6 text-center">
                 <div className="text-xs uppercase tracking-widest gs-muted">
