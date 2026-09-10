@@ -92,7 +92,10 @@ function FinishPage() {
         backgroundSize: "cover",
         backgroundPosition: "center top",
         paddingTop: "calc(env(safe-area-inset-top) + 24px)",
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 24px)",
+        // The banner is hidden on Finish (see __root), but reserve its height too
+        // in case it's briefly visible on entry, so the Play/Home CTAs can never
+        // sit under it (AdMob "ads obscuring content" fix).
+        paddingBottom: "calc(var(--ad-banner-h, 100px) + env(safe-area-inset-bottom) + 16px)",
       }}
     >
       {/* Mascot celebration */}

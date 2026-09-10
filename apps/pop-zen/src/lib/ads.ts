@@ -109,10 +109,16 @@ export async function initAds(): Promise<void> {
     void preloadRewarded();
 
     // Recover ads automatically when connectivity returns (e.g. the player
-    // was offline, then reconnects mid-session).
+    // was offline, then reconnects mid-session). Only re-request the banner if we
+    // currently INTEND it visible (not on Finish); force the request even though
+    // `bannerVisible` is already true, since the OS may have dropped it offline.
     if (typeof window !== "undefined") {
       window.addEventListener("online", () => {
-        void showBanner();
+        if (bannerVisible) {
+          AdMob.showBanner(bannerOptions()).catch(() => {
+            /* ignore */
+          });
+        }
         void preloadInterstitial();
       });
     }
@@ -152,14 +158,27 @@ function bannerOptions(): BannerAdOptions {
 let lastBannerAt = 0;
 const BANNER_MIN_REFRESH_MS = 60_000;
 
-/** Show the bottom banner. Safe to call more than once. */
+// Whether we currently INTEND the banner to be visible. Used to keep show/hide
+// idempotent (so a route effect can call showBanner()/hideBanner() freely) and
+// to stop a refresh from re-showing a banner we've deliberately hidden (e.g. on
+// the full-screen Finish screen — the AdMob "ads obscuring content" fix).
+let bannerVisible = false;
+
+/** Whether the bottom banner is currently intended to be on screen. */
+export function isBannerVisible(): boolean {
+  return bannerVisible;
+}
+
+/** Show the bottom banner. Idempotent — no-ops if it's already shown. */
 export async function showBanner(): Promise<void> {
-  if (!IS_NATIVE) return;
+  if (!IS_NATIVE || bannerVisible) return;
+  bannerVisible = true;
   trackBannerSize();
   try {
     await AdMob.showBanner(bannerOptions());
     lastBannerAt = Date.now();
   } catch (e) {
+    bannerVisible = false;
     console.warn("[ads] showBanner failed:", e);
   }
 }
@@ -167,11 +186,11 @@ export async function showBanner(): Promise<void> {
 /**
  * Request a FRESH banner ad — e.g. when moving to a new phase — so the player
  * doesn't stare at the same creative all run. Rate-limited to once/minute to
- * stay within AdMob's banner-refresh policy; no-ops if a refresh happened
- * recently, if offline, or on web.
+ * stay within AdMob's banner-refresh policy; no-ops if the banner is hidden, if
+ * a refresh happened recently, if offline, or on web.
  */
 export async function refreshBanner(): Promise<void> {
-  if (!IS_NATIVE || !isOnline()) return;
+  if (!IS_NATIVE || !bannerVisible || !isOnline()) return;
   if (Date.now() - lastBannerAt < BANNER_MIN_REFRESH_MS) return;
   try {
     await AdMob.hideBanner();
@@ -182,8 +201,10 @@ export async function refreshBanner(): Promise<void> {
   }
 }
 
+/** Hide the bottom banner. Idempotent — no-ops if it's already hidden. */
 export async function hideBanner(): Promise<void> {
-  if (!IS_NATIVE) return;
+  if (!IS_NATIVE || !bannerVisible) return;
+  bannerVisible = false;
   try {
     await AdMob.hideBanner();
   } catch (e) {

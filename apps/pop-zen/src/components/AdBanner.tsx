@@ -21,10 +21,12 @@ export function AdBanner({ inline = false }: { inline?: boolean }) {
         "flex items-center justify-center border-t border-border/60 bg-card/80 backdrop-blur-sm"
       }
       style={{
-        // content-box so the banner's total footprint is the full 72px plus the
-        // home-indicator safe area — the space a real AdMob banner needs.
+        // content-box so the banner's total footprint is the REAL adaptive-banner
+        // height (published to --ad-banner-h by ads.ts, ~90-100px on many phones;
+        // 100px fallback before it reports) plus the home-indicator safe area —
+        // the exact space a real AdMob banner needs so it never overlaps content.
         boxSizing: "content-box",
-        height: "72px",
+        height: "var(--ad-banner-h, 100px)",
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
       aria-label="Advertisement"
@@ -47,7 +49,7 @@ export function AdBannerSpacer() {
     <div
       aria-hidden
       style={{
-        height: "calc(72px + env(safe-area-inset-bottom))",
+        height: "calc(var(--ad-banner-h, 100px) + env(safe-area-inset-bottom))",
       }}
     />
   );

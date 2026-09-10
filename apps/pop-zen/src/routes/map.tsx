@@ -229,7 +229,8 @@ function MapPage() {
       {auto && arrived && (
         <div
           className="pointer-events-none fixed inset-x-0 z-30 flex justify-center"
-          style={{ bottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+          // Lifted above the native bottom banner so the ad never covers it.
+          style={{ bottom: "calc(var(--ad-banner-h, 100px) + env(safe-area-inset-bottom) + 12px)" }}
         >
           <span className="gs-ribbon">{t("home.tapToPlay")} →</span>
         </div>
@@ -265,7 +266,12 @@ function MapPage() {
           anchors. A soft wash keeps the nodes + label legible over the art. */}
       <div
         ref={contentRef}
-        className="relative z-10 mx-auto flex max-w-md flex-col gap-4 px-4 pb-24 pt-2"
+        className="relative z-10 mx-auto flex max-w-md flex-col gap-4 px-4 pt-2"
+        // Reserve the real banner height so the lowest node / portal always clears
+        // the native bottom banner (AdMob "ads obscuring content" fix).
+        style={{
+          paddingBottom: "calc(var(--ad-banner-h, 100px) + env(safe-area-inset-bottom) + 16px)",
+        }}
       >
         {Array.from({ length: TOTAL_ROUNDS }, (_, wi) => {
           const world = wi + 1;

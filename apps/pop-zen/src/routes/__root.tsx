@@ -4,14 +4,15 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { initAds, showBanner } from "../lib/ads";
+import { initAds, showBanner, hideBanner } from "../lib/ads";
 import { initAnalytics, track } from "../lib/analytics";
 import { AchievementToast } from "../components/AchievementToast";
 
@@ -128,11 +129,18 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+// Routes where the bottom banner must be HIDDEN — full-screen moments whose
+// bottom buttons would otherwise sit under the native banner overlay (the AdMob
+// "Google-served ads obscuring content" fix). Add future full-screen dialogs here.
+const BANNER_HIDDEN_ROUTES = new Set<string>(["/finish"]);
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [adsReady, setAdsReady] = useState(false);
 
-  // Initialize AdMob and show the bottom banner once, on native only.
-  // Both calls are no-ops on the web/dev build.
+  // Initialize AdMob once (no-op on web/dev). Banner show/hide is driven by the
+  // route below, not here, so full-screen routes can suppress it.
   useEffect(() => {
     // P1-T6: load Firebase off the critical path (idle), then mark ready.
     initAnalytics();
@@ -140,12 +148,21 @@ function RootComponent() {
     let cancelled = false;
     (async () => {
       await initAds();
-      if (!cancelled) await showBanner();
+      if (!cancelled) setAdsReady(true);
     })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // Show the banner on normal screens; hide it on full-screen routes (Finish)
+  // so no button/CTA is ever covered. Idempotent (see ads.ts), so re-running on
+  // every navigation is cheap. No-op on web/dev.
+  useEffect(() => {
+    if (!adsReady) return;
+    if (BANNER_HIDDEN_ROUTES.has(pathname)) void hideBanner();
+    else void showBanner();
+  }, [adsReady, pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>
