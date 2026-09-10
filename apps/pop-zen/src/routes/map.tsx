@@ -17,6 +17,7 @@ import world1 from "../assets/scene/world-1.webp";
 import world2 from "../assets/scene/world-2.webp";
 import world3 from "../assets/scene/world-3.webp";
 import world4 from "../assets/scene/world-4.webp";
+import portalImg from "../assets/shell/portal.webp";
 
 const WORLD_BG = [world1, world2, world3, world4];
 // The baked tan pads are all the same isometric-oval footprint: ~12.6% wide ×
@@ -29,6 +30,14 @@ const PAD_W = 12.6;
 // the DISC — not the square canvas — lands exactly on the pad centre.
 const OVAL_FILL = 0.91;
 const MARKER_SCALE = 0.72; // ~28% smaller than a pad-sized marker (20% then a further 10%)
+const PORTAL_W = 15; // portal sprite width as a % of the square island
+
+// Build the SVG path (viewBox 0..100) for the rope that links the 8 nodes in order
+// and continues to the portal. Drawn BEHIND the markers so each disc covers its
+// node — the rope reads as one line entering and one leaving each marker.
+function ropePath(nodes: [number, number][], portal: [number, number]): string {
+  return [...nodes, portal].map((p, i) => `${i === 0 ? "M" : "L"} ${p[0]} ${p[1]}`).join(" ");
+}
 const DISC_CY = 0.47; // disc's vertical centre as a fraction of the sprite canvas
 // Square box whose disc renders at MARKER_SCALE × the pad width.
 const NODE_BOX = +((PAD_W / OVAL_FILL) * MARKER_SCALE).toFixed(2); // ≈ 11.08
@@ -86,10 +95,10 @@ const WORLD_NODES: [number, number][][] = [
     [72.0, 56.0],
   ],
 ];
-// The portal sits just past pad8, baked into each image (world-maps v3). Tapping
-// it advances to the next world's first phase (when unlocked).
+// Portal position per world (now DRAWN in code, so freely placeable). World 1's is
+// pushed farther down-left of the last node (pad 8) than the old baked one.
 const WORLD_PORTALS: [number, number][] = [
-  [36.8, 63.3],
+  [30.5, 64.5],
   [67.7, 35.6],
   [45.0, 70.5],
   [78.2, 46.9],
@@ -333,6 +342,34 @@ function MapPage() {
                 className="pointer-events-none absolute inset-0"
                 style={{ background: "rgba(255,255,255,0.08)" }}
               />
+              {/* Rope/path connecting the nodes → portal, drawn in code so it runs
+                  exactly through each marker centre (one line in, one out) and
+                  reaches the portal. Sits behind the markers. */}
+              <svg
+                aria-hidden
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                className="pointer-events-none absolute inset-0"
+                style={{ width: "100%", height: "100%" }}
+              >
+                <path
+                  d={ropePath(WORLD_NODES[wi], WORLD_PORTALS[wi])}
+                  fill="none"
+                  stroke="#b98a52"
+                  strokeWidth={3.4}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity={0.85}
+                />
+                <path
+                  d={ropePath(WORLD_NODES[wi], WORLD_PORTALS[wi])}
+                  fill="none"
+                  stroke="#f0d6a0"
+                  strokeWidth={1.7}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
               {/* world name chip */}
               <div className="absolute left-3 top-3 z-10">
                 <span
@@ -408,33 +445,47 @@ function MapPage() {
                 );
               })}
 
-              {/* Portal past pad 8 — baked into the art; a tap here continues to
-                  the next world's first phase once it's unlocked. */}
+              {/* Portal past pad 8 — now DRAWN in code (portal.webp) rather than baked
+                  into the island, so it can sit farther from the last node. It shows
+                  on every world that has a next one, dimmed until unlocked; a tap
+                  advances to the next world's first phase. */}
               {(() => {
                 const [px, py] = WORLD_PORTALS[wi];
                 const nextStage = world * PHASES_PER_ROUND + 1; // first phase of next world
-                const unlocked =
-                  nextStage <= TOTAL_ROUNDS * PHASES_PER_ROUND && reached >= nextStage;
-                if (!unlocked) return null;
+                if (nextStage > TOTAL_ROUNDS * PHASES_PER_ROUND) return null; // last world → no portal
+                const unlocked = reached >= nextStage;
                 return (
                   <button
                     type="button"
-                    onClick={() => {
-                      track("portal_used", { from_world: world, to_world: world + 1 });
-                      openEquip(nextStage);
-                    }}
+                    onClick={
+                      unlocked
+                        ? () => {
+                            track("portal_used", { from_world: world, to_world: world + 1 });
+                            openEquip(nextStage);
+                          }
+                        : undefined
+                    }
+                    disabled={!unlocked}
                     aria-label={t("map.portal")}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    className="absolute -translate-x-1/2 -translate-y-1/2"
                     style={{
                       left: `${px}%`,
                       top: `${py}%`,
-                      width: "17%",
-                      aspectRatio: "1 / 1",
+                      width: `${PORTAL_W}%`,
                       border: 0,
                       background: "transparent",
-                      cursor: "pointer",
+                      padding: 0,
+                      cursor: unlocked ? "pointer" : "default",
+                      opacity: unlocked ? 1 : 0.55,
                     }}
-                  />
+                  >
+                    <img
+                      src={portalImg}
+                      alt=""
+                      aria-hidden
+                      style={{ width: "100%", height: "auto", display: "block" }}
+                    />
+                  </button>
                 );
               })()}
             </section>
