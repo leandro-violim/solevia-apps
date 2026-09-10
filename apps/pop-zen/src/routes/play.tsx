@@ -55,7 +55,6 @@ import { unlockZenSkins } from "../lib/skins";
 import { ChallengeGoals } from "../components/ChallengeGoals";
 import { CoinBalance } from "../components/CoinBalance";
 import { CoinIcon, PlayIcon } from "../components/icons";
-import wrapTile from "../assets/scene/wrap-tile.webp";
 import sky from "../assets/scene/sky.webp";
 import {
   computeTimeAttackScore,
@@ -151,6 +150,36 @@ function usableFieldHeight(el: HTMLElement): number {
 
   const reserve = banner + safe + 16; // + small breathing gap
   return Math.max(160, vpH - reserve - rect.top);
+}
+
+/**
+ * A single clear glass bubble drawn as an inline SVG, on a `w`×`h` cell with the
+ * bubble round at diameter `d`, centred. Repeated as the play-field background so
+ * each bubble lands behind a poppable one (see the `bg` layout math). Vector, so
+ * it stays crisp at any size — and being generated per-phase from the real cell
+ * dimensions it can't seam, ghost, or drift out of size like a fixed bitmap tile.
+ */
+function bubbleTileUrl(w: number, h: number, d: number): string {
+  const cx = (w / 2).toFixed(1);
+  const cy = (h / 2).toFixed(1);
+  const r = (d / 2).toFixed(1);
+  const ri = (d / 2 - 1.2).toFixed(1);
+  const hx = (w / 2 - d * 0.13).toFixed(1);
+  const hy = (h / 2 - d * 0.19).toFixed(1);
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'>` +
+    `<defs><radialGradient id='g' cx='42%' cy='37%' r='62%'>` +
+    `<stop offset='0%' stop-color='#ffffff' stop-opacity='0.95'/>` +
+    `<stop offset='42%' stop-color='#eef2f4' stop-opacity='0.6'/>` +
+    `<stop offset='84%' stop-color='#cfd8de' stop-opacity='0.42'/>` +
+    `<stop offset='100%' stop-color='#b6c2c9' stop-opacity='0.55'/>` +
+    `</radialGradient></defs>` +
+    `<circle cx='${cx}' cy='${cy}' r='${r}' fill='#b9c4cb' fill-opacity='0.5'/>` +
+    `<circle cx='${cx}' cy='${cy}' r='${ri}' fill='url(#g)'/>` +
+    `<circle cx='${cx}' cy='${cy}' r='${ri}' fill='none' stroke='#ffffff' stroke-opacity='0.5' stroke-width='1.1'/>` +
+    `<ellipse cx='${hx}' cy='${hy}' rx='${(d * 0.13).toFixed(1)}' ry='${(d * 0.08).toFixed(1)}' fill='#ffffff' fill-opacity='0.65'/>` +
+    `</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
 /**
@@ -888,14 +917,48 @@ function PlayPage() {
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
   remainingRef.current = remaining; // keep the expiry-handler's live count fresh
 
-  // Background wrap texture is tiled so its bubbles are the SAME size as the
-  // phase's poppable bubbles — the board then reads as one continuous sheet
-  // (tiny bubbles on dense phases, big on phase 1). Pitch = the bubble size.
-  const bubblePx = bubbles[0]?.size ?? cfg.size;
-  // The wrap tile is a seamless block 3 bubbles wide × 2 tall, so it renders at
-  // (3·pitch) × (2·pitch). The 1.3 factor sizes the tile's rendered bubbles to
-  // match the poppable bubbles (the tile's bubbles sit a bit inside their cell).
-  const bgPitch = Math.round(bubblePx * 1.3);
+  // Background wrap: a round glass bubble drawn as an inline SVG, sized to the
+  // EXACT layout cell (pitchX × pitchY) with the bubble at the poppable bubble's
+  // diameter, then repeated on the SAME grid (matched pitch + origin). So one
+  // background bubble sits directly behind each poppable bubble at the identical
+  // size — no drifting "doubled bubble", and the wrap tracks the adaptive size on
+  // every level. The grid is often non-square (rows more spread than columns), so
+  // the cell aspect is baked into the SVG to keep the bubble perfectly round.
+  const bg = useMemo(() => {
+    const build = (pitchX: number, pitchY: number, d: number, posX: number, posY: number) => ({
+      image: bubbleTileUrl(pitchX, pitchY, d),
+      sizeX: pitchX,
+      sizeY: pitchY,
+      posX,
+      posY,
+    });
+    if (bubbles.length === 0) {
+      const p = cfg.size + 6;
+      return build(p, p, cfg.size, 0, 0);
+    }
+    // Cluster rows by y (bubbles in a row share a y up to sub-pixel rounding);
+    // a new row starts when y jumps more than half a bubble.
+    const gap = cfg.size * 0.5;
+    const rows = [...bubbles]
+      .sort((a, b) => a.y - b.y)
+      .reduce<number[]>((acc, b) => {
+        if (acc.length === 0 || b.y - acc[acc.length - 1] > gap) acc.push(b.y);
+        return acc;
+      }, []);
+    const topY = rows[0];
+    const topRow = bubbles.filter((b) => Math.abs(b.y - topY) <= gap).sort((a, b) => a.x - b.x);
+    const b0 = topRow[0];
+    if (!b0) {
+      const p = cfg.size + 6;
+      return build(p, p, cfg.size, 0, 0);
+    }
+    const pitchX = topRow[1] ? topRow[1].x - topRow[0].x : b0.size + 6;
+    const pitchY = rows[1] != null ? rows[1] - rows[0] : pitchX;
+    // Centre a cell (its bubble is centred) on b0's centre.
+    const posX = b0.x + b0.size / 2 - pitchX / 2;
+    const posY = b0.y + b0.size / 2 - pitchY / 2;
+    return build(pitchX, pitchY, b0.size, posX, posY);
+  }, [bubbles, cfg.size]);
 
   return (
     <div
@@ -989,22 +1052,22 @@ function PlayPage() {
             background: "#b0bec9",
           }}
         >
-          {/* v1.3 (Project C) playfield: a REAL, CLEAR bubble-wrap sheet (de-tinted
-              from the photo so it reads as transparent plastic, encoded crisp with
-              native sharp — no blur). Tiled — NOT cover — so the background bubbles
-              are drawn at the SAME size as this phase's poppable bubbles (bgPitch
-              tracks cfg.size). The board then reads as one continuous sheet where
-              the poppable bubbles stand out via their rims + shadows, instead of
-              big background bubbles behind tiny poppable ones on dense phases. */}
+          {/* v1.3 (Project C) playfield: a clear bubble-wrap sheet. The tile is a
+              single procedurally-drawn glass bubble (perfectly periodic — no photo
+              seams or ghost layer), laid on the SAME grid as the poppable bubbles
+              (see `bg` above): one background bubble centred behind each poppable
+              one, at the same pitch, so their sizes match on every level and there
+              is no drifting "doubled bubble" look. Kept semi-transparent so the
+              poppable bubbles read clearly in front. */}
           <div
             aria-hidden
             className="pointer-events-none absolute"
             style={{
               inset: 0,
-              backgroundImage: `url(${wrapTile})`,
-              backgroundSize: `${bgPitch * 3}px ${bgPitch * 2}px`,
+              backgroundImage: bg.image,
+              backgroundSize: `${bg.sizeX}px ${bg.sizeY}px`,
               backgroundRepeat: "repeat",
-              backgroundPosition: "center",
+              backgroundPosition: `${bg.posX}px ${bg.posY}px`,
               // More transparent so the wrap reads as gentle, see-through plastic
               // and the poppable bubbles sit clearly in front of it.
               opacity: 0.5,
