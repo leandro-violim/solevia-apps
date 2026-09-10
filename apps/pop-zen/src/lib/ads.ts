@@ -443,11 +443,19 @@ export async function showRewarded(placement: string): Promise<boolean> {
       void preloadRewarded(); // warm up the next one
     };
     const timer = setTimeout(finish, 40000); // safety net for a stuck SDK
+    // Some AdMob builds fire Rewarded slightly AFTER Dismissed (or the two race),
+    // which lost the reward for a user who watched the whole ad. On Dismissed,
+    // wait a short grace for a trailing Rewarded before settling, so a watched ad
+    // reliably grants its reward (e.g. the +15s revive).
+    const onDismissed = () => {
+      if (earned) return finish();
+      setTimeout(finish, 600);
+    };
     Promise.all([
       AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
         earned = true;
       }),
-      AdMob.addListener(RewardAdPluginEvents.Dismissed, finish),
+      AdMob.addListener(RewardAdPluginEvents.Dismissed, onDismissed),
       AdMob.addListener(RewardAdPluginEvents.FailedToShow, finish),
     ])
       .then((hs) => {

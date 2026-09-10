@@ -64,13 +64,15 @@ export function challengeAvailable(): boolean {
   return msUntilChallenge() <= 0;
 }
 
-/** Format a remaining duration as H:MM or M:SS for the tile countdown. */
+/** Format a remaining duration as H:MM:SS or M:SS (seconds always tick) for the tile countdown. */
 export function formatCooldown(ms: number): string {
   const s = Math.ceil(ms / 1000);
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
-  if (h > 0) return `${h}:${String(m).padStart(2, "0")}`;
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  }
   return `${m}:${String(sec).padStart(2, "0")}`;
 }
 

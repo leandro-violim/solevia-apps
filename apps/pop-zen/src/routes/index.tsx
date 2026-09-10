@@ -60,6 +60,13 @@ function Home() {
     return () => fadeMusicOut();
   }, []);
 
+  // §11: tapping the bubble-buddy makes it do a little bounce (and unlocks audio).
+  const [mascotJumping, setMascotJumping] = useState(false);
+  const bounceMascot = () => {
+    unlockAudio();
+    setMascotJumping(true);
+  };
+
   const startZen = () => {
     unlockAudio();
     trackModeSelected("zen");
@@ -156,16 +163,29 @@ function Home() {
                 transform: "translateX(-50%)",
               }}
             />
-            <Mascot
-              size={104}
-              variant="cheer"
+            <button
+              type="button"
+              onClick={bounceMascot}
+              aria-label={t("home.tapToPlay")}
               style={{
                 position: "absolute",
                 left: "50%",
                 bottom: 74,
                 transform: "translateX(-50%)",
+                background: "transparent",
+                border: 0,
+                padding: 0,
+                cursor: "pointer",
+                lineHeight: 0,
               }}
-            />
+            >
+              <div
+                onAnimationEnd={() => setMascotJumping(false)}
+                style={{ animation: mascotJumping ? "mascotJump 0.6s ease" : undefined }}
+              >
+                <Mascot size={104} variant="cheer" />
+              </div>
+            </button>
           </div>
         </div>
       </div>

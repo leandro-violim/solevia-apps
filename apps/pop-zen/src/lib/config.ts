@@ -48,13 +48,13 @@ export const CONFIG = {
 
   /** §6 Shop prices by rarity. */
   skins: {
-    prices: { common: 150, uncommon: 350, rare: 600, premium: 900, background: 250 },
+    prices: { common: 275, uncommon: 625, rare: 1050, premium: 1575, background: 450 },
     premiumStreakMilestone: 7, // premium skin also unlockable at this streak day
   },
 
   /** Consumable power-ups (Bombs, Time Freeze) — premium-priced (~2 runs each). */
   consumables: {
-    prices: { bomb: 250, freeze: 300 },
+    prices: { bomb: 440, freeze: 525 },
     freezeMs: 2000, // Time Freeze extends the Time Attack countdown by this much
     bombRadiusFactor: 1.9, // used-item bomb blast: neighbours within size×this pop
   },

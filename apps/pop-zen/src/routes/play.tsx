@@ -78,7 +78,7 @@ import {
   TOTAL_STAGES,
 } from "../lib/game-config";
 import { layoutBubbles, type BubbleState } from "../lib/layout";
-import { playPop, playMilestone, playCoinTick, unlockAudio } from "../lib/pop-sound";
+import { playPop, playMilestone, playCoinTick, unlockAudio, resumeAudio } from "../lib/pop-sound";
 import { launchConfetti } from "../lib/confetti";
 import { fadeMusicIn, fadeMusicOut } from "../lib/music";
 import { popHaptic } from "../lib/haptics";
@@ -340,6 +340,13 @@ function PlayPage() {
   useEffect(() => {
     if (!isZen && !isDaily && !isChallenge) noteStageReached(phase);
   }, [phase, isZen, isDaily, isChallenge]);
+  // Recover the iOS audio session on entering a play screen — e.g. arriving right
+  // after a between-phase interstitial, or a Pop Challenge launched from Home — so
+  // bubble pops always sound (#1/#2). The first pop is a real gesture that finishes
+  // the unlock; this just makes sure the context isn't left "interrupted".
+  useEffect(() => {
+    resumeAudio();
+  }, []);
   // Zen makes specials rare; Time Attack full-rate (§7/§9). Primitive → effect-safe.
   const specialsMul = isZen ? CONFIG.specials.zenMultiplier : 1;
   const cfg = isZen ? ZEN_FIELD : stageConfig(phase, difficulty);
@@ -393,7 +400,9 @@ function PlayPage() {
   // null in Zen and before the first pop. Extended by a revive.
   const [deadline, setDeadline] = useState<number | null>(null);
   const [reviveBusy, setReviveBusy] = useState(false); // rewarded-ad in flight
-  const [state, setState] = useState<"ready" | "playing" | "timeup" | "done">("ready");
+  // "resume" = after a revive, the phase is armed but the countdown is PAUSED
+  // until the player taps Continue (so the +15s never bleeds away behind the ad).
+  const [state, setState] = useState<"ready" | "playing" | "timeup" | "done" | "resume">("ready");
   const [result, setResult] = useState<{
     score: number;
     timeMs: number;
@@ -936,13 +945,28 @@ function PlayPage() {
         duration_s: Math.round((Date.now() - runStartAtRef.current) / 1000),
         ended_by: endedBy,
       }); // P1-T6
-      if (interAdsRef.current < CONFIG.ads.interstitial.maxPerRun) {
+      // #6: "End run" (a timeout) goes STRAIGHT to Run Complete — never an ad.
+      // A genuine completion still gets the natural run-end interstitial (capped).
+      if (endedBy === "completed" && interAdsRef.current < CONFIG.ads.interstitial.maxPerRun) {
         interAdsRef.current += 1;
         await maybeShowInterstitial("run_end");
       }
-      navigate({ to: "/finish", search: { total, prevBest, beat: beat ? 1 : 0, coins } });
+      navigate({
+        to: "/finish",
+        search: {
+          total,
+          prevBest,
+          beat: beat ? 1 : 0,
+          coins,
+          ended: endedBy,
+          phase, // so "Try Again" restarts the SAME phase
+          mode,
+          difficulty,
+          daily,
+        },
+      });
     },
-    [navigate, isDaily, mode, difficulty, phase],
+    [navigate, isDaily, mode, difficulty, phase, daily],
   );
 
   // P1-T4: the countdown hit 0 with bubbles still up → offer a revive / end run.
@@ -957,20 +981,31 @@ function PlayPage() {
   // Revives left this run? (Time Attack only; capped by CONFIG.ads.rewarded.)
   const canRevive = !isZen && getRunRevives() < CONFIG.ads.rewarded.maxRevivesPerRun;
 
-  // Watch a rewarded ad to add +reviveSeconds and resume the phase.
+  // Watch a rewarded ad to earn a revive. On a watched ad the player ALWAYS gets
+  // the +reviveSeconds (see the Dismissed grace in ads.ts). We then go to the
+  // PAUSED "resume" state — the countdown doesn't start until the player taps
+  // Continue, so the granted time can't drain away behind the ad (#12).
   const onRevive = useCallback(async () => {
     if (reviveBusy) return;
     setReviveBusy(true);
     const watched = await showRewarded("revive"); // web/dev simulates success
+    resumeAudio(); // recover the iOS audio session the ad stole, so pops sound again
     if (watched) {
       registerRevive(); // run-scoped cap + lifetime stat
       checkAchievements(); // "use your first revive"
       track("revive_used", { mode, phase });
-      setDeadline(Date.now() + CONFIG.ads.rewarded.reviveSeconds * 1000);
-      setState("playing");
+      setState("resume"); // armed but paused — wait for "tap to continue"
     }
     setReviveBusy(false);
   }, [reviveBusy, mode, phase]);
+
+  // Player tapped "Continue" after a revive: unlock audio (real gesture), start
+  // the +reviveSeconds countdown fresh from NOW, and resume play.
+  const continueAfterRevive = useCallback(() => {
+    unlockAudio();
+    setDeadline(Date.now() + CONFIG.ads.rewarded.reviveSeconds * 1000);
+    setState("playing");
+  }, []);
 
   const restart = useCallback(() => {
     const el = fieldRef.current;
@@ -1127,6 +1162,9 @@ function PlayPage() {
             <Countdown deadline={deadline} onExpire={handleTimeUp} />
           ) : state === "timeup" ? (
             <span className="text-coral">{formatCountdown(0)}</span>
+          ) : state === "resume" ? (
+            // Paused after a revive — show the granted time; it starts on Continue.
+            formatCountdown(CONFIG.ads.rewarded.reviveSeconds * 1000)
           ) : state === "done" && result ? (
             formatCountdown(result.timeLeftMs)
           ) : (
@@ -1258,6 +1296,23 @@ function PlayPage() {
                 <div className="gs-hud px-5 py-2 text-sm font-semibold">{t("play.tapToStart")}</div>
               )}
             </div>
+          )}
+
+          {/* After a revive: paused until the player taps to continue, so the
+              granted seconds don't drain behind the ad (#12). The overlay covers
+              the field so this tap only resumes — it never pops a bubble. */}
+          {state === "resume" && (
+            <button
+              type="button"
+              onClick={continueAfterRevive}
+              aria-label={t("play.tapToContinue")}
+              className="absolute inset-0 z-40 flex items-center justify-center px-4"
+              style={{ border: 0, background: "rgba(0,0,0,0.14)" }}
+            >
+              <span className="gs-hud px-5 py-2 text-sm font-semibold">
+                {t("play.tapToContinue")}
+              </span>
+            </button>
           )}
 
           {state === "timeup" && !isChallenge && (

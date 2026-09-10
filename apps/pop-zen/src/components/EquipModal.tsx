@@ -2,20 +2,32 @@ import { useEffect, useState } from "react";
 import { Modal } from "./Modal";
 import { t } from "../lib/i18n";
 import { track } from "../lib/analytics";
-import { getCount, consumeItems, subscribeInventory, CONSUMABLE_EMOJI } from "../lib/consumables";
+import {
+  getCount,
+  consumeItems,
+  buyConsumable,
+  priceOfConsumable,
+  subscribeInventory,
+  CONSUMABLE_EMOJI,
+  type ConsumableId,
+} from "../lib/consumables";
+import { getCoins } from "../lib/economy";
 import { showRewarded } from "../lib/ads";
-import { PlayIcon } from "./icons";
+import { CoinBalance } from "./CoinBalance";
+import { PlayIcon, CoinIcon } from "./icons";
 
 // Free bombs + snowflakes granted by the "Rewarded Play" button (on top of what
 // the player equipped). Drives ad watches and hands out power-ups (Leandro).
-const BOOST = { bomb: 2, freeze: 2 };
+const BOOST = { bomb: 1, freeze: 1 };
 
 /**
- * Journey equip popup (v1.3). Shown when the player taps a phase on the map: they
- * equip bombs / snowflakes they OWN onto the stage (only equipped ones appear on
- * the board — no random specials), then Play. "Rewarded Play" watches an ad for a
- * FREE boost of extra bombs + snowflakes, then starts. `onStart(bombs, freeze)`
- * navigates into the phase with those counts.
+ * Journey equip popup (v1.3). Shown when the player taps a phase on the map. Each
+ * "+" IRREVERSIBLY arms one bomb / snowflake onto the stage: it uses a unit the
+ * player already OWNS (free), or, if none are left, BUYS one with coins. There is
+ * no "−": equipping cannot be undone. Because items are consumed/bought as they're
+ * added, Play does NOT consume again. "Rewarded Play" watches an ad for a FREE +1
+ * boost of each, then starts. `onStart(bombs, freeze)` enters the phase with those
+ * counts.
  */
 export function EquipModal({
   world,
@@ -30,21 +42,34 @@ export function EquipModal({
 }) {
   const [, force] = useState(0);
   useEffect(() => subscribeInventory(() => force((n) => n + 1)), []);
-  const ownedBomb = getCount("bomb");
-  const ownedFreeze = getCount("freeze");
+  // Equipped-so-far counts for THIS phase (each already consumed from inventory
+  // or bought with coins the moment it was added — never undone).
   const [bombs, setBombs] = useState(0);
   const [freeze, setFreeze] = useState(0);
   const [busy, setBusy] = useState(false);
 
-  // Keep selections within what's owned (inventory can change via the shop tab).
-  const bombN = Math.min(bombs, ownedBomb);
-  const freezeN = Math.min(freeze, ownedFreeze);
+  const bombN = bombs;
+  const freezeN = freeze;
+
+  // Add one of `id` to this phase, irreversibly. Prefer an owned unit (free);
+  // otherwise buy one with coins. No-op if unaffordable and none owned.
+  const add = (id: ConsumableId, inc: () => void) => {
+    if (busy) return;
+    if (getCount(id) > 0) {
+      consumeItems(id, 1);
+      inc();
+      return;
+    }
+    if (buyConsumable(id)) {
+      consumeItems(id, 1);
+      inc();
+    }
+  };
 
   const start = () => {
     if (busy) return;
     setBusy(true);
-    consumeItems("bomb", bombN);
-    consumeItems("freeze", freezeN);
+    // Already consumed/bought on each "+", so don't consume again here.
     track("phase_equipped", { world, phase, bombs: bombN, freeze: freezeN, boost: 0 });
     onStart(bombN, freezeN);
   };
@@ -53,69 +78,79 @@ export function EquipModal({
     if (busy) return;
     setBusy(true);
     const watched = await showRewarded("equip_boost");
-    // Consume the owned selection; the BOOST items are free (not from inventory).
-    consumeItems("bomb", bombN);
-    consumeItems("freeze", freezeN);
-    const b = bombN + (watched ? BOOST.bomb : 0);
-    const f = freezeN + (watched ? BOOST.freeze : 0);
-    track("phase_equipped", { world, phase, bombs: b, freeze: f, boost: watched ? 1 : 0 });
-    onStart(b, f);
+    const boost = watched ? BOOST.bomb : 0;
+    track("phase_equipped", {
+      world,
+      phase,
+      bombs: bombN + boost,
+      freeze: freezeN + boost,
+      boost: watched ? 1 : 0,
+    });
+    onStart(bombN + boost, freezeN + boost);
   };
 
-  const Stepper = ({
+  const EquipRow = ({
+    id,
     emoji,
     label,
     value,
-    owned,
-    onChange,
+    onAdd,
   }: {
+    id: ConsumableId;
     emoji: string;
     label: string;
     value: number;
-    owned: number;
-    onChange: (v: number) => void;
-  }) => (
-    <div
-      className="flex items-center gap-3 rounded-2xl p-3"
-      style={{ background: "rgba(0,0,0,0.04)" }}
-    >
-      <span aria-hidden className="text-2xl leading-none">
-        {emoji}
-      </span>
-      <div className="min-w-0 flex-1 text-left">
-        <div className="text-sm font-bold" style={{ color: "var(--gs-ink)" }}>
-          {label}
-        </div>
-        <div className="text-[11px] gs-muted">{t("equip.owned", { n: owned })}</div>
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => onChange(Math.max(0, value - 1))}
-          disabled={value <= 0}
-          aria-label="−"
-          className="gs-hud h-8 w-8 justify-center text-lg font-bold disabled:opacity-30"
-        >
-          −
-        </button>
-        <span
-          className="w-5 text-center text-base font-extrabold tabular-nums"
-          style={{ color: "var(--gs-ink)" }}
-        >
-          {value}
+    onAdd: () => void;
+  }) => {
+    const owned = getCount(id);
+    const price = priceOfConsumable(id);
+    const free = owned > 0; // next "+" uses an owned unit (no coins)
+    const canAfford = getCoins() >= price;
+    const disabled = busy || (!free && !canAfford);
+    return (
+      <div
+        className="flex items-center gap-3 rounded-2xl p-3"
+        style={{ background: "rgba(0,0,0,0.04)" }}
+      >
+        <span aria-hidden className="text-2xl leading-none">
+          {emoji}
         </span>
-        <button
-          type="button"
-          onClick={() => onChange(Math.min(owned, value + 1))}
-          disabled={value >= owned}
-          aria-label="+"
-          className="gs-hud h-8 w-8 justify-center text-lg font-bold disabled:opacity-30"
-        >
-          +
-        </button>
+        <div className="min-w-0 flex-1 text-left">
+          <div className="text-sm font-bold" style={{ color: "var(--gs-ink)" }}>
+            {label}
+          </div>
+          <div className="flex items-center gap-2 text-[11px]">
+            <span className="gs-muted">{t("equip.owned", { n: owned })}</span>
+            <span
+              className={`inline-flex items-center gap-0.5 tabular-nums ${
+                free ? "gs-muted opacity-60 line-through" : "text-gold font-semibold"
+              }`}
+            >
+              <CoinIcon size={12} />
+              {price}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className="w-5 text-center text-base font-extrabold tabular-nums"
+            style={{ color: "var(--gs-ink)" }}
+          >
+            {value}
+          </span>
+          <button
+            type="button"
+            onClick={onAdd}
+            disabled={disabled}
+            aria-label={free ? `${label} +1` : `${label} +1 (${price})`}
+            className="gs-hud h-8 w-8 justify-center text-lg font-bold disabled:opacity-30"
+          >
+            +
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <Modal
@@ -125,7 +160,10 @@ export function EquipModal({
       panelClassName="gs-panel relative w-full max-w-xs p-6 text-center"
       closeClassName="text-[color:var(--gs-ink-soft)] hover:text-[color:var(--gs-ink)]"
     >
-      <div className="text-[11px] uppercase tracking-[0.25em] gs-muted">
+      <div className="flex justify-center">
+        <CoinBalance className="text-sm font-bold" />
+      </div>
+      <div className="mt-2 text-[11px] uppercase tracking-[0.25em] gs-muted">
         {t("play.worldPhase", { world, phase, per: 8 })}
       </div>
       <h2 className="mt-1 text-2xl font-extrabold" style={{ color: "var(--gs-ink)" }}>
@@ -134,25 +172,21 @@ export function EquipModal({
       <p className="mx-auto mt-1 max-w-[16rem] text-sm gs-muted">{t("equip.desc")}</p>
 
       <div className="mt-4 space-y-2">
-        <Stepper
+        <EquipRow
+          id="bomb"
           emoji={CONSUMABLE_EMOJI.bomb}
           label={t("items.bomb")}
           value={bombN}
-          owned={ownedBomb}
-          onChange={setBombs}
+          onAdd={() => add("bomb", () => setBombs((n) => n + 1))}
         />
-        <Stepper
+        <EquipRow
+          id="freeze"
           emoji={CONSUMABLE_EMOJI.freeze}
           label={t("items.snowflake")}
           value={freezeN}
-          owned={ownedFreeze}
-          onChange={setFreeze}
+          onAdd={() => add("freeze", () => setFreeze((n) => n + 1))}
         />
       </div>
-
-      {ownedBomb === 0 && ownedFreeze === 0 && (
-        <p className="mt-3 text-[11px] gs-muted">{t("equip.getMore")}</p>
-      )}
 
       <div className="mt-5 flex flex-col gap-2.5">
         <button

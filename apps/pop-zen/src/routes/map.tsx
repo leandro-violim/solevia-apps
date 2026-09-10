@@ -277,13 +277,32 @@ function MapPage() {
         backgroundPosition: "center top",
       }}
     >
-      {auto && arrived && (
+      {/* Play CTA fixed at the bottom of the island — after finishing a phase the
+          mascot hops to the new node (auto), then this button plays it; it's also a
+          persistent "play my current phase" button while browsing. (#3) */}
+      {arrived && (
         <div
-          className="pointer-events-none fixed inset-x-0 z-30 flex justify-center"
+          className="fixed inset-x-0 z-30 flex justify-center px-4"
           // Lifted above the native bottom banner so the ad never covers it.
           style={{ bottom: "calc(var(--ad-banner-h, 100px) + env(safe-area-inset-bottom) + 12px)" }}
         >
-          <span className="gs-ribbon">{t("home.tapToPlay")} →</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              openEquip(reached);
+            }}
+            className="gs-btn gs-btn--hero w-full max-w-xs flex-col gap-0.5 px-4 py-3"
+          >
+            <span style={{ fontSize: 18 }}>{t("home.play")}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.95 }}>
+              {t("play.worldPhase", {
+                world: roundOf(reached),
+                phase: phaseInRound(reached),
+                per: PHASES_PER_ROUND,
+              })}
+            </span>
+          </button>
         </div>
       )}
       {/* header */}
@@ -318,10 +337,10 @@ function MapPage() {
       <div
         ref={contentRef}
         className="relative z-10 mx-auto flex max-w-md flex-col gap-4 px-4 pt-2"
-        // Reserve the real banner height so the lowest node / portal always clears
-        // the native bottom banner (AdMob "ads obscuring content" fix).
+        // Reserve the banner height AND the fixed Play button (~84px) so the last
+        // world clears both the native bottom banner and the CTA (#3).
         style={{
-          paddingBottom: "calc(var(--ad-banner-h, 100px) + env(safe-area-inset-bottom) + 16px)",
+          paddingBottom: "calc(var(--ad-banner-h, 100px) + env(safe-area-inset-bottom) + 100px)",
         }}
       >
         {Array.from({ length: TOTAL_ROUNDS }, (_, wi) => {

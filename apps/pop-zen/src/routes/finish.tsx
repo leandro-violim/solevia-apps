@@ -12,6 +12,7 @@ import { CoinIcon, PlayIcon } from "../components/icons";
 import { Mascot } from "../components/gameshell";
 import { fadeMusicIn, fadeMusicOut } from "../lib/music";
 import sky from "../assets/scene/sky.webp";
+import mascotSad from "../assets/shell/mascot-sad.webp";
 
 // beat is passed as 1/0 to survive URL (de)serialization cleanly.
 const searchSchema = z.object({
@@ -19,6 +20,13 @@ const searchSchema = z.object({
   prevBest: z.coerce.number().nonnegative().default(0),
   beat: z.coerce.number().default(0),
   coins: z.coerce.number().nonnegative().default(0),
+  // How the run ended + the context to restart, so "Try Again" replays the SAME
+  // phase and a timeout ("End run") shows the sad mascot.
+  ended: z.enum(["completed", "timeout"]).optional().default("completed"),
+  phase: z.coerce.number().int().min(1).optional().default(1),
+  mode: z.enum(["zen", "time-attack"]).optional().default("time-attack"),
+  difficulty: z.enum(["easy", "normal", "hard"]).optional().default("normal"),
+  daily: z.coerce.number().optional().default(0),
 });
 
 export const Route = createFileRoute("/finish")({
@@ -36,9 +44,10 @@ export const Route = createFileRoute("/finish")({
 });
 
 function FinishPage() {
-  const { total, prevBest, beat, coins } = Route.useSearch();
+  const { total, prevBest, beat, coins, ended, phase, mode, difficulty, daily } = Route.useSearch();
   const navigate = useNavigate();
   const beatRecord = beat === 1;
+  const lost = ended === "timeout"; // "End run" / ran out of time → sad mascot (#6)
 
   // §3.2 rewarded double-coins for this run.
   const [bonusCoins, setBonusCoins] = useState(0);
@@ -108,10 +117,22 @@ function FinishPage() {
           style={{
             background: beatRecord
               ? "radial-gradient(circle at 50% 45%, rgba(245,196,81,0.5), transparent 70%)"
-              : "radial-gradient(circle at 50% 45%, rgba(51,224,198,0.35), transparent 70%)",
+              : lost
+                ? "radial-gradient(circle at 50% 45%, rgba(240,98,160,0.28), transparent 70%)"
+                : "radial-gradient(circle at 50% 45%, rgba(51,224,198,0.35), transparent 70%)",
           }}
         >
-          <Mascot size={116} variant="cheer" />
+          {lost ? (
+            <img
+              src={mascotSad}
+              alt=""
+              aria-hidden
+              className="h-[116px] w-[116px]"
+              style={{ filter: "drop-shadow(0 6px 8px rgba(0,0,0,0.2))" }}
+            />
+          ) : (
+            <Mascot size={116} variant="cheer" />
+          )}
         </div>
       </div>
 
@@ -232,7 +253,8 @@ function FinishPage() {
           onClick={() =>
             navigate({
               to: "/play",
-              search: { phase: 1, mode: "time-attack", difficulty: "normal", daily: 1 },
+              // #7: restart the SAME phase the run ended on (not always phase 1).
+              search: { phase, mode, difficulty, daily },
             })
           }
           className="gs-btn w-full gap-1.5 py-4 text-base"
@@ -250,7 +272,7 @@ function FinishPage() {
         <Link to="/records" className="gs-btn gs-btn--ghost w-full py-3 text-sm">
           {t("finish.viewRecords")}
         </Link>
-        <Link to="/" className="py-1 text-xs gs-muted hover:underline">
+        <Link to="/" className="gs-btn gs-btn--ghost w-full py-3 text-sm">
           {t("finish.backHome")}
         </Link>
       </div>
