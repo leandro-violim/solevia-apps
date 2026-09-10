@@ -261,10 +261,11 @@ function PlayPage() {
   const isDaily = daily === 1; // §12 date-seeded Time Attack run
 
   // v1.3 §11 step 4: advance world/phase map progress as the player reaches each
-  // Pop Challenge phase (not Zen). Persistence only — no gameplay effect.
+  // phase of the MAIN journey (Pop Challenge, not Zen and not the daily challenge
+  // — the daily is its own date-seeded run). Persistence only — no gameplay effect.
   useEffect(() => {
-    if (!isZen) noteStageReached(phase);
-  }, [phase, isZen]);
+    if (!isZen && !isDaily) noteStageReached(phase);
+  }, [phase, isZen, isDaily]);
   // Zen makes specials rare; Time Attack full-rate (§7/§9). Primitive → effect-safe.
   const specialsMul = isZen ? CONFIG.specials.zenMultiplier : 1;
   const cfg = isZen ? ZEN_FIELD : stageConfig(phase, difficulty);
