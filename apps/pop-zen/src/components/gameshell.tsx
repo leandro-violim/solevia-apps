@@ -4,7 +4,7 @@
  * the ".gs-*" classes in styles.css; these components own structure + assets.
  * See store-assets/PROJECT-C-DESIGN.md §11.
  */
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { t } from "../lib/i18n";
 import { CoinBalance } from "./CoinBalance";
@@ -13,6 +13,9 @@ import wrapSheet from "../assets/scene/wrap-sheet.webp";
 import poppedSprite from "../assets/bubbles/real-bubble-popped.webp";
 import mascotIdle from "../assets/shell/mascot-idle.webp";
 import mascotCheer from "../assets/shell/mascot-cheer.webp";
+import mascotHop1 from "../assets/shell/mascot-hop-1.webp";
+import mascotHop2 from "../assets/shell/mascot-hop-2.webp";
+import mascotHop3 from "../assets/shell/mascot-hop-3.webp";
 import islandTrees from "../assets/shell/island-trees.webp";
 import islandHex from "../assets/shell/island-hex.webp";
 import nodeDone from "../assets/shell/node-done.webp";
@@ -188,6 +191,72 @@ export function Mascot({
       aria-hidden
       className={`gs-mascot ${className}`}
       style={{ width: size, height: size, ...style }}
+    />
+  );
+}
+
+/* 8b — Mascot hop: the bubble-buddy hopping in place (crouch → apex → land),
+   cycling the three Higgsfield frames with a CSS transform arc for the lift.
+   Used between phases on the map to say "let's go!". When `play` is false it's
+   just the idle sprite; prefers-reduced-motion renders idle and never animates. */
+const HOP_FRAMES: ReadonlyArray<{ src: string; y: number; ms: number }> = [
+  { src: mascotHop1, y: 0, ms: 120 }, // crouch (anticipation)
+  { src: mascotHop2, y: -20, ms: 260 }, // apex (hang time)
+  { src: mascotHop3, y: -2, ms: 120 }, // land (squash)
+];
+
+export function MascotHop({
+  size = 46,
+  play = false,
+  className = "",
+  style,
+}: {
+  size?: number;
+  play?: boolean;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  const [step, setStep] = useState<number | null>(null); // null = idle sprite
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!play) {
+      setStep(null);
+      return;
+    }
+    const reduce =
+      typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setStep(null);
+      return;
+    }
+    let i = 0;
+    setStep(0);
+    const advance = () => {
+      i = (i + 1) % HOP_FRAMES.length;
+      setStep(i);
+      timer.current = setTimeout(advance, HOP_FRAMES[i].ms);
+    };
+    timer.current = setTimeout(advance, HOP_FRAMES[0].ms);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [play]);
+
+  const frame = step == null ? null : HOP_FRAMES[step];
+  return (
+    <img
+      src={frame ? frame.src : mascotIdle}
+      alt=""
+      aria-hidden
+      className={`gs-mascot ${className}`}
+      style={{
+        width: size,
+        height: size,
+        transform: `translateY(${frame ? frame.y : 0}px)`,
+        transition: "transform 140ms ease-out",
+        ...style,
+      }}
     />
   );
 }

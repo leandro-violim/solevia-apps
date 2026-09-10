@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { TOTAL_ROUNDS, PHASES_PER_ROUND } from "../lib/game-config";
 import { reachedStage, stageState } from "../lib/progress";
-import { HexNode, Mascot } from "../components/gameshell";
+import { HexNode, MascotHop } from "../components/gameshell";
 import { t } from "../lib/i18n";
 import { unlockAudio } from "../lib/pop-sound";
 import { trackModeSelected } from "../lib/mode";
@@ -233,8 +233,9 @@ function MapPage() {
                       </button>
                     )}
                     {isCurrent && (
-                      <Mascot
+                      <MascotHop
                         size={46}
+                        play={!!auto}
                         style={{
                           position: "absolute",
                           left: "82%",
