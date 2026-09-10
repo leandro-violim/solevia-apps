@@ -1,52 +1,49 @@
-# Cowork brief — "Your journey" CLEAN island bases (no baked pads/rope/portal)
+# Cowork brief — "Your journey" islands: remove PADS, keep the rope
 
 ## Why
-We now render the level markers (locked / done-star / current) as our own oval disc
-sprites on top of the island, and we have a standalone portal sprite
-(`src/assets/shell/portal.webp`) we can place in code. So the pads, the connecting
-rope, and the portal that are **baked into** the current island images are now
-redundant — and they show through / clutter the board under the smaller markers.
+We render the level markers (locked / done-star / current) as our own oval disc
+sprites on top of the island. The baked tan **pads** under them now just clutter /
+show through beneath the smaller markers. So please **remove the pads** — but
+**KEEP the connecting rope**. Each marker will sit centred on a rope node, so the
+rope reads as one line entering and one line leaving each marker.
 
-Please deliver **clean island bases** with those baked elements removed, so only our
-code-drawn markers + portal appear. Leandro wants World 1 first; please do **all 4**
-for consistency (the markers/portal are rendered the same way on every world).
+Leandro wants World 1 first; please do **all 4** for consistency (markers render the
+same on every world).
 
 ## What to remove vs keep
-Starting from the current `world-1.webp … world-4.webp` islands:
-- **REMOVE:** the 8 tan level **pads**, the golden **rope/trail** connecting them,
-  and the teal **portal swirl**. Leave clean bubble-wrap ground where they were.
-- **KEEP everything else exactly as-is:** island shape, size, framing, camera/
-  perspective, the tan **border/rim**, the **trees/palms**, the **bubble-wrap ground
-  texture**, lighting (upper-left), and the sky/ocean background.
+Starting from the current `world-1.webp … world-4.webp`:
+- **REMOVE:** only the 8 tan level **pads**. Where each pad was, leave a clean rope
+  **node/junction** so a disc centred there has the rope coming in one side and going
+  out the other (one entry, one exit per node — no stub ends, no gap under the disc).
+- **KEEP:** the golden **rope/trail** and its 8 nodes, the tan **border/rim**, the
+  **trees/palms**, the **bubble-wrap ground**, lighting (upper-left), and the sky.
+
+## Portal — move it farther, keep it on the rope
+On World 1 the portal sits too close to the last pad. Please move the **portal a bit
+farther from the last node (pad 8)** and **extend the rope** so it still connects
+cleanly into the portal. Keep the portal baked (as today) — just repositioned with
+the rope reaching it. Do the same "portal comfortably past the last node" spacing on
+all four worlds.
 
 ## Critical: identical framing (so our coordinates still line up)
-The clean island MUST have the **same dimensions, crop, and on-image position/scale**
-as the current file for that world (they're square). We place markers at fixed
-percentage coordinates measured against the current art, so if the island shifts or
-rescales even slightly, every marker will be off. Same square canvas, same island
-placement within it — only the pads/rope/portal painted out.
+The updated island MUST keep the **same dimensions, crop, and island position/scale**
+as the current file for that world (square). We place markers at fixed percentage
+coordinates, so any shift/rescale throws every marker off. Only the pads change (and
+the portal moves) — the rope nodes should stay at essentially the **same positions**
+the pads were, so our existing marker coordinates still land on them.
 
 ## Deliverables
-- Transparent-or-opaque **PNG masters** (whatever matches your pipeline), same square
-  size as the current sources (the current shipped webp are ~1080²; masters at
-  1080²+ are fine — we re-encode).
-- Filenames: `world-1-clean.png … world-4-clean.png`.
+- **PNG masters**, same square size as the current sources (~1080²+ is fine).
+- Filenames: `world-1-pads-off.png … world-4-pads-off.png`.
 - Same CDN host as before. **No AI upscaler** — clean composited renders. We'll
   re-encode to `world-1.webp … world-4.webp` with the project's native `sharp`.
-
-## Portal (no art needed, just context)
-Don't bake a portal. We already have `portal.webp` (clean transparent teal swirl)
-and will render it in code, positioned a bit **farther from the last pad** than the
-old baked one. If you'd rather deliver a fresh portal sprite matching the new look,
-that's welcome but optional.
-
-## Optional — path connector
-With the rope gone the markers will sit on bare bubble-wrap. If that reads too empty,
-we can draw a subtle dotted/rope connector in code between markers. Your call whether
-to leave the ground fully clean; we can add the connector on our side either way.
+- Please also send the **new portal centre coordinate** per world (x%, y% of the
+  square image) so we can move the portal's tap target to match.
 
 ## Acceptance checklist
-- [ ] Pads, rope, and portal fully removed; clean bubble-wrap where they were.
-- [ ] Island shape/size/framing/scale IDENTICAL to the current file (per world).
+- [ ] Pads removed; rope KEPT with a clean node at each former pad spot (one in, one out).
+- [ ] Portal moved farther from the last node, rope extended to reach it (all 4 worlds).
+- [ ] Island shape/size/framing/scale IDENTICAL to the current file; rope nodes at the
+      same positions the pads were.
 - [ ] Trees, border, ground texture, lighting, background unchanged.
-- [ ] Square masters, correct filenames, no AI upscaling.
+- [ ] Square masters, correct filenames, no AI upscaling; portal coords included.
