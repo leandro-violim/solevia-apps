@@ -23,15 +23,16 @@ const WORLD_BG = [world1, world2, world3, world4];
 // phase markers sit dead-centre on the pads, ordered pad1→pad8 along the rope.
 // The section is shown SQUARE (full image, no crop) so these percentages map 1:1.
 const WORLD_NODES: [number, number][][] = [
-  // World 1 — daytime, green trees
+  // World 1 — daytime, green trees. (pads 6 & 7 are baked a touch close together,
+  // so they're nudged apart slightly to keep the two markers from overlapping.)
   [
     [37.0, 33.0],
     [50.3, 35.1],
     [63.0, 39.0],
     [51.0, 44.5],
     [40.3, 50.9],
-    [52.6, 56.2],
-    [58.0, 62.4],
+    [50.5, 54.5],
+    [61.0, 64.0],
     [45.0, 66.0],
   ],
   // World 2 — tropical, palms
@@ -323,7 +324,9 @@ function MapPage() {
                 const node = (
                   // "You are here" now rides above the mascot's head (see the
                   // overlay below), not the node, so we don't pass hereLabel.
-                  <HexNode n={p} state={state} size={isCurrent ? 46 : 40} />
+                  // Sized to fit the pads without markers overlapping on the more
+                  // crowded islands (World 1).
+                  <HexNode n={p} state={state} size={isCurrent ? 40 : 34} />
                 );
                 const interactive = state !== "locked";
                 return (
