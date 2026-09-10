@@ -62,11 +62,14 @@ export const CONFIG = {
   /** §7 Special bubbles — spawn rate (fraction) + earliest phase. Zen scales down. */
   specials: {
     golden: { rate: 0.03, fromPhase: 1 },
-    bomb: { rate: 0.02, fromPhase: 2 },
+    // Bomb & snowflake no longer spawn RANDOMLY (rate 0) — players now EQUIP them
+    // per phase from the journey equip popup (only equipped ones appear on the
+    // board). fromPhase kept for reference.
+    bomb: { rate: 0, fromPhase: 2 },
     // Mystery "?" bubble disabled — players found it unclear what it did. Set a
     // rate > 0 to bring it back (its reward logic in play.tsx still exists).
     mystery: { rate: 0, fromPhase: 2 },
-    frozen: { rate: 0.03, fromPhase: 4, taps: 2, freezeMs: 2000 }, // snowflake: pops → pause the countdown 2s
+    frozen: { rate: 0, fromPhase: 4, taps: 2, freezeMs: 2000 }, // snowflake: pops → pause the countdown 2s
     chain: { rate: 0.015, fromPhase: 3, minLen: 3, maxLen: 5 },
     zenMultiplier: 0.15, // specials are rare in Zen (rate × this); 0 = off
     goldenBonusPoints: 25,

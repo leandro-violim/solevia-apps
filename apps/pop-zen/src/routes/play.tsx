@@ -14,11 +14,9 @@ import {
 import { Bubble } from "../components/Bubble";
 import { Shields } from "../components/Shields";
 import { WorldIntro } from "../components/WorldIntro";
-import { ItemHud } from "../components/ItemHud";
 import {
   getCount,
   buyConsumable,
-  consumeItem,
   subscribeInventory,
   priceOfConsumable,
   CONSUMABLE_EMOJI,
@@ -93,6 +91,12 @@ const searchSchema = z.object({
   mode: z.enum(["zen", "time-attack"]).optional().default("time-attack"),
   difficulty: z.enum(["easy", "normal", "hard"]).optional().default("normal"),
   daily: z.coerce.number().optional().default(0), // 1 = date-seeded daily challenge (§12)
+  // Power-ups the player equipped for this phase from the journey popup — exactly
+  // this many bomb / snowflake bubbles are placed on the board (no random ones).
+  // Left optional (no default) so existing navigations to /play needn't pass them;
+  // absent ⇒ treated as 0 equipped (see equipBubbles calls).
+  bombs: z.coerce.number().int().min(0).max(20).optional(),
+  freeze: z.coerce.number().int().min(0).max(20).optional(),
 });
 
 export const Route = createFileRoute("/play")({
@@ -165,6 +169,32 @@ function usableFieldHeight(el: HTMLElement): number {
  */
 const WRAP_TILE = `url(${wrapTile})`;
 const WRAP_BUBBLES_ACROSS = 7;
+
+/**
+ * Place the player's EQUIPPED power-ups onto the field: convert `bombs` random
+ * plain bubbles into bomb bubbles and `freeze` into snowflake (frozen) bubbles.
+ * Since random specials are disabled (CONFIG.specials bomb/frozen rate 0), these
+ * are the ONLY bomb/snowflake bubbles on the board. Leaves golden bubbles alone.
+ */
+function equipBubbles(list: BubbleState[], bombs: number, freeze: number): BubbleState[] {
+  if (bombs <= 0 && freeze <= 0) return list;
+  const slots = list
+    .map((b, i) => (b.special === "normal" && !b.popped ? i : -1))
+    .filter((i) => i >= 0);
+  for (let i = slots.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [slots[i], slots[j]] = [slots[j], slots[i]];
+  }
+  const out = list.slice();
+  let k = 0;
+  for (let n = 0; n < bombs && k < slots.length; n++, k++) {
+    out[slots[k]] = { ...out[slots[k]], special: "bomb" };
+  }
+  for (let n = 0; n < freeze && k < slots.length; n++, k++) {
+    out[slots[k]] = { ...out[slots[k]], special: "frozen" };
+  }
+  return out;
+}
 
 /**
  * P1-T4 — isolated Time Attack countdown. Owns the 100ms interval so a tick
@@ -269,7 +299,10 @@ function prePopSome(list: BubbleState[]): BubbleState[] {
 }
 
 function PlayPage() {
-  const { phase, mode, difficulty, daily } = Route.useSearch();
+  const { phase, mode, difficulty, daily, bombs: bombsRaw, freeze: freezeRaw } = Route.useSearch();
+  // Equipped power-up counts (absent in the URL ⇒ none equipped).
+  const bombs = bombsRaw ?? 0;
+  const freeze = freezeRaw ?? 0;
   const navigate = useNavigate({ from: "/play" });
   const isZen = mode === "zen";
   const isDaily = daily === 1; // §12 date-seeded Time Attack run
@@ -310,8 +343,6 @@ function PlayPage() {
       b();
     };
   }, []);
-  const [bombArmed, setBombArmed] = useState(false);
-  const bombArmedRef = useRef(false);
   const [itemFlash, setItemFlash] = useState<string | null>(null);
   // Rewarded-video "earn coins" between stages — capped per run (anti-abuse).
   const coinAdsUsedRef = useRef(0);
@@ -397,23 +428,6 @@ function PlayPage() {
     return () => window.clearTimeout(id);
   }, [itemFlash]);
 
-  // Arm a Bomb (next bubble tap detonates it). Toggles off if tapped again.
-  const armBomb = useCallback(() => {
-    if (getCount("bomb") <= 0) return;
-    const next = !bombArmedRef.current;
-    bombArmedRef.current = next;
-    setBombArmed(next);
-    setItemFlash(next ? t("items.bombArmed") : null);
-  }, []);
-
-  // Use a Time Freeze: extend the running countdown. Only while the clock runs.
-  const freezeTime = useCallback(() => {
-    if (deadline === null || state !== "playing") return;
-    if (!consumeItem("freeze")) return;
-    setDeadline((d) => (d === null ? d : d + CONFIG.consumables.freezeMs));
-    setItemFlash(t("items.frozen", { s: Math.round(CONFIG.consumables.freezeMs / 1000) }));
-  }, [deadline, state]);
-
   // Between-stage restock: buy a power-up with coins (subscribeInventory re-renders).
   const buyItem = useCallback((id: "bomb" | "freeze") => {
     buyConsumable(id);
@@ -449,11 +463,15 @@ function PlayPage() {
       );
     } else {
       setBubbles(
-        layoutBubbles(cfg.bubbles, cfg.size, w, h, isDaily ? seededRand(phase) : Math.random, {
-          phase: pir,
-          specialsMul,
-          jitter: fieldJitter,
-        }),
+        equipBubbles(
+          layoutBubbles(cfg.bubbles, cfg.size, w, h, isDaily ? seededRand(phase) : Math.random, {
+            phase: pir,
+            specialsMul,
+            jitter: fieldJitter,
+          }),
+          bombs,
+          freeze,
+        ),
       );
     }
     setStartAt(null);
@@ -466,8 +484,6 @@ function PlayPage() {
     settledRef.current = false;
     startedRef.current = false;
     bonusPointsRef.current = 0;
-    bombArmedRef.current = false; // never carry an armed bomb into a new phase
-    setBombArmed(false);
     resetCombo(); // fresh phase → no lingering combo chain
     // Start a brand-new full-run total when entering phase 1 — or when arriving
     // at a later phase that isn't a valid continuation (e.g. an edited ?phase=3
@@ -509,6 +525,8 @@ function PlayPage() {
     isDaily,
     mode,
     difficulty,
+    bombs,
+    freeze,
   ]);
 
   // Re-lay-out the field when the native ad banner reports its real height,
@@ -529,11 +547,15 @@ function PlayPage() {
         );
       } else {
         setBubbles(
-          layoutBubbles(cfg.bubbles, cfg.size, w, h, isDaily ? seededRand(phase) : Math.random, {
-            phase: pir,
-            specialsMul,
-            jitter: fieldJitter,
-          }),
+          equipBubbles(
+            layoutBubbles(cfg.bubbles, cfg.size, w, h, isDaily ? seededRand(phase) : Math.random, {
+              phase: pir,
+              specialsMul,
+              jitter: fieldJitter,
+            }),
+            bombs,
+            freeze,
+          ),
         );
       }
     };
@@ -543,7 +565,19 @@ function PlayPage() {
       window.removeEventListener("ad-banner-resize", onResize);
       window.visualViewport?.removeEventListener("resize", onResize);
     };
-  }, [state, cfg.bubbles, cfg.size, phase, pir, fieldJitter, specialsMul, isDaily, isZen]);
+  }, [
+    state,
+    cfg.bubbles,
+    cfg.size,
+    phase,
+    pir,
+    fieldJitter,
+    specialsMul,
+    isDaily,
+    isZen,
+    bombs,
+    freeze,
+  ]);
 
   // Freeze the animated full-screen aurora while actively playing — a large
   // blurred, continuously-animated layer under the field's backdrop-blur is a
@@ -578,36 +612,6 @@ function PlayPage() {
   const handlePop = useCallback(
     (id: number, cx: number, cy: number, variant: number, special: SpecialType) => {
       markFirstPop(); // onboarding funnel: the very first bubble ever popped (guarded)
-      // Armed Bomb power-up: this tap detonates a blast at (cx,cy) instead of a
-      // normal single pop — clears the tapped bubble + its cluster, spends one bomb.
-      if (bombArmedRef.current) {
-        bombArmedRef.current = false;
-        setBombArmed(false);
-        consumeItem("bomb");
-        if (!startedRef.current) {
-          startedRef.current = true;
-          unlockAudio();
-          setStartAt(Date.now());
-          setState("playing");
-          if (!isZen && cfg.timeLimitMs > 0) setDeadline(Date.now() + cfg.timeLimitMs);
-        }
-        playPop();
-        popHaptic();
-        noteRunPop("normal");
-        burstParticles(cx, cy, variant, 30, 1.9, "#ff9a6a");
-        const r2 = CONFIG.consumables.bombRadiusFactor;
-        setBubbles((prev) =>
-          prev.map((b) => {
-            if (b.popped) return b;
-            const dx = b.x + b.size / 2 - cx;
-            const dy = b.y + b.size / 2 - cy;
-            if (b.id === id || Math.hypot(dx, dy) <= b.size * r2) return { ...b, popped: true };
-            return b;
-          }),
-        );
-        scanObjectives();
-        return;
-      }
       if (!startedRef.current) {
         startedRef.current = true;
         unlockAudio();
@@ -893,17 +897,21 @@ function PlayPage() {
     if (!el) return;
     setFieldWidth(el.clientWidth);
     setBubbles(
-      layoutBubbles(
-        cfg.bubbles,
-        cfg.size,
-        el.clientWidth,
-        usableFieldHeight(el),
-        isDaily ? seededRand(phase) : Math.random,
-        {
-          phase: pir,
-          specialsMul,
-          jitter: fieldJitter,
-        },
+      equipBubbles(
+        layoutBubbles(
+          cfg.bubbles,
+          cfg.size,
+          el.clientWidth,
+          usableFieldHeight(el),
+          isDaily ? seededRand(phase) : Math.random,
+          {
+            phase: pir,
+            specialsMul,
+            jitter: fieldJitter,
+          },
+        ),
+        bombs,
+        freeze,
       ),
     );
     setStartAt(null);
@@ -915,7 +923,7 @@ function PlayPage() {
     startedRef.current = false;
     bonusPointsRef.current = 0;
     resetCombo();
-  }, [cfg.bubbles, cfg.size, phase, pir, fieldJitter, specialsMul, isDaily]);
+  }, [cfg.bubbles, cfg.size, phase, pir, fieldJitter, specialsMul, isDaily, bombs, freeze]);
 
   // A fresh phase re-enables the advance buttons (nextPhase set the guard, then
   // navigated here). goFinish leaves for /finish, so it never needs a reset.
@@ -1028,20 +1036,6 @@ function PlayPage() {
       <div className="px-4 pb-2 text-center text-xs" style={{ color: "var(--gs-ink-soft)" }}>
         {t("play.bubblesLeft", { n: remaining, best: record?.bestScore ?? 0 })}
       </div>
-
-      {/* Power-up toolbar ABOVE the field so it never covers the (tiny) bubbles. */}
-      {!isZen && (state === "ready" || state === "playing") && !showWorldIntro && (
-        <div className="px-4 pb-2">
-          <ItemHud
-            bombCount={getCount("bomb")}
-            freezeCount={getCount("freeze")}
-            bombArmed={bombArmed}
-            onBomb={armBomb}
-            onFreeze={freezeTime}
-            freezeDisabled={state !== "playing" || deadline === null}
-          />
-        </div>
-      )}
 
       <div
         className="relative flex flex-1 px-2 pb-2"

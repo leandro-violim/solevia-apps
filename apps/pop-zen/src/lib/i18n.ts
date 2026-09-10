@@ -140,6 +140,14 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
     "items.freezeDesc": "Add seconds to the clock in a stage.",
     "items.bombArmed": "Bomb armed — tap a bubble",
     "items.frozen": "Frozen +{s}s",
+    "items.snowflake": "Snowflake",
+    "equip.title": "Gear up",
+    "equip.desc":
+      "Add bombs and snowflakes to this stage. Only what you equip appears on the board.",
+    "equip.owned": "You own {n}",
+    "equip.getMore": "Win coins or visit the shop to stock up on power-ups.",
+    "equip.play": "Play",
+    "equip.boostPlay": "Watch ad · +{n} free boost",
     "home.shop": "Shop",
     "home.streak": "Day {n}",
 
@@ -382,6 +390,14 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
     "items.freezeDesc": "Adiciona segundos ao relógio na fase.",
     "items.bombArmed": "Bomba armada — toque numa bolha",
     "items.frozen": "Congelado +{s}s",
+    "items.snowflake": "Floco de neve",
+    "equip.title": "Prepare-se",
+    "equip.desc":
+      "Adicione bombas e flocos de neve a esta fase. Só o que você equipar aparece no tabuleiro.",
+    "equip.owned": "Você tem {n}",
+    "equip.getMore": "Ganhe moedas ou vá à loja para estocar power-ups.",
+    "equip.play": "Jogar",
+    "equip.boostPlay": "Ver anúncio · +{n} grátis",
     "home.shop": "Loja",
     "home.streak": "Dia {n}",
 
@@ -624,6 +640,14 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
     "items.freezeDesc": "Suma segundos al reloj en una fase.",
     "items.bombArmed": "Bomba lista — toca una burbuja",
     "items.frozen": "Congelado +{s}s",
+    "items.snowflake": "Copo de nieve",
+    "equip.title": "Prepárate",
+    "equip.desc":
+      "Añade bombas y copos de nieve a esta fase. Solo lo que equipes aparece en el tablero.",
+    "equip.owned": "Tienes {n}",
+    "equip.getMore": "Gana monedas o visita la tienda para abastecerte de power-ups.",
+    "equip.play": "Jugar",
+    "equip.boostPlay": "Ver anuncio · +{n} gratis",
     "home.shop": "Tienda",
     "home.streak": "Día {n}",
 

@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { z } from "zod";
-import { TOTAL_ROUNDS, PHASES_PER_ROUND } from "../lib/game-config";
+import { TOTAL_ROUNDS, PHASES_PER_ROUND, roundOf, phaseInRound } from "../lib/game-config";
 import { reachedStage, stageState } from "../lib/progress";
 import { HexNode, MascotHop } from "../components/gameshell";
+import { EquipModal } from "../components/EquipModal";
 import { t } from "../lib/i18n";
 import { unlockAudio } from "../lib/pop-sound";
 import { track } from "../lib/analytics";
@@ -122,14 +123,29 @@ function MapPage() {
   const [mascotPos, setMascotPos] = useState<Pos | null>(null);
   const [travelVec, setTravelVec] = useState<{ dx: number; dy: number } | null>(null);
   const [arrived, setArrived] = useState(!auto);
+  // The stage whose equip popup is open (tap a phase → equip bombs/snowflakes → play).
+  const [equipStage, setEquipStage] = useState<number | null>(null);
 
-  const playStage = useCallback(
-    (stage: number) => {
-      unlockAudio();
+  // Tapping a phase opens the equip popup rather than playing immediately.
+  const openEquip = useCallback((stage: number) => {
+    unlockAudio();
+    setEquipStage(stage);
+  }, []);
+
+  // Start a phase with the chosen equipped bombs / snowflakes (from the popup).
+  const startPhase = useCallback(
+    (stage: number, bombs: number, freeze: number) => {
       trackModeSelected("time-attack");
       navigate({
         to: "/play",
-        search: { phase: stage, mode: "time-attack", difficulty: "normal", daily: 0 },
+        search: {
+          phase: stage,
+          mode: "time-attack",
+          difficulty: "normal",
+          daily: 0,
+          bombs,
+          freeze,
+        },
       });
     },
     [navigate],
@@ -218,7 +234,7 @@ function MapPage() {
   // arrived, start the phase.
   const onTap = () => {
     if (!auto) return;
-    if (arrived) playStage(reached);
+    if (arrived) openEquip(reached);
     else setArrived(true);
   };
 
@@ -339,7 +355,7 @@ function MapPage() {
                     {interactive ? (
                       <button
                         type="button"
-                        onClick={() => playStage(stage)}
+                        onClick={() => openEquip(stage)}
                         aria-label={`${t("world.label")} ${world} · ${p}`}
                         className={isCurrent && arrived && auto ? "gs-unlock" : undefined}
                         style={{
@@ -371,7 +387,7 @@ function MapPage() {
                     type="button"
                     onClick={() => {
                       track("portal_used", { from_world: world, to_world: world + 1 });
-                      playStage(nextStage);
+                      openEquip(nextStage);
                     }}
                     aria-label={t("map.portal")}
                     className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -425,6 +441,17 @@ function MapPage() {
           </div>
         )}
       </div>
+
+      {/* Equip popup — tap a phase → choose bombs/snowflakes → Play (or Rewarded
+          Play for a free boost). Only equipped power-ups appear on the board. */}
+      {equipStage != null && (
+        <EquipModal
+          world={roundOf(equipStage)}
+          phase={phaseInRound(equipStage)}
+          onStart={(bombs, freeze) => startPhase(equipStage, bombs, freeze)}
+          onClose={() => setEquipStage(null)}
+        />
+      )}
     </div>
   );
 }

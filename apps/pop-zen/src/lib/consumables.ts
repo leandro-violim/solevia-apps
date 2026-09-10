@@ -72,6 +72,22 @@ export function consumeItem(id: ConsumableId): boolean {
   return true;
 }
 
+/**
+ * Consume up to `n` of an item (clamped to what's owned). Used when equipping
+ * bombs/snowflakes onto a phase from the journey popup. Returns how many were
+ * actually taken. One notify + one analytics event for the whole batch.
+ */
+export function consumeItems(id: ConsumableId, n: number): number {
+  const take = Math.max(0, Math.min(n, getCount(id)));
+  if (take <= 0) return 0;
+  update((st) => {
+    st.inventory[id] = Math.max(0, (st.inventory[id] ?? 0) - take);
+  });
+  track("consumable_used", { item: id, count: take });
+  notify();
+  return take;
+}
+
 /** Grant one for free (rewards) — no coin cost. */
 export function grantConsumable(id: ConsumableId, source: string): void {
   update((st) => {
