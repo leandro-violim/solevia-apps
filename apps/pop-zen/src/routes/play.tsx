@@ -644,6 +644,15 @@ function PlayPage() {
         burstParticles(cx, cy, variant, 16, 1.4);
       } else if (special === "bomb") {
         burstParticles(cx, cy, variant, 26, 1.7, "#ff9a6a");
+      } else if (special === "frozen") {
+        // Snowflake: popping it PAUSES the Time Attack countdown for 2s — i.e.
+        // grant that much extra time. (No effect in Zen, which is timeless.)
+        if (!isZen) {
+          const ms = CONFIG.specials.frozen.freezeMs;
+          setDeadline((d) => (d === null ? d : d + ms));
+          setItemFlash(t("items.frozen", { s: Math.round(ms / 1000) }));
+        }
+        burstParticles(cx, cy, variant, 18, 1.4, "#a6e6ff");
       }
 
       // Pure state update. A Bomb also pops un-popped neighbours within its blast.
