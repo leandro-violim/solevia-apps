@@ -56,7 +56,7 @@ import { ChallengeGoals } from "../components/ChallengeGoals";
 import { CoinBalance } from "../components/CoinBalance";
 import { CoinIcon, PlayIcon } from "../components/icons";
 import sky from "../assets/scene/sky.webp";
-import wrapBubble from "../assets/scene/wrap-bubble.webp";
+import wrapTile from "../assets/scene/wrap-tile.webp";
 import {
   computeTimeAttackScore,
   formatCountdown,
@@ -154,14 +154,15 @@ function usableFieldHeight(el: HTMLElement): number {
 }
 
 /**
- * The background bubble: ONE real bubble-wrap bubble, cut round (alpha) from the
- * photographed sheet, so tiling it forms a continuous, close-packed, PHOTOGRAPHIC
- * bubble-wrap sheet — realistic, not drawn. Because every cell is this identical
- * cut-out on transparent corners, the sheet can't seam or ghost a second layer
- * the way a multi-bubble photo crop does. Tiled at the poppable bubble size and
+ * The background bubble-wrap: a 3×2 block of REAL bubbles (from the photographed
+ * sheet, native-sharp, illumination-flattened + gutter-aligned so it tiles), so
+ * the bubbles stay CONNECTED by the plastic between them — real wrap, not drawn.
+ * Tiled at the poppable bubble size (3·size × 2·size) and aligned to the grid,
  * kept see-through, it sits behind the gameplay (see the `bg` math below).
  */
-const WRAP_TILE = `url(${wrapBubble})`;
+const WRAP_TILE = `url(${wrapTile})`;
+const WRAP_COLS = 3;
+const WRAP_ROWS = 2;
 
 /**
  * P1-T4 — isolated Time Attack countdown. Owns the 100ms interval so a tick
@@ -919,7 +920,7 @@ function PlayPage() {
       posX = b0.x + b0.size / 2 - size / 2;
       posY = b0.y + b0.size / 2 - size / 2;
     }
-    return { image: WRAP_TILE, size, posX, posY };
+    return { image: WRAP_TILE, sizeX: size * WRAP_COLS, sizeY: size * WRAP_ROWS, posX, posY };
   }, [bubbles, cfg.size]);
 
   return (
@@ -1026,7 +1027,7 @@ function PlayPage() {
             style={{
               inset: 0,
               backgroundImage: bg.image,
-              backgroundSize: `${bg.size}px ${bg.size}px`,
+              backgroundSize: `${bg.sizeX}px ${bg.sizeY}px`,
               backgroundRepeat: "repeat",
               backgroundPosition: `${bg.posX}px ${bg.posY}px`,
               // See-through so the wrap reads as gentle background plastic and the
