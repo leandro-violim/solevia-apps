@@ -56,6 +56,7 @@ import { ChallengeGoals } from "../components/ChallengeGoals";
 import { CoinBalance } from "../components/CoinBalance";
 import { CoinIcon, PlayIcon } from "../components/icons";
 import sky from "../assets/scene/sky.webp";
+import wrapBubble from "../assets/scene/wrap-bubble.webp";
 import {
   computeTimeAttackScore,
   formatCountdown,
@@ -153,31 +154,14 @@ function usableFieldHeight(el: HTMLElement): number {
 }
 
 /**
- * One clear glass bubble drawn as an inline SVG on a 100×100 cell, the bubble
- * filling the cell so that when the cell is REPEATED it forms a continuous,
- * close-packed bubble-wrap sheet (bubbles touch; the corners leave the little
- * flat "weld" diamonds real wrap has). Vector + perfectly periodic, so the sheet
- * never seams, never ghosts a second layer, and stays crisp at any size. It's
- * intentionally gentle/see-through — it sits BEHIND the poppable bubbles as a
- * soft background, sized to the same bubble size (see the `bg` math below).
+ * The background bubble: ONE real bubble-wrap bubble, cut round (alpha) from the
+ * photographed sheet, so tiling it forms a continuous, close-packed, PHOTOGRAPHIC
+ * bubble-wrap sheet — realistic, not drawn. Because every cell is this identical
+ * cut-out on transparent corners, the sheet can't seam or ghost a second layer
+ * the way a multi-bubble photo crop does. Tiled at the poppable bubble size and
+ * kept see-through, it sits behind the gameplay (see the `bg` math below).
  */
-const WRAP_TILE = (() => {
-  const svg =
-    `<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'>` +
-    `<defs><radialGradient id='g' cx='42%' cy='37%' r='62%'>` +
-    `<stop offset='0%' stop-color='#ffffff' stop-opacity='0.85'/>` +
-    `<stop offset='45%' stop-color='#eef3f6' stop-opacity='0.5'/>` +
-    `<stop offset='85%' stop-color='#cdd7dd' stop-opacity='0.34'/>` +
-    `<stop offset='100%' stop-color='#aeb9c1' stop-opacity='0.5'/>` +
-    `</radialGradient></defs>` +
-    // base disc gives the bubble body; slightly < 50 so neighbours meet cleanly.
-    `<circle cx='50' cy='50' r='49.5' fill='#b7c2ca' fill-opacity='0.4'/>` +
-    `<circle cx='50' cy='50' r='48' fill='url(#g)'/>` +
-    `<circle cx='50' cy='50' r='48' fill='none' stroke='#ffffff' stroke-opacity='0.45' stroke-width='1'/>` +
-    `<ellipse cx='37' cy='31' rx='12' ry='7.5' fill='#ffffff' fill-opacity='0.55' transform='rotate(-25 37 31)'/>` +
-    `</svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-})();
+const WRAP_TILE = `url(${wrapBubble})`;
 
 /**
  * P1-T4 — isolated Time Attack countdown. Owns the 100ms interval so a tick
@@ -1030,11 +1014,12 @@ function PlayPage() {
             background: "#b0bec9",
           }}
         >
-          {/* v1.3 (Project C) playfield: a continuous, see-through bubble-wrap
-              sheet behind the gameplay — the WRAP_TILE bubble (a perfectly periodic
-              inline SVG, so no photo seams or ghost layer) tiled at the poppable
-              bubble size and aligned to the grid (see `bg` above). The poppable
-              bubbles sit on top at the same size; the background fills the board. */}
+          {/* v1.3 (Project C) playfield: a continuous, see-through REAL bubble-wrap
+              sheet behind the gameplay — one cut-out photographed bubble (WRAP_TILE)
+              tiled at the poppable bubble size and aligned to the grid (see `bg`
+              above), so it looks like real wrap without seams or a ghost layer. The
+              poppable bubbles sit on top at the same size; the background fills the
+              board. */}
           <div
             aria-hidden
             className="pointer-events-none absolute"
