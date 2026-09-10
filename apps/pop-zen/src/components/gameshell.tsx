@@ -12,8 +12,12 @@ import { AdBanner, AdBannerSpacer } from "./AdBanner";
 import wrapSheet from "../assets/scene/wrap-sheet.webp";
 import poppedSprite from "../assets/bubbles/real-bubble-popped.webp";
 import mascotIdle from "../assets/shell/mascot-idle.webp";
+import mascotCheer from "../assets/shell/mascot-cheer.webp";
 import islandTrees from "../assets/shell/island-trees.webp";
 import islandHex from "../assets/shell/island-hex.webp";
+import nodeDone from "../assets/shell/node-done.webp";
+import nodeCurrent from "../assets/shell/node-current.webp";
+import nodeLocked from "../assets/shell/node-locked.webp";
 import sky from "../assets/scene/sky.webp";
 
 /* 1 — Glossy primary button (actions). Navigation uses <Link className="gs-btn">. */
@@ -114,12 +118,30 @@ export function HexNode({
   size?: number;
   style?: CSSProperties;
 }) {
+  const tile = state === "done" ? nodeDone : state === "current" ? nodeCurrent : nodeLocked;
   return (
     <div className={`gs-node is-${state}`} style={{ width: size, height: size, ...style }}>
-      {state === "current" && <span className="gs-node__glow" aria-hidden />}
       {state === "current" && hereLabel && <span className="gs-node__here">{hereLabel}</span>}
-      <span className="gs-hex" aria-hidden />
-      <span className="gs-node__num">{state === "done" ? "★" : state === "locked" ? "🔒" : n}</span>
+      <img
+        src={tile}
+        alt=""
+        aria-hidden
+        style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+      />
+      {state === "current" && (
+        <span
+          className="gs-node__num"
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            paddingTop: "12%",
+          }}
+        >
+          {n}
+        </span>
+      )}
     </div>
   );
 }
@@ -147,19 +169,21 @@ export function Island({
   );
 }
 
-/* 8 — Mascot (bubble-buddy) */
+/* 8 — Mascot (bubble-buddy): idle or cheering (arms up) */
 export function Mascot({
   size = 76,
+  variant = "idle",
   className = "",
   style,
 }: {
   size?: number;
+  variant?: "idle" | "cheer";
   className?: string;
   style?: CSSProperties;
 }) {
   return (
     <img
-      src={mascotIdle}
+      src={variant === "cheer" ? mascotCheer : mascotIdle}
       alt=""
       aria-hidden
       className={`gs-mascot ${className}`}

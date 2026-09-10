@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { TOTAL_ROUNDS, PHASES_PER_ROUND } from "../lib/game-config";
 import { reachedStage, stageState } from "../lib/progress";
-import { HexNode } from "../components/gameshell";
+import { HexNode, Mascot } from "../components/gameshell";
 import { t } from "../lib/i18n";
 import { unlockAudio } from "../lib/pop-sound";
 import { trackModeSelected } from "../lib/mode";
@@ -11,7 +11,24 @@ import { fadeMusicIn, fadeMusicOut } from "../lib/music";
 import { CoinBalance } from "../components/CoinBalance";
 import { ResourcePill } from "../components/gameshell";
 import sky from "../assets/scene/sky.webp";
-import islandHex from "../assets/shell/island-hex.webp";
+import world1 from "../assets/scene/world-1.webp";
+import world2 from "../assets/scene/world-2.webp";
+import world3 from "../assets/scene/world-3.webp";
+import world4 from "../assets/scene/world-4.webp";
+
+const WORLD_BG = [world1, world2, world3, world4];
+// Deterministic serpentine node anchors (% of the world section) laid over the
+// painted island scenery — 8 phases per world.
+const NODE_XY: [number, number][] = [
+  [30, 12],
+  [54, 20],
+  [65, 31],
+  [46, 42],
+  [32, 53],
+  [50, 63],
+  [66, 73],
+  [48, 84],
+];
 
 // `auto=1` means we arrived here between phases: pan to the new node, then
 // continue into the phase automatically (tap anywhere to skip the wait).
@@ -24,9 +41,6 @@ export const Route = createFileRoute("/map")({
   }),
   component: MapPage,
 });
-
-// Winding-path horizontal offsets for the 8 nodes in a world (px).
-const ZIG = [-66, -20, 40, 74, 40, -20, -66, -94];
 
 function MapPage() {
   const { auto } = Route.useSearch();
@@ -147,87 +161,91 @@ function MapPage() {
         </Link>
       </div>
 
-      {/* worlds, top (World 1) → bottom (World 4) */}
+      {/* worlds, top (World 1) → bottom (World 4). Each = a painted island scene
+          (Cowork/Higgsfield) with the 8 phase nodes overlaid at deterministic
+          anchors. A soft wash keeps the nodes + label legible over the art. */}
       <div className="relative z-10 mx-auto flex max-w-md flex-col gap-4 px-4 pb-24 pt-2">
         {Array.from({ length: TOTAL_ROUNDS }, (_, wi) => {
           const world = wi + 1;
           return (
             <section
               key={world}
-              className="relative overflow-hidden rounded-3xl border border-white/50 px-3 py-4"
-              style={{ background: "rgba(255,255,255,0.28)", backdropFilter: "blur(2px)" }}
+              className="relative overflow-hidden rounded-3xl border border-white/40 shadow-lg"
+              style={{
+                height: 480,
+                backgroundImage: `url(${WORLD_BG[wi]})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
             >
-              {/* world header */}
-              <div className="mb-2 flex items-center gap-2">
-                <img
-                  src={islandHex}
-                  alt=""
-                  aria-hidden
-                  width={40}
-                  height={40}
-                  style={{ filter: "drop-shadow(0 3px 4px rgba(120,90,40,.3))" }}
-                />
-                <div>
-                  <div
-                    className="text-[11px] font-bold uppercase tracking-wider"
-                    style={{ color: "var(--gs-ink-soft)" }}
-                  >
-                    {t("world.label")} {world}
-                  </div>
-                  <div className="text-sm font-extrabold" style={{ color: "var(--gs-ink)" }}>
-                    {t(`world.r${world}.name`)}
-                  </div>
-                </div>
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{ background: "rgba(255,255,255,0.14)" }}
+              />
+              {/* world name chip */}
+              <div className="absolute left-3 top-3 z-10">
+                <span
+                  className="inline-block rounded-full px-3 py-1 text-xs font-extrabold"
+                  style={{ background: "rgba(255,255,255,0.85)", color: "var(--gs-ink)" }}
+                >
+                  {t("world.label")} {world} · {t(`world.r${world}.name`)}
+                </span>
               </div>
 
-              {/* winding path of 8 nodes; a dashed line runs down the middle */}
-              <div className="relative" style={{ minHeight: PHASES_PER_ROUND * 62 }}>
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-2"
-                  style={{ left: "50%", borderLeft: "3px dashed rgba(255,255,255,0.7)" }}
-                />
-                {Array.from({ length: PHASES_PER_ROUND }, (_, pi) => {
-                  const p = pi + 1;
-                  const stage = wi * PHASES_PER_ROUND + p;
-                  const state = stageState(stage, reached);
-                  const isCurrent = state === "current";
-                  const node = (
-                    <HexNode
-                      n={p}
-                      state={state}
-                      hereLabel={isCurrent ? t("home.here") : undefined}
-                      size={isCurrent ? 58 : 50}
-                    />
-                  );
-                  return (
-                    <div
-                      key={p}
-                      ref={isCurrent ? currentRef : undefined}
-                      className="relative flex justify-center"
-                      style={{ height: 62, transform: `translateX(${ZIG[pi]}px)` }}
-                    >
-                      {state === "locked" ? (
-                        <div aria-label={`${t("world.label")} ${world} · ${p}`}>{node}</div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => playStage(stage)}
-                          aria-label={`${t("world.label")} ${world} · ${p}`}
-                          style={{
-                            border: 0,
-                            background: "transparent",
-                            padding: 0,
-                            cursor: "pointer",
-                          }}
-                        >
-                          {node}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {/* 8 phase nodes */}
+              {Array.from({ length: PHASES_PER_ROUND }, (_, pi) => {
+                const p = pi + 1;
+                const stage = wi * PHASES_PER_ROUND + p;
+                const state = stageState(stage, reached);
+                const isCurrent = state === "current";
+                const [x, y] = NODE_XY[pi];
+                const node = (
+                  <HexNode
+                    n={p}
+                    state={state}
+                    hereLabel={isCurrent ? t("home.here") : undefined}
+                    size={isCurrent ? 58 : 48}
+                  />
+                );
+                return (
+                  <div
+                    key={p}
+                    ref={isCurrent ? currentRef : undefined}
+                    className="absolute -translate-x-1/2 -translate-y-1/2"
+                    style={{ left: `${x}%`, top: `${y}%` }}
+                  >
+                    {state === "locked" ? (
+                      <div aria-label={`${t("world.label")} ${world} · ${p}`}>{node}</div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => playStage(stage)}
+                        aria-label={`${t("world.label")} ${world} · ${p}`}
+                        style={{
+                          border: 0,
+                          background: "transparent",
+                          padding: 0,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {node}
+                      </button>
+                    )}
+                    {isCurrent && (
+                      <Mascot
+                        size={46}
+                        style={{
+                          position: "absolute",
+                          left: "82%",
+                          bottom: "58%",
+                          filter: "drop-shadow(0 4px 5px rgba(0,0,0,0.25))",
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </section>
           );
         })}

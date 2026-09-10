@@ -3,6 +3,19 @@ import { equippedBubbleSprite } from "../lib/skins";
 import { SPECIAL_LOOK, FROZEN_TAPS, type SpecialType } from "../lib/specials";
 import bubbleFull from "../assets/bubbles/real-bubble-full.webp";
 import bubblePopped from "../assets/bubbles/real-bubble-popped.webp";
+import pwBomb from "../assets/bubbles/pw-bomb.webp";
+import pwFrozen from "../assets/bubbles/pw-frozen.webp";
+import pwGolden from "../assets/bubbles/pw-golden.webp";
+import pwMystery from "../assets/bubbles/pw-mystery.webp";
+
+// Special bubbles show a gamified power-up inside the clear dome (v1.3 art).
+// The popped state reuses the default popped sprite.
+const SPECIAL_SPRITE: Record<Exclude<SpecialType, "normal">, string> = {
+  bomb: pwBomb,
+  frozen: pwFrozen,
+  golden: pwGolden,
+  mystery: pwMystery,
+};
 
 // F8 (Mockup C): a matched sprite pair — a plump, glossy FULL bubble and a
 // flattened, crinkled POPPED bubble. Popping swaps the texture and scales the
@@ -109,7 +122,8 @@ export const Bubble = memo(function Bubble({
   // Equipped skin's own bubble art (bespoke per-skin sprite). Specials keep their
   // own look, so only plain bubbles get the skin sprite; Classic → default bubble.
   const sprite = special === "normal" ? equippedBubbleSprite(id) : undefined;
-  const fullSrc = sprite ? sprite.full : bubbleFull;
+  const fullSrc =
+    special !== "normal" ? SPECIAL_SPRITE[special] : sprite ? sprite.full : bubbleFull;
   const poppedSrc = sprite ? sprite.popped : bubblePopped;
   const look = special !== "normal" ? SPECIAL_LOOK[special] : null;
 
@@ -158,17 +172,14 @@ export const Bubble = memo(function Bubble({
           // not a per-bubble drop-shadow filter that repainted every float frame.
         }}
       />
-      {look && !popped && (
+      {/* Frozen bubbles need several taps — dim slightly while still frozen so the
+          progress reads (the power-up sprite itself shows the snowflake). */}
+      {special === "frozen" && !popped && frozenTaps > 0 && (
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 flex items-center justify-center"
-          style={{
-            fontSize: size * 0.4,
-            opacity: special === "frozen" && frozenTaps > 0 ? 0.5 : 0.92,
-          }}
-        >
-          {look.emoji}
-        </span>
+          className="pointer-events-none absolute inset-0 rounded-full"
+          style={{ background: "rgba(255,255,255,0.28)" }}
+        />
       )}
     </button>
   );

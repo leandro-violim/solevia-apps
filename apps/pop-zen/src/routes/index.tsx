@@ -143,7 +143,8 @@ function Home() {
               }}
             />
             <Mascot
-              size={96}
+              size={104}
+              variant="cheer"
               style={{
                 position: "absolute",
                 left: "50%",

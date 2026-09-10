@@ -108,7 +108,7 @@ function FinishPage() {
               : "radial-gradient(circle at 50% 45%, rgba(51,224,198,0.35), transparent 70%)",
           }}
         >
-          <Mascot size={116} />
+          <Mascot size={116} variant="cheer" />
         </div>
       </div>
 
