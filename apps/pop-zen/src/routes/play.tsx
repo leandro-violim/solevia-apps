@@ -55,7 +55,7 @@ import { unlockZenSkins } from "../lib/skins";
 import { ChallengeGoals } from "../components/ChallengeGoals";
 import { CoinBalance } from "../components/CoinBalance";
 import { CoinIcon, PlayIcon } from "../components/icons";
-import fieldSheet from "../assets/scene/field-sheet.webp";
+import wrapTile from "../assets/scene/wrap-tile.webp";
 import sky from "../assets/scene/sky.webp";
 import {
   computeTimeAttackScore,
@@ -888,14 +888,25 @@ function PlayPage() {
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
   remainingRef.current = remaining; // keep the expiry-handler's live count fresh
 
+  // Background wrap texture is tiled so its bubbles track the phase's poppable
+  // bubble SIZE — the board then reads as one continuous sheet (small bubbles on
+  // dense phases, big bubbles on phase 1). Pitch = displayed bubble size + the
+  // layout's 6px padding; the tile is 3 bubbles wide (see wrap-tile.webp).
+  const bubblePx = bubbles[0]?.size ?? cfg.size;
+  const bgTile = (bubblePx + 6) * 3;
+
   return (
     <div
       className="screen-fade flex min-h-dvh flex-col"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        // v1.3 (Project C): the play screen shares the same sky shell as Home and
+        // the menus, so the whole app reads as one game-style surface.
+        backgroundImage: `url(${sky})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+      }}
     >
-      {/* The play screen sits on the app's own calm navy shell (styles.css body
-          bg-grad + soft aqua aurora) — same as the home/menus — so the whole
-          screen reads as one integrated surface. */}
       <header className="flex items-center justify-between px-4 py-3">
         <Link
           to="/"
@@ -915,19 +926,26 @@ function PlayPage() {
               });
             }
           }}
-          className="hud-chip px-3 py-1.5 text-sm font-semibold text-muted-foreground"
+          className="gs-hud px-3 py-1.5 text-sm font-semibold"
         >
           {t("play.exit")}
         </Link>
-        <div className="hud-chip flex-col gap-0 px-4 py-1">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+        <div className="gs-hud flex-col gap-0 px-4 py-1">
+          <div
+            className="text-[10px] uppercase tracking-[0.25em]"
+            style={{ color: "var(--gs-ink-soft)" }}
+          >
             {isZen
               ? t("home.zen")
               : t("play.worldPhase", { world: round, phase: pir, per: PHASES_PER_ROUND })}
           </div>
-          {!isZen && <div className="text-sm font-semibold text-foreground">{t(cfg.key)}</div>}
+          {!isZen && (
+            <div className="text-sm font-semibold" style={{ color: "var(--gs-ink)" }}>
+              {t(cfg.key)}
+            </div>
+          )}
         </div>
-        <div className="hud-chip min-w-[3.25rem] justify-center px-3 py-1.5 font-mono text-sm tabular-nums">
+        <div className="gs-hud min-w-[3.25rem] justify-center px-3 py-1.5 font-mono text-sm tabular-nums">
           {isZen ? (
             <span aria-hidden>∞</span>
           ) : state === "playing" && deadline !== null ? (
@@ -942,7 +960,7 @@ function PlayPage() {
         </div>
       </header>
 
-      <div className="px-4 pb-2 text-center text-xs text-muted-foreground">
+      <div className="px-4 pb-2 text-center text-xs" style={{ color: "var(--gs-ink-soft)" }}>
         {t("play.bubblesLeft", { n: remaining, best: record?.bestScore ?? 0 })}
       </div>
 
@@ -962,25 +980,28 @@ function PlayPage() {
           className="relative w-full flex-1 overflow-hidden rounded-3xl border border-white/10"
           style={{
             isolation: "isolate",
-            // v1.3 (Project C): soft aqua-teal ground behind the real bubble-wrap
-            // sheet (Leandro's pick "D") — gentle mood, texture stays visible, and
-            // the clear poppable bubbles still read via their rims + shadows.
-            background: "#7fb8b4",
+            // v1.3 (Project C): a light, neutral cool ground behind the CLEAR
+            // bubble-wrap sheet — the wrap now reads as real, transparent plastic
+            // (Leandro's pick) rather than the old teal tint; the poppable bubbles
+            // still read via their own rims + shadows.
+            background: "#b0bec9",
           }}
         >
-          {/* v1.3 (Project C) playfield: a REAL continuous bubble-wrap sheet,
-              soft aqua-teal tinted (baked into the asset) so the clear poppable
-              bubbles read with contrast. Shown crisply as one image (cover, no
-              tiling, NO blur — the foreground bubbles separate via their own
-              shadows). Inset past the clip so cover has no soft edge. */}
+          {/* v1.3 (Project C) playfield: a REAL, CLEAR bubble-wrap sheet (de-tinted
+              from the photo so it reads as transparent plastic, encoded crisp with
+              native sharp — no blur). Tiled — NOT cover — so the background bubbles
+              are drawn at the SAME size as this phase's poppable bubbles (bgTile
+              tracks cfg.size). The board then reads as one continuous sheet where
+              the poppable bubbles stand out via their rims + shadows, instead of
+              big background bubbles behind tiny poppable ones on dense phases. */}
           <div
             aria-hidden
             className="pointer-events-none absolute"
             style={{
-              inset: "-14px",
-              backgroundImage: `url(${fieldSheet})`,
-              backgroundSize: "cover",
-              backgroundRepeat: "no-repeat",
+              inset: 0,
+              backgroundImage: `url(${wrapTile})`,
+              backgroundSize: `${bgTile}px ${bgTile}px`,
+              backgroundRepeat: "repeat",
               backgroundPosition: "center",
               opacity: 1,
             }}
@@ -1052,8 +1073,11 @@ function PlayPage() {
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4">
               {!isZen && phase === 1 && objectivesRef.current.length > 0 ? (
                 // Pop Challenge intro: show today's goals before the run starts.
-                <div className="zbonus-card w-full max-w-xs rounded-2xl border border-white/10 bg-popover p-5 text-center shadow-xl">
-                  <div className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+                <div className="gs-panel w-full max-w-xs p-5 text-center">
+                  <div
+                    className="text-[11px] uppercase tracking-[0.25em]"
+                    style={{ color: "var(--gs-ink-soft)" }}
+                  >
                     {t("challenge.goalsTitle")}
                   </div>
                   <div className="mt-3">
@@ -1062,14 +1086,12 @@ function PlayPage() {
                       completed={completedRef.current}
                     />
                   </div>
-                  <div className="mt-4 text-sm font-semibold text-primary">
+                  <div className="mt-4 text-sm font-semibold" style={{ color: "var(--gs-blue-2)" }}>
                     {t("challenge.goalsHint")}
                   </div>
                 </div>
               ) : (
-                <div className="hud-chip px-5 py-2 text-sm font-semibold">
-                  {t("play.tapToStart")}
-                </div>
+                <div className="gs-hud px-5 py-2 text-sm font-semibold">{t("play.tapToStart")}</div>
               )}
             </div>
           )}

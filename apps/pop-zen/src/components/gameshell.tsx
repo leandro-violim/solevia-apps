@@ -195,14 +195,15 @@ export function Mascot({
   );
 }
 
-/* 8b — Mascot hop: the bubble-buddy hopping in place (crouch → apex → land),
-   cycling the three Higgsfield frames with a CSS transform arc for the lift.
-   Used between phases on the map to say "let's go!". When `play` is false it's
-   just the idle sprite; prefers-reduced-motion renders idle and never animates. */
-const HOP_FRAMES: ReadonlyArray<{ src: string; y: number; ms: number }> = [
-  { src: mascotHop1, y: 0, ms: 120 }, // crouch (anticipation)
-  { src: mascotHop2, y: -20, ms: 260 }, // apex (hang time)
-  { src: mascotHop3, y: -2, ms: 120 }, // land (squash)
+/* 8b — Mascot hop: the bubble-buddy hopping (crouch → apex → land), cycling the
+   three Higgsfield frames. The distinct silhouettes carry the hop; the ambient
+   float (.gs-mascot gsFloat) adds the gentle bob. Used between phases on the map
+   as the mascot travels to the next node (the parent moves it; this animates the
+   legs). `play` false → idle sprite; prefers-reduced-motion → idle, no cycling. */
+const HOP_FRAMES: ReadonlyArray<{ src: string; ms: number }> = [
+  { src: mascotHop1, ms: 150 }, // crouch (anticipation)
+  { src: mascotHop2, ms: 300 }, // apex (hang time)
+  { src: mascotHop3, ms: 150 }, // land (squash)
 ];
 
 export function MascotHop({
@@ -250,13 +251,7 @@ export function MascotHop({
       alt=""
       aria-hidden
       className={`gs-mascot ${className}`}
-      style={{
-        width: size,
-        height: size,
-        transform: `translateY(${frame ? frame.y : 0}px)`,
-        transition: "transform 140ms ease-out",
-        ...style,
-      }}
+      style={{ width: size, height: size, ...style }}
     />
   );
 }

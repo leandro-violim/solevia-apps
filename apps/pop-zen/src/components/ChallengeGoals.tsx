@@ -29,13 +29,19 @@ export function ChallengeGoals({
         return (
           <li key={o.id} className="flex items-center gap-2.5 text-sm">
             <span
-              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
-                done ? "bg-primary/20 text-primary" : "border border-white/20"
-              }`}
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+              style={
+                done
+                  ? { background: "rgba(51,224,198,0.2)", color: "var(--gs-green-2)" }
+                  : { border: "1px solid rgba(38,48,74,0.22)" }
+              }
             >
               {done && <CheckIcon size={12} />}
             </span>
-            <span className={done ? "text-primary line-through" : "text-foreground"}>
+            <span
+              className={done ? "line-through" : undefined}
+              style={{ color: done ? "var(--gs-green-2)" : "var(--gs-ink)" }}
+            >
               {t(o.labelKey, { n: o.n })}
             </span>
             <span className="ml-auto shrink-0 text-xs tabular-nums">
@@ -45,11 +51,14 @@ export function ChallengeGoals({
                   <CoinIcon size={12} className="text-gold" />
                 </span>
               ) : showProgress && cur !== null ? (
-                <span className="text-muted-foreground">
+                <span style={{ color: "var(--gs-ink-soft)" }}>
                   {Math.min(cur, o.n)}/{o.n}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <span
+                  className="inline-flex items-center gap-1"
+                  style={{ color: "var(--gs-ink-soft)" }}
+                >
                   +{o.reward}
                   <CoinIcon size={12} className="text-gold" />
                 </span>

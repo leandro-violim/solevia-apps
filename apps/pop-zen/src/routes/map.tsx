@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { z } from "zod";
 import { TOTAL_ROUNDS, PHASES_PER_ROUND } from "../lib/game-config";
 import { reachedStage, stageState } from "../lib/progress";
@@ -30,8 +30,9 @@ const NODE_XY: [number, number][] = [
   [48, 84],
 ];
 
-// `auto=1` means we arrived here between phases: pan to the new node, then
-// continue into the phase automatically (tap anywhere to skip the wait).
+// `auto=1` means we arrived here between phases: the mascot HOPS from the phase
+// just cleared to the new one, the new node's lock is removed on arrival, and we
+// wait for the player to tap Play (no auto-start).
 const searchSchema = z.object({ auto: z.coerce.number().optional().default(0) });
 
 export const Route = createFileRoute("/map")({
@@ -42,10 +43,15 @@ export const Route = createFileRoute("/map")({
   component: MapPage,
 });
 
+type Pos = { left: number; top: number };
+
 function MapPage() {
   const { auto } = Route.useSearch();
   const navigate = useNavigate();
-  const currentRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const curNodeRef = useRef<HTMLDivElement>(null);
+  const prevNodeRef = useRef<HTMLDivElement>(null);
+  const panRaf = useRef<number>(0);
   // Read progress AFTER mount: on the server (SSR/dev) there is no localStorage,
   // so it would render as reached=1 and the client would keep that. Start at the
   // SSR-safe default, then sync to the real value on the client.
@@ -59,40 +65,15 @@ function MapPage() {
     return () => fadeMusicOut();
   }, []);
 
-  // Land on the current node: quickly pan from the top (over the passed phases)
-  // down to where the mascot is now. Reduced-motion → jump straight there.
-  useEffect(() => {
-    const el = currentRef.current;
-    if (!el) return;
-    const targetY =
-      el.getBoundingClientRect().top +
-      window.scrollY -
-      window.innerHeight / 2 +
-      el.offsetHeight / 2;
-    const reduce =
-      typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce || targetY <= 0) {
-      window.scrollTo(0, Math.max(0, targetY));
-      return;
-    }
-    window.scrollTo(0, 0);
-    let raf = 0;
-    const start = performance.now();
-    const dur = 950;
-    const step = (now: number) => {
-      const p = Math.min(1, (now - start) / dur);
-      const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
-      window.scrollTo(0, targetY * e);
-      if (p < 1) raf = requestAnimationFrame(step);
-    };
-    const timer = setTimeout(() => {
-      raf = requestAnimationFrame(step);
-    }, 140);
-    return () => {
-      clearTimeout(timer);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, [reached]);
+  // Between-phases sequence state.
+  // - mascotPos: absolute position (px, relative to the map content) of the buddy,
+  //   anchored on the NEW node; a CSS animation carries it from the old one.
+  // - travelVec: (previous - current) offset in px, fed to the gsTravel keyframe.
+  //   null → no travel (non-auto browsing, or reduced motion).
+  // - arrived: the new node is unlocked and Play is offered. onAnimationEnd sets it.
+  const [mascotPos, setMascotPos] = useState<Pos | null>(null);
+  const [travelVec, setTravelVec] = useState<{ dx: number; dy: number } | null>(null);
+  const [arrived, setArrived] = useState(!auto);
 
   const playStage = useCallback(
     (stage: number) => {
@@ -106,28 +87,100 @@ function MapPage() {
     [navigate],
   );
 
-  // Between-phases (auto): after the pan lands on the new node, continue into the
-  // phase; a tap anywhere skips the short wait.
+  // Animate window scroll so `el` ends up centred (reduced-motion → jump).
+  const panTo = useCallback((el: HTMLElement, reduce: boolean) => {
+    const targetY =
+      el.getBoundingClientRect().top +
+      window.scrollY -
+      window.innerHeight / 2 +
+      el.offsetHeight / 2;
+    const y = Math.max(0, targetY);
+    if (reduce) {
+      window.scrollTo(0, y);
+      return;
+    }
+    window.scrollTo(0, 0);
+    const start = performance.now();
+    const dur = 900;
+    const step = (now: number) => {
+      const p = Math.min(1, (now - start) / dur);
+      const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      window.scrollTo(0, y * e);
+      if (p < 1) panRaf.current = requestAnimationFrame(step);
+    };
+    panRaf.current = requestAnimationFrame(step);
+  }, []);
+
+  // Position the mascot + (in `auto`) set up the hop-to-next-node travel. The
+  // motion itself is a CSS keyframe (see .gsTravel) so it can't be disrupted by
+  // React re-running this effect; here we only compute the anchor + offset.
   useEffect(() => {
+    const content = contentRef.current;
+    const curEl = curNodeRef.current;
+    if (!content || !curEl) return;
+    const centre = (el: HTMLElement): Pos => {
+      const c = content.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      // Sit the buddy just above-right of the node centre (as the old static one did).
+      return { left: r.left - c.left + r.width / 2 + 10, top: r.top - c.top + r.height * 0.2 };
+    };
+    const reduce =
+      typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const curPos = centre(curEl);
+
+    // Normal browsing: rest the buddy on the current node.
+    if (!auto) {
+      setMascotPos(curPos);
+      setTravelVec(null);
+      setArrived(true);
+      panTo(curEl, reduce);
+      return;
+    }
+
+    // Between phases (auto): `reached` is always ≥2. Ignore the SSR-default
+    // reached=1 pass (and any render before the previous node exists) so it can't
+    // prematurely mark us "arrived" — we act only once the real progress is known.
+    if (reached <= 1 || !prevNodeRef.current) return;
+
+    setMascotPos(curPos); // wrapper anchored on the NEW node
+
+    if (reduce) {
+      setTravelVec(null);
+      setArrived(true);
+      panTo(curEl, true);
+      return;
+    }
+
+    // Feed the (prev − cur) offset to the gsTravel keyframe, which starts the
+    // buddy on the just-cleared node and eases it to the new one.
+    const prevPos = centre(prevNodeRef.current);
+    setTravelVec({ dx: prevPos.left - curPos.left, dy: prevPos.top - curPos.top });
+    setArrived(false);
+    panTo(curEl, false);
+    return () => {
+      if (panRaf.current) cancelAnimationFrame(panRaf.current);
+    };
+  }, [auto, reached, panTo]);
+
+  // Tap: while the buddy is still hopping across, skip to the end; once it's
+  // arrived, start the phase.
+  const onTap = () => {
     if (!auto) return;
-    const id = setTimeout(() => playStage(reached), 1650);
-    return () => clearTimeout(id);
-  }, [auto, reached, playStage]);
-  const skipContinue = () => {
-    if (auto) playStage(reached);
+    if (arrived) playStage(reached);
+    else setArrived(true);
   };
 
   return (
     <div
       className="gs-home relative min-h-dvh"
-      onClick={skipContinue}
+      onClick={onTap}
       style={{
         backgroundImage: `url(${sky})`,
         backgroundSize: "cover",
         backgroundPosition: "center top",
       }}
     >
-      {auto && (
+      {auto && arrived && (
         <div
           className="pointer-events-none fixed inset-x-0 z-30 flex justify-center"
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
@@ -164,7 +217,10 @@ function MapPage() {
       {/* worlds, top (World 1) → bottom (World 4). Each = a painted island scene
           (Cowork/Higgsfield) with the 8 phase nodes overlaid at deterministic
           anchors. A soft wash keeps the nodes + label legible over the art. */}
-      <div className="relative z-10 mx-auto flex max-w-md flex-col gap-4 px-4 pb-24 pt-2">
+      <div
+        ref={contentRef}
+        className="relative z-10 mx-auto flex max-w-md flex-col gap-4 px-4 pb-24 pt-2"
+      >
         {Array.from({ length: TOTAL_ROUNDS }, (_, wi) => {
           const world = wi + 1;
           return (
@@ -197,31 +253,36 @@ function MapPage() {
               {Array.from({ length: PHASES_PER_ROUND }, (_, pi) => {
                 const p = pi + 1;
                 const stage = wi * PHASES_PER_ROUND + p;
-                const state = stageState(stage, reached);
-                const isCurrent = state === "current";
+                const baseState = stageState(stage, reached);
+                const isCurrent = stage === reached;
+                const isPrev = stage === reached - 1;
+                // Until the buddy arrives (auto), the new node still reads as
+                // locked — then the lock is removed with a pop.
+                const showLocked = isCurrent && auto && !arrived;
+                const state = showLocked ? "locked" : baseState;
                 const [x, y] = NODE_XY[pi];
                 const node = (
                   <HexNode
                     n={p}
                     state={state}
-                    hereLabel={isCurrent ? t("home.here") : undefined}
+                    hereLabel={state === "current" ? t("home.here") : undefined}
                     size={isCurrent ? 58 : 48}
                   />
                 );
+                const interactive = state !== "locked";
                 return (
                   <div
                     key={p}
-                    ref={isCurrent ? currentRef : undefined}
+                    ref={isCurrent ? curNodeRef : isPrev ? prevNodeRef : undefined}
                     className="absolute -translate-x-1/2 -translate-y-1/2"
                     style={{ left: `${x}%`, top: `${y}%` }}
                   >
-                    {state === "locked" ? (
-                      <div aria-label={`${t("world.label")} ${world} · ${p}`}>{node}</div>
-                    ) : (
+                    {interactive ? (
                       <button
                         type="button"
                         onClick={() => playStage(stage)}
                         aria-label={`${t("world.label")} ${world} · ${p}`}
+                        className={isCurrent && arrived && auto ? "gs-unlock" : undefined}
                         style={{
                           border: 0,
                           background: "transparent",
@@ -231,18 +292,8 @@ function MapPage() {
                       >
                         {node}
                       </button>
-                    )}
-                    {isCurrent && (
-                      <MascotHop
-                        size={46}
-                        play={!!auto}
-                        style={{
-                          position: "absolute",
-                          left: "82%",
-                          bottom: "58%",
-                          filter: "drop-shadow(0 4px 5px rgba(0,0,0,0.25))",
-                        }}
-                      />
+                    ) : (
+                      <div aria-label={`${t("world.label")} ${world} · ${p}`}>{node}</div>
                     )}
                   </div>
                 );
@@ -250,6 +301,38 @@ function MapPage() {
             </section>
           );
         })}
+
+        {/* The bubble-buddy: one overlay anchored on the NEW node. Between phases
+            it HOPS across from the cleared node via the gsTravel keyframe (it waits
+            on the old node while the map pans, then eases over and the legs cycle);
+            onAnimationEnd unlocks the node + offers Play. Normal browsing → it just
+            rests on the current node. */}
+        {mascotPos && (
+          <div
+            className="pointer-events-none absolute z-20"
+            onAnimationEnd={() => setArrived(true)}
+            style={
+              {
+                left: mascotPos.left,
+                top: mascotPos.top,
+                transform: "translate(-50%, -50%)",
+                ...(travelVec && !arrived
+                  ? {
+                      "--dx": `${travelVec.dx}px`,
+                      "--dy": `${travelVec.dy}px`,
+                      animation: "gsTravel 1.5s ease-in-out 0.9s both",
+                    }
+                  : {}),
+              } as CSSProperties
+            }
+          >
+            <MascotHop
+              size={48}
+              play={!!travelVec && !arrived}
+              style={{ filter: "drop-shadow(0 4px 5px rgba(0,0,0,0.25))" }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
