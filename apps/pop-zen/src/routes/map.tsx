@@ -408,13 +408,8 @@ function MapPage() {
               } as CSSProperties
             }
           >
-            {/* "You are here" — centred 2px above the buddy's head. Shown once the
-                buddy is resting on the current node (not mid-hop). */}
-            {arrived && (
-              <span className="gs-node__here" style={{ top: "auto", bottom: "calc(100% + 2px)" }}>
-                {t("home.here")}
-              </span>
-            )}
+            {/* "You are here" label hidden for now (Leandro: too cluttered) — the
+                mascot on the pad already marks the current phase. */}
             <MascotHop
               size={48}
               play={!!travelVec && !arrived}
