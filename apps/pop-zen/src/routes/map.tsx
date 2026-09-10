@@ -167,8 +167,12 @@ function MapPage() {
     const centre = (el: HTMLElement): Pos => {
       const c = content.getBoundingClientRect();
       const r = el.getBoundingClientRect();
-      // Sit the buddy just above-right of the node centre (as the old static one did).
-      return { left: r.left - c.left + r.width / 2 + 10, top: r.top - c.top + r.height * 0.2 };
+      // Sit the buddy OVER the pad (centred on the node); the "You are here" label
+      // rides just above the buddy's head (rendered with the mascot below).
+      return {
+        left: r.left - c.left + r.width / 2,
+        top: r.top - c.top + r.height / 2,
+      };
     };
     const reduce =
       typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -316,12 +320,9 @@ function MapPage() {
                 const state = showLocked ? "locked" : baseState;
                 const [x, y] = WORLD_NODES[wi][pi];
                 const node = (
-                  <HexNode
-                    n={p}
-                    state={state}
-                    hereLabel={state === "current" ? t("home.here") : undefined}
-                    size={isCurrent ? 46 : 40}
-                  />
+                  // "You are here" now rides above the mascot's head (see the
+                  // overlay below), not the node, so we don't pass hereLabel.
+                  <HexNode n={p} state={state} size={isCurrent ? 46 : 40} />
                 );
                 const interactive = state !== "locked";
                 return (
@@ -407,6 +408,13 @@ function MapPage() {
               } as CSSProperties
             }
           >
+            {/* "You are here" — centred 2px above the buddy's head. Shown once the
+                buddy is resting on the current node (not mid-hop). */}
+            {arrived && (
+              <span className="gs-node__here" style={{ top: "auto", bottom: "calc(100% + 2px)" }}>
+                {t("home.here")}
+              </span>
+            )}
             <MascotHop
               size={48}
               play={!!travelVec && !arrived}
