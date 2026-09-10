@@ -888,14 +888,14 @@ function PlayPage() {
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
   remainingRef.current = remaining; // keep the expiry-handler's live count fresh
 
-  // Background wrap texture is tiled so its bubbles track the phase's poppable
-  // bubble SIZE — the board then reads as one continuous sheet (small bubbles on
-  // dense phases, big bubbles on phase 1). Pitch = displayed bubble size + the
-  // layout's 6px padding; the tile is 3 bubbles wide (see wrap-tile.webp).
+  // Background wrap texture is tiled so its bubbles are the SAME size as the
+  // phase's poppable bubbles — the board then reads as one continuous sheet
+  // (tiny bubbles on dense phases, big on phase 1). Pitch = the bubble size.
   const bubblePx = bubbles[0]?.size ?? cfg.size;
   // The wrap tile is a seamless block 3 bubbles wide × 2 tall, so it renders at
-  // (3·pitch) × (2·pitch) to keep the bubbles round and matched to the phase size.
-  const bgPitch = bubblePx + 6;
+  // (3·pitch) × (2·pitch). The 1.3 factor sizes the tile's rendered bubbles to
+  // match the poppable bubbles (the tile's bubbles sit a bit inside their cell).
+  const bgPitch = Math.round(bubblePx * 1.3);
 
   return (
     <div
@@ -1005,7 +1005,9 @@ function PlayPage() {
               backgroundSize: `${bgPitch * 3}px ${bgPitch * 2}px`,
               backgroundRepeat: "repeat",
               backgroundPosition: "center",
-              opacity: 1,
+              // More transparent so the wrap reads as gentle, see-through plastic
+              // and the poppable bubbles sit clearly in front of it.
+              opacity: 0.5,
             }}
           />
           {bubbles.map((b) => (
