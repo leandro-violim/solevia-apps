@@ -32,11 +32,13 @@ const OVAL_FILL = 0.91;
 const MARKER_SCALE = 0.72; // ~28% smaller than a pad-sized marker (20% then a further 10%)
 const PORTAL_W = 15; // portal sprite width as a % of the square island
 
-// Build the SVG path (viewBox 0..100) for the rope that links the 8 nodes in order
-// and continues to the portal. Drawn BEHIND the markers so each disc covers its
-// node — the rope reads as one line entering and one leaving each marker.
-function ropePath(nodes: [number, number][], portal: [number, number]): string {
-  return [...nodes, portal].map((p, i) => `${i === 0 ? "M" : "L"} ${p[0]} ${p[1]}`).join(" ");
+// Build the SVG path (viewBox 0..100) for the rope that links the 8 nodes in order,
+// continuing to the portal only when this world HAS one (the last world doesn't, so
+// the rope must not dangle out to an empty portal spot). Drawn BEHIND the markers so
+// each disc covers its node — the rope reads as one line in and one out per marker.
+function ropePath(nodes: [number, number][], portal?: [number, number]): string {
+  const pts = portal ? [...nodes, portal] : nodes;
+  return pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p[0]} ${p[1]}`).join(" ");
 }
 const DISC_CY = 0.47; // disc's vertical centre as a fraction of the sprite canvas
 // Square box whose disc renders at MARKER_SCALE × the pad width.
@@ -353,19 +355,25 @@ function MapPage() {
                 style={{ width: "100%", height: "100%" }}
               >
                 <path
-                  d={ropePath(WORLD_NODES[wi], WORLD_PORTALS[wi])}
+                  d={ropePath(
+                    WORLD_NODES[wi],
+                    wi < TOTAL_ROUNDS - 1 ? WORLD_PORTALS[wi] : undefined,
+                  )}
                   fill="none"
                   stroke="#b98a52"
-                  strokeWidth={3.4}
+                  strokeWidth={2}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   opacity={0.85}
                 />
                 <path
-                  d={ropePath(WORLD_NODES[wi], WORLD_PORTALS[wi])}
+                  d={ropePath(
+                    WORLD_NODES[wi],
+                    wi < TOTAL_ROUNDS - 1 ? WORLD_PORTALS[wi] : undefined,
+                  )}
                   fill="none"
                   stroke="#f0d6a0"
-                  strokeWidth={1.7}
+                  strokeWidth={0.9}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -447,8 +455,8 @@ function MapPage() {
 
               {/* Portal past pad 8 — now DRAWN in code (portal.webp) rather than baked
                   into the island, so it can sit farther from the last node. It shows
-                  on every world that has a next one, dimmed until unlocked; a tap
-                  advances to the next world's first phase. */}
+                  full-colour on every world that has a next one; a tap advances to the
+                  next world's first phase once unlocked. */}
               {(() => {
                 const [px, py] = WORLD_PORTALS[wi];
                 const nextStage = world * PHASES_PER_ROUND + 1; // first phase of next world
@@ -476,7 +484,9 @@ function MapPage() {
                       background: "transparent",
                       padding: 0,
                       cursor: unlocked ? "pointer" : "default",
-                      opacity: unlocked ? 1 : 0.55,
+                      // Always full, vibrant colour (like the old baked swirl) — a
+                      // dimmed portal read as a faint watermark. Lock state is
+                      // conveyed by the node markers, not by fading the portal.
                     }}
                   >
                     <img
