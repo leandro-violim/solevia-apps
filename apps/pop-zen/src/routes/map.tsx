@@ -207,7 +207,13 @@ function MapPage() {
   // Position the mascot + (in `auto`) set up the hop-to-next-node travel. The
   // motion itself is a CSS keyframe (see .gsTravel) so it can't be disrupted by
   // React re-running this effect; here we only compute the anchor + offset.
+  // Cancel any in-flight pan rAF on unmount (the pan effect below has early
+  // returns, so it can't rely on a single trailing cleanup).
+  useEffect(() => () => cancelAnimationFrame(panRaf.current), []);
+
   useEffect(() => {
+    // Kill a prior pan loop before starting a new one (re-run on reached/auto).
+    if (panRaf.current) cancelAnimationFrame(panRaf.current);
     const content = contentRef.current;
     const curEl = curNodeRef.current;
     if (!content || !curEl) return;
@@ -445,7 +451,10 @@ function MapPage() {
                     {interactive ? (
                       <button
                         type="button"
-                        onClick={() => openEquip(stage)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEquip(stage);
+                        }}
                         aria-label={`${t("world.label")} ${world} · ${p}`}
                         className={isCurrent && arrived && auto ? "gs-unlock" : undefined}
                         style={{
@@ -486,7 +495,8 @@ function MapPage() {
                     type="button"
                     onClick={
                       unlocked
-                        ? () => {
+                        ? (e) => {
+                            e.stopPropagation();
                             track("portal_used", { from_world: world, to_world: world + 1 });
                             openEquip(nextStage);
                           }

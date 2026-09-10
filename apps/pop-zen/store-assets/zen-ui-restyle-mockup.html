@@ -1,0 +1,238 @@
+<!doctype html>
+<title>Burbujas Zen — UI Restyle</title>
+<style>
+  :root{
+    /* ===== Zen Bubbles color tokens (Direction A — Serene Glass, aqua) ===== */
+    --aqua:#33E0C6;          /* brand primary */
+    --aqua-press:#22C4AD;    /* pressed */
+    --aqua-deep:#0E8F7D;     /* accent text on light */
+    --ink:#123F38;           /* headings / dark text */
+    --muted:#5C7D76;         /* secondary text */
+    --coral:#FF6FA5;         /* playful accent (sparingly) */
+    --gold:#F5C451;          /* coins / stars */
+    --g1:#EAF7F4;            /* page ground (top) */
+    --g2:#CDEBE4;            /* page ground (bottom) */
+    --panel:rgba(255,255,255,.72);   /* frosted card */
+    --panel-solid:#F4FBF9;
+    --line:rgba(18,63,56,.10);
+    --shadow:0 10px 26px rgba(18,80,70,.14);
+    --radius:20px;
+    --page:#eef2f3;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--page);color:var(--ink);padding:26px 18px 60px}
+  .wrap{max-width:1200px;margin:0 auto}
+  h1.big{font-size:26px;letter-spacing:-.4px}
+  .lead{color:#5b6472;margin:6px 0 22px;font-size:14.5px;max-width:860px;line-height:1.5}
+  h2.sec{font-size:15px;text-transform:uppercase;letter-spacing:1.5px;color:#7d8890;margin:26px 0 12px}
+
+  /* ---- token / component reference strip ---- */
+  .tokens{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow);display:grid;grid-template-columns:1.2fr 1fr;gap:22px}
+  @media(max-width:760px){.tokens{grid-template-columns:1fr}}
+  .sws{display:flex;gap:8px;flex-wrap:wrap}
+  .sw{width:88px;height:56px;border-radius:10px;border:1px solid var(--line);position:relative;overflow:hidden}
+  .sw b{position:absolute;left:6px;bottom:5px;font-size:9px;font-weight:600}
+  .comp{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .btn-primary{background:var(--aqua);color:#06342c;font-weight:700;border:none;border-radius:14px;padding:12px 20px;font-size:14px;box-shadow:0 6px 16px rgba(51,224,198,.4)}
+  .btn-ghost{background:var(--panel);color:var(--aqua-deep);font-weight:600;border:1px solid rgba(51,224,198,.4);border-radius:14px;padding:12px 20px;font-size:14px}
+  .chip{background:rgba(51,224,198,.14);color:var(--aqua-deep);font-weight:600;border-radius:999px;padding:6px 14px;font-size:12px}
+  .chip.gold{background:rgba(245,196,81,.18);color:#98701a}
+  .toggle{width:46px;height:27px;border-radius:999px;background:var(--aqua);position:relative}
+  .toggle::after{content:"";position:absolute;top:3px;right:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .toggle.off{background:#cdd8d5}.toggle.off::after{right:auto;left:3px}
+  .cardlet{background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:12px;color:var(--muted)}
+
+  /* ---- phones ---- */
+  .screens{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-top:12px}
+  @media(max-width:1100px){.screens{grid-template-columns:repeat(2,minmax(0,1fr));max-width:720px}}
+  @media(max-width:560px){.screens{grid-template-columns:minmax(0,1fr);max-width:340px}}
+  .scr{display:flex;flex-direction:column}
+  .scrname{font-size:12px;font-weight:700;color:#7d8890;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px}
+  .phone{height:600px;border-radius:30px;overflow:hidden;position:relative;background:linear-gradient(170deg,var(--g1),var(--g2));box-shadow:var(--shadow);border:1px solid var(--line)}
+  .st{position:absolute;top:0;left:0;right:0;height:34px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;font-size:11px;font-weight:600;color:var(--aqua-deep);z-index:5}
+  .coins{display:inline-flex;align-items:center;gap:5px;background:var(--panel);border-radius:999px;padding:3px 9px;color:#98701a;font-weight:700}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--gold);display:inline-block}
+
+  /* reusable clear bubble (placeholder for the real Higgsfield sprite) */
+  .bw{border-radius:50%;position:relative;
+    background:radial-gradient(circle at 34% 28%, rgba(255,255,255,.97) 0%, rgba(255,255,255,.35) 22%, rgba(190,233,226,.4) 55%, rgba(255,255,255,.08) 80%);
+    box-shadow: inset 0 -6px 12px rgba(120,180,170,.3), inset 0 6px 10px rgba(255,255,255,.9), 0 4px 10px rgba(80,140,130,.18);
+    border:1.5px solid rgba(255,255,255,.6)}
+  .bw::before{content:"";position:absolute;top:16%;left:22%;width:26%;height:20%;border-radius:50%;background:rgba(255,255,255,.95);filter:blur(1px)}
+
+  /* HOME */
+  .home-hero{position:absolute;top:80px;left:50%;transform:translateX(-50%);width:150px;height:150px}
+  .home-title{position:absolute;top:250px;left:0;right:0;text-align:center;font-size:30px;font-weight:800;letter-spacing:-.5px;color:var(--ink)}
+  .home-tag{position:absolute;top:292px;left:30px;right:30px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.4}
+  .home-cta{position:absolute;left:24px;right:24px;top:350px;display:flex;flex-direction:column;gap:12px}
+  .home-cta .p{background:var(--aqua);color:#06342c;font-weight:800;border-radius:16px;padding:15px;text-align:center;font-size:15px;box-shadow:0 8px 20px rgba(51,224,198,.45)}
+  .home-cta .g{background:var(--panel);color:var(--aqua-deep);font-weight:700;border:1px solid rgba(51,224,198,.4);border-radius:16px;padding:15px;text-align:center;font-size:14px}
+  .home-cta .sub{font-size:11px;color:var(--muted);text-align:center;margin-top:-4px}
+  .home-foot{position:absolute;left:0;right:0;bottom:22px;display:flex;justify-content:center;gap:8px}
+  .home-foot .fc{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:11px;font-weight:600;color:var(--aqua-deep)}
+
+  /* MAP */
+  .map-h{position:absolute;top:44px;left:0;right:0;text-align:center;font-size:13px;font-weight:800;color:var(--ink);letter-spacing:.3px}
+  .worldband{position:absolute;left:14px;right:14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--aqua-deep);text-align:center}
+  .node{position:absolute;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:15px;font-weight:800;color:#fff}
+  .node.done{background:var(--aqua);box-shadow:0 4px 10px rgba(51,224,198,.5)}
+  .node.cur{background:#fff;color:var(--aqua-deep);box-shadow:0 0 0 5px rgba(51,224,198,.35),0 6px 14px rgba(0,0,0,.12)}
+  .node.lock{background:#cdd8d5;color:#89988f}
+  .youare{position:absolute;background:var(--coral);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:999px;white-space:nowrap}
+  .seg{position:absolute;border-top:3px dashed rgba(51,224,198,.5)}
+
+  /* SHOP */
+  .sh-title{position:absolute;top:44px;left:0;right:0;text-align:center;font-size:15px;font-weight:800}
+  .sh-video{position:absolute;top:74px;left:16px;right:16px;background:var(--coral);color:#fff;border-radius:14px;padding:11px;text-align:center;font-size:12px;font-weight:700}
+  .sh-lbl{position:absolute;left:16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+  .pu{position:absolute;width:calc(50% - 22px);background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;padding:10px;font-size:11px}
+  .pu .n{font-weight:700;color:var(--ink);font-size:12px}
+  .pu .price{margin-top:8px;background:var(--aqua);color:#06342c;border-radius:10px;text-align:center;font-weight:700;font-size:11px;padding:6px}
+  .skin{position:absolute;width:calc(50% - 22px);background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;padding:8px;text-align:center}
+  .skin .sname{font-size:11px;font-weight:700;margin-top:5px}
+  .skin .eq{margin-top:6px;border-radius:9px;font-size:10px;font-weight:700;padding:5px}
+  .skin .eq.on{background:rgba(51,224,198,.16);color:var(--aqua-deep)}
+  .skin .eq.buy{background:var(--panel);border:1px solid rgba(51,224,198,.4);color:var(--aqua-deep)}
+
+  /* SETTINGS */
+  .set-title{position:absolute;top:44px;left:0;right:0;text-align:center;font-size:15px;font-weight:800}
+  .row{position:absolute;left:16px;right:16px;background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--ink)}
+  .row .d{font-size:10.5px;color:var(--muted);font-weight:500;margin-top:2px}
+
+  /* FINISH */
+  .fin-badge{position:absolute;top:70px;left:0;right:0;text-align:center;font-size:46px}
+  .fin-k{position:absolute;top:132px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--coral)}
+  .fin-t{position:absolute;top:150px;left:0;right:0;text-align:center;font-size:24px;font-weight:800;color:var(--ink)}
+  .fin-card{position:absolute;top:205px;left:24px;right:24px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;text-align:center}
+  .fin-score{font-size:44px;font-weight:800;color:var(--aqua-deep);line-height:1}
+  .fin-badge2{margin-top:10px;background:rgba(255,111,165,.14);color:#c23e77;border-radius:999px;font-size:11px;font-weight:700;padding:6px 10px;display:inline-block}
+  .fin-cta{position:absolute;left:24px;right:24px;bottom:100px;display:flex;flex-direction:column;gap:10px}
+  .fin-cta .p{background:var(--aqua);color:#06342c;font-weight:800;border-radius:15px;padding:14px;text-align:center;font-size:14px}
+  .fin-cta .g{background:var(--panel);color:var(--aqua-deep);font-weight:700;border:1px solid rgba(51,224,198,.4);border-radius:15px;padding:12px;text-align:center;font-size:13px}
+  .fin-home{position:absolute;left:0;right:0;bottom:60px;text-align:center;font-size:12px;color:var(--muted);font-weight:600}
+</style>
+
+<div class="wrap">
+  <h1 class="big">Burbujas Zen — full UI restyle + color system</h1>
+  <p class="lead">Direction A (Serene Glass, aqua) applied across the whole app so it feels premium and calming — the retention play. One token set, frosted-glass panels, airy type, brand aqua accents, the realistic clear bubble as hero imagery. (Hero/board bubbles here are CSS placeholders; the real Higgsfield sprites drop into these same slots.)</p>
+
+  <h2 class="sec">Color & component tokens</h2>
+  <div class="tokens">
+    <div>
+      <div class="sws">
+        <div class="sw" style="background:#33E0C6"><b>--aqua #33E0C6</b></div>
+        <div class="sw" style="background:#0E8F7D;color:#fff"><b style="color:#fff">--aqua-deep</b></div>
+        <div class="sw" style="background:#123F38;color:#fff"><b style="color:#fff">--ink</b></div>
+        <div class="sw" style="background:#FF6FA5;color:#fff"><b style="color:#fff">--coral</b></div>
+        <div class="sw" style="background:#F5C451"><b>--gold</b></div>
+        <div class="sw" style="background:linear-gradient(170deg,#EAF7F4,#CDEBE4)"><b>ground</b></div>
+        <div class="sw" style="background:rgba(255,255,255,.72)"><b>--panel</b></div>
+      </div>
+      <div class="cardlet" style="margin-top:12px">Radius 20 · soft aqua shadows · airy system type · dark-teal text for AA contrast on light grounds.</div>
+    </div>
+    <div class="comp">
+      <button class="btn-primary">Desafío Pop</button>
+      <button class="btn-ghost">Reventar por diversión</button>
+      <span class="chip">★ Racha 4</span>
+      <span class="chip gold">● 1240</span>
+      <span class="toggle"></span>
+      <span class="toggle off"></span>
+    </div>
+  </div>
+
+  <h2 class="sec">Screens</h2>
+  <div class="screens">
+
+    <!-- HOME -->
+    <div class="scr"><div class="scrname">Home</div>
+      <div class="phone">
+        <div class="st"><span class="chip" style="padding:3px 9px">★ Racha 4</span><span class="coins"><span class="dot"></span>1240</span></div>
+        <div class="bw home-hero"></div>
+        <div class="home-title">Burbujas Zen</div>
+        <div class="home-tag">Revienta plástico de burbujas realista. Relájate y supera tu récord.</div>
+        <div class="home-cta">
+          <div class="p">🔥 Desafío Pop</div>
+          <div class="sub">Nuevo desafío hoy · otro mañana</div>
+          <div class="g">Reventar por diversión</div>
+        </div>
+        <div class="home-foot">
+          <span class="fc">Récords</span><span class="fc">Tienda</span><span class="fc">Ajustes</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAP -->
+    <div class="scr"><div class="scrname">Mapa (Mundos)</div>
+      <div class="phone">
+        <div class="st"><span style="font-weight:800;color:var(--ink)">Mapa</span><span class="coins"><span class="dot"></span>1240</span></div>
+        <div class="map-h">Tu aventura</div>
+        <div class="worldband" style="top:74px">— Mundo 1 —</div>
+        <div class="seg" style="top:120px;left:78px;width:70px;transform:rotate(20deg)"></div>
+        <div class="seg" style="top:150px;left:150px;width:70px;transform:rotate(-20deg)"></div>
+        <div class="seg" style="top:200px;left:150px;width:70px;transform:rotate(20deg)"></div>
+        <div class="node done" style="top:100px;left:40px">★</div>
+        <div class="node done" style="top:130px;left:130px">★</div>
+        <div class="node done" style="top:170px;left:210px">★</div>
+        <div class="node cur" style="top:210px;left:120px">▶</div>
+        <div class="youare" style="top:200px;left:158px">Continúa aquí</div>
+        <div class="worldband" style="top:280px">— Mundo 2 —</div>
+        <div class="node lock" style="top:310px;left:60px">🔒</div>
+        <div class="node lock" style="top:350px;left:150px">🔒</div>
+        <div class="node lock" style="top:390px;left:230px">🔒</div>
+        <div class="cardlet" style="position:absolute;left:16px;right:16px;bottom:20px;text-align:center;background:var(--panel)">Fase 12 de 32 · Mundo 1 completado 3/8</div>
+      </div>
+    </div>
+
+    <!-- SHOP -->
+    <div class="scr"><div class="scrname">Tienda</div>
+      <div class="phone">
+        <div class="st"><span style="font-weight:700;color:var(--aqua-deep)">← Inicio</span><span class="coins"><span class="dot"></span>1240</span></div>
+        <div class="sh-title">Tienda</div>
+        <div class="sh-video">▶ Mira un video · +20 monedas</div>
+        <div class="sh-lbl" style="top:126px">Potenciadores</div>
+        <div class="pu" style="top:146px;left:16px"><div class="n">💣 Bomba</div><div style="color:var(--muted);margin-top:3px">Revienta un grupo</div><div class="price">◎ 250</div></div>
+        <div class="pu" style="top:146px;right:16px"><div class="n">❄ Congelar</div><div style="color:var(--muted);margin-top:3px">+ segundos</div><div class="price">◎ 300</div></div>
+        <div class="sh-lbl" style="top:250px">Estilos de burbuja</div>
+        <div class="skin" style="top:270px;left:16px"><div class="bw" style="width:52px;height:52px;margin:0 auto"></div><div class="sname">Classic</div><div class="eq on">✓ Equipado</div></div>
+        <div class="skin" style="top:270px;right:16px"><div class="bw" style="width:52px;height:52px;margin:0 auto;background:radial-gradient(circle at 34% 28%,#bff6ff,#33bfe0 70%)"></div><div class="sname">Neon</div><div class="eq buy">◎ 400</div></div>
+        <div class="skin" style="top:420px;left:16px"><div class="bw" style="width:52px;height:52px;margin:0 auto;background:radial-gradient(circle at 34% 28%,#ffe6c2,#ff9e6b 70%)"></div><div class="sname">Sunset</div><div class="eq buy">◎ 400</div></div>
+        <div class="skin" style="top:420px;right:16px"><div class="bw" style="width:52px;height:52px;margin:0 auto;background:radial-gradient(circle at 34% 28%,#fff0b8,#f5c451 70%)"></div><div class="sname">Gold</div><div class="eq buy">▶ ver</div></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="scr"><div class="scrname">Ajustes</div>
+      <div class="phone">
+        <div class="st"><span style="font-weight:700;color:var(--aqua-deep)">← Inicio</span></div>
+        <div class="set-title">Ajustes</div>
+        <div class="row" style="top:84px"><div>Sonido<div class="d">Música y efectos</div></div><span class="toggle"></span></div>
+        <div class="row" style="top:154px"><div>Vibración<div class="d">Un toque en cada pop</div></div><span class="toggle"></span></div>
+        <div class="row" style="top:224px"><div>Analíticas<div class="d">Ayuda anónima a mejorar</div></div><span class="toggle"></span></div>
+        <div class="row" style="top:294px"><div>Movimiento reducido<div class="d">Menos animaciones</div></div><span class="toggle off"></span></div>
+        <div class="row" style="top:364px"><div>Idioma<div class="d">Español (Latinoamérica)</div></div><span style="color:var(--aqua-deep);font-weight:700;font-size:12px">Cambiar</span></div>
+        <div class="cardlet" style="position:absolute;left:16px;right:16px;bottom:24px;text-align:center;background:var(--panel)">Acerca de · Privacidad · Términos</div>
+      </div>
+    </div>
+
+    <!-- FINISH -->
+    <div class="scr"><div class="scrname">Fin de ronda</div>
+      <div class="phone">
+        <div class="st"><span></span><span class="coins"><span class="dot"></span>1288</span></div>
+        <div class="fin-badge">🏆</div>
+        <div class="fin-k">Nuevo récord absoluto</div>
+        <div class="fin-t">¡Superaste tu récord!</div>
+        <div class="fin-card">
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Tu partida</div>
+          <div class="fin-score">4,820</div>
+          <div class="fin-badge2">▲ 910 sobre tu récord</div>
+        </div>
+        <div class="fin-cta">
+          <div class="g" style="color:var(--coral);border-color:rgba(255,111,165,.4)">▶ Duplicar monedas · +48</div>
+          <div class="p">→ Mejorar tu récord</div>
+        </div>
+        <div class="fin-home">Volver al inicio</div>
+      </div>
+    </div>
+
+  </div>
+</div>

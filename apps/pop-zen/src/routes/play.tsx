@@ -365,6 +365,9 @@ function PlayPage() {
   // Candy-Crush-style "entering World N" flourish, shown when a run crosses into
   // a new round (world 2–4 → its first phase). Dismisses into the phase.
   const [showWorldIntro, setShowWorldIntro] = useState(false);
+  // Stable so WorldIntro's confetti/auto-dismiss effect doesn't re-fire on every
+  // PlayPage re-render (a fresh inline fn would restart its burst + timer).
+  const dismissWorldIntro = useCallback(() => setShowWorldIntro(false), []);
 
   // Consumable power-ups (Bombs, Time Freeze) — Pop Challenge only. Live counts
   // re-read on any inventory change. Bomb is armed then detonated on a bubble tap.
@@ -1251,7 +1254,7 @@ function PlayPage() {
           <ComboHud />
 
           {/* Candy-Crush-style "entering World N" flourish (worlds 2–4). */}
-          {showWorldIntro && <WorldIntro round={round} onDone={() => setShowWorldIntro(false)} />}
+          {showWorldIntro && <WorldIntro round={round} onDone={dismissWorldIntro} />}
 
           {/* Power-up flash ("+2s", "Bomb armed"). */}
           {itemFlash && (

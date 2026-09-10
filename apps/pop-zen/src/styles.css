@@ -246,6 +246,16 @@
     will-change: auto;
   }
 
+  /* Battery/accessibility: users who prefer reduced motion (and battery-savers,
+     which often correlate) get the static aurora — no continuous large-blur
+     repaint. The gradient still shows. */
+  @media (prefers-reduced-motion: reduce) {
+    body::before {
+      animation: none;
+      will-change: auto;
+    }
+  }
+
   /* Vignette to deepen the edges and make the glass surfaces read. */
   body::after {
     content: "";

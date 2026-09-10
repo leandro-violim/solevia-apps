@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Achievement } from "../lib/achievements";
 import { t } from "../lib/i18n";
 import { TrophyIcon } from "./icons";
@@ -10,14 +10,21 @@ import { TrophyIcon } from "./icons";
  */
 export function AchievementToast() {
   const [ach, setAch] = useState<Achievement | null>(null);
+  const hideTimer = useRef<number | undefined>(undefined);
   useEffect(() => {
     const onUnlock = (e: Event) => {
       const a = (e as CustomEvent<Achievement>).detail;
       setAch(a);
-      window.setTimeout(() => setAch(null), 3200);
+      // Re-arm the hide timer for the LATEST toast so back-to-back unlocks each
+      // get their full display time (an earlier timer must not clear a later one).
+      window.clearTimeout(hideTimer.current);
+      hideTimer.current = window.setTimeout(() => setAch(null), 3200);
     };
     window.addEventListener("zen-achievement", onUnlock);
-    return () => window.removeEventListener("zen-achievement", onUnlock);
+    return () => {
+      window.removeEventListener("zen-achievement", onUnlock);
+      window.clearTimeout(hideTimer.current);
+    };
   }, []);
   if (!ach) return null;
   return (

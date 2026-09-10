@@ -1,0 +1,203 @@
+<!doctype html>
+<title>Zen Bubbles — 3 Directions</title>
+<style>
+  :root{ --ink:#1c2330; --muted:#5b6472; --line:rgba(0,0,0,.09); --bg:#eef1f4; }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);padding:28px 18px 60px;}
+  .head{max-width:1180px;margin:0 auto 26px;}
+  .head h1{font-size:26px;letter-spacing:-.4px;}
+  .head p{color:var(--muted);margin-top:6px;font-size:14.5px;max-width:820px;line-height:1.5}
+  .grid{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+  @media(max-width:960px){.grid{grid-template-columns:minmax(0,1fr);max-width:420px}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 12px 34px rgba(20,30,50,.07)}
+  .tag{display:flex;align-items:center;gap:8px;padding:16px 18px 4px}
+  .tag .letter{font-weight:700;font-size:13px;color:#fff;background:var(--ink);width:24px;height:24px;border-radius:7px;display:grid;place-items:center}
+  .tag .mood{font-weight:700;font-size:17px;letter-spacing:-.2px}
+  .tag .sub{font-size:12px;color:var(--muted);padding:0 18px 12px}
+  /* phone */
+  .phone{margin:8px 18px 0;border-radius:26px;overflow:hidden;height:600px;position:relative;box-shadow:0 8px 22px rgba(0,0,0,.18) inset, 0 2px 0 rgba(255,255,255,.4)}
+  .hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:12px 14px 10px;font-size:11px;font-weight:600;z-index:3}
+  .hud .world{letter-spacing:1.5px;text-transform:uppercase;opacity:.9}
+  .hud .timer{padding:3px 9px;border-radius:20px;font-variant-numeric:tabular-nums}
+  .board{position:absolute;inset:44px 14px auto 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+  .b{aspect-ratio:1;border-radius:50%;position:relative}
+  .goal{position:absolute;left:14px;right:14px;bottom:64px;border-radius:14px;padding:9px 12px;font-size:11px;font-weight:600;z-index:3;display:flex;justify-content:space-between;align-items:center}
+  /* map ribbon */
+  .mapwrap{padding:14px 18px 4px}
+  .mapwrap .lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .map{position:relative;height:56px;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:space-around;padding:0 12px}
+  .node{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;position:relative;z-index:2}
+  .path{position:absolute;top:50%;left:14px;right:14px;height:3px;border-radius:3px;z-index:1}
+  /* menu sample */
+  .menu{margin:12px 18px 0;border-radius:16px;padding:16px;text-align:center}
+  .menu .t{font-size:18px;font-weight:700;letter-spacing:-.2px}
+  .menu .btnp{margin-top:12px;padding:11px;border-radius:14px;font-weight:700;font-size:13px}
+  .menu .btns{margin-top:8px;padding:11px;border-radius:14px;font-weight:600;font-size:13px}
+  /* palette + spec */
+  .pal{display:flex;gap:6px;padding:14px 18px 6px}
+  .pal .sw{flex:1;height:34px;border-radius:8px;border:1px solid rgba(0,0,0,.06);position:relative}
+  .pal .sw span{position:absolute;bottom:3px;left:0;right:0;text-align:center;font-size:8px;color:rgba(255,255,255,.9);text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  .spec{padding:8px 18px 20px;font-size:12.5px;line-height:1.5;color:var(--muted)}
+  .spec b{color:var(--ink);font-weight:600}
+  .spec .row{margin-top:7px}
+
+  /* ============ DIRECTION A — Serene Glass & Light ============ */
+  .A .phone{background:radial-gradient(120% 90% at 50% 8%, #ffffff 0%, #eaf7f4 42%, #d6efe9 100%)}
+  .A .hud{color:#2a6a60}
+  .A .hud .timer{background:rgba(255,255,255,.6);color:#1f5b52;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .A .b{
+    background:radial-gradient(circle at 34% 28%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.35) 24%, rgba(190,233,226,.35) 55%, rgba(255,255,255,.08) 78%);
+    box-shadow: inset 0 -6px 12px rgba(120,180,170,.28), inset 0 6px 10px rgba(255,255,255,.9), 0 4px 10px rgba(80,140,130,.18);
+    border:1.5px solid rgba(255,255,255,.6);
+  }
+  .A .b::after{content:"";position:absolute;inset:-1.5px;border-radius:50%;padding:1.5px;background:conic-gradient(from 210deg,rgba(255,180,220,.0),rgba(150,230,255,.7),rgba(190,255,210,.7),rgba(255,220,150,.6),rgba(255,180,220,.0));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.55}
+  .A .b::before{content:"";position:absolute;top:16%;left:22%;width:26%;height:20%;border-radius:50%;background:rgba(255,255,255,.95);filter:blur(1px)}
+  .A .goal{background:rgba(245,251,249,.9);color:#1f5b52}
+  .A .goal b{color:#0e8f7d}
+  .A .map{background:rgba(255,255,255,.55)}
+  .A .path{background:repeating-linear-gradient(90deg,#8fd9cd 0 6px,transparent 6px 12px)}
+  .A .node.done{background:#33E0C6;color:#fff}
+  .A .node.cur{background:#fff;color:#0e8f7d;box-shadow:0 0 0 4px rgba(51,224,198,.35)}
+  .A .node.lock{background:#dceee9;color:#9cc4bc}
+  .A .menu{background:linear-gradient(160deg,#f2fbf9,#e2f2ee);border:1px solid rgba(255,255,255,.8)}
+  .A .menu .t{color:#17423b}
+  .A .menu .btnp{background:#33E0C6;color:#08322b}
+  .A .menu .btns{background:rgba(255,255,255,.7);color:#1f5b52}
+
+  /* ============ DIRECTION B — Tactile Paper-Craft ============ */
+  .B .phone{background:#efe7d8;box-shadow:inset 0 0 60px rgba(150,120,80,.12)}
+  .B .hud{color:#6b5e52}
+  .B .hud .timer{background:#fff;color:#7a5a3a;box-shadow:0 2px 4px rgba(120,90,50,.14)}
+  .B .b{background:radial-gradient(circle at 38% 32%, #f4ece0 0%, #e7d3c2 46%, #d7b8a6 100%);box-shadow:0 6px 10px rgba(120,90,60,.22),inset 0 4px 6px rgba(255,255,255,.55),inset 0 -6px 10px rgba(150,110,80,.18)}
+  .B .b:nth-child(3n+1){background:radial-gradient(circle at 38% 32%,#f6efe2 0%,#d9c0ad 48%,#c9a896 100%)}
+  .B .b:nth-child(3n+2){background:radial-gradient(circle at 38% 32%,#f1f2ea 0%,#c9d6bf 48%,#a9bfa0 100%)}
+  .B .b:nth-child(3n){background:radial-gradient(circle at 38% 32%,#fbeeec 0%,#e6bdb6 48%,#d9a7a0 100%)}
+  .B .b::before{content:"";position:absolute;top:15%;left:24%;width:30%;height:22%;border-radius:50%;background:rgba(255,255,255,.5);filter:blur(2px)}
+  .B .goal{background:#fff;color:#6b5e52;box-shadow:0 3px 8px rgba(120,90,50,.14)}
+  .B .goal b{color:#b06a4e}
+  .B .map{background:#fbf6ec;box-shadow:inset 0 0 0 1px rgba(120,90,50,.08)}
+  .B .path{background:repeating-linear-gradient(90deg,#c9a896 0 5px,transparent 5px 11px)}
+  .B .node.done{background:#a9bfa0;color:#fff}
+  .B .node.cur{background:#d9a7a0;color:#fff;box-shadow:0 0 0 4px rgba(217,167,160,.3)}
+  .B .node.lock{background:#e6ddcd;color:#b3a48f}
+  .B .menu{background:#fbf6ec;border:1px dashed rgba(120,90,50,.28);transform:rotate(-.5deg)}
+  .B .menu .t{color:#5c4f42}
+  .B .menu .btnp{background:#c98a5e;color:#fff}
+  .B .menu .btns{background:#e7ddcc;color:#6b5e52}
+
+  /* ============ DIRECTION C — Luminous Night-Sky ============ */
+  .C .phone{background:radial-gradient(120% 90% at 50% 0%, #1a2450 0%, #0e1430 48%, #080c20 100%)}
+  .C .phone .stars{position:absolute;inset:0;background-image:radial-gradient(1px 1px at 20% 18%,#fff,transparent),radial-gradient(1px 1px at 70% 12%,#cfe,transparent),radial-gradient(1px 1px at 85% 40%,#fff,transparent),radial-gradient(1px 1px at 32% 55%,#fff,transparent),radial-gradient(1px 1px at 55% 78%,#adf,transparent),radial-gradient(1px 1px at 12% 82%,#fff,transparent);opacity:.7}
+  .C .hud{color:#bcd0ff}
+  .C .hud .timer{background:rgba(60,90,160,.35);color:#e7efff;box-shadow:0 0 10px rgba(20,184,166,.25)}
+  .C .b{background:radial-gradient(circle at 36% 30%, rgba(140,255,235,.95) 0%, rgba(40,190,180,.5) 40%, rgba(30,60,110,.35) 72%, rgba(20,36,70,.15) 100%);box-shadow:0 0 14px rgba(20,200,180,.5),inset 0 0 10px rgba(180,255,245,.4);border:1px solid rgba(140,240,230,.25)}
+  .C .b::before{content:"";position:absolute;top:22%;left:30%;width:20%;height:16%;border-radius:50%;background:rgba(220,255,250,.95);filter:blur(1px)}
+  .C .goal{background:rgba(28,44,92,.9);color:#d8e6ff;box-shadow:0 0 12px rgba(20,184,166,.2)}
+  .C .goal b{color:#5eead4}
+  .C .map{background:rgba(20,32,70,.6)}
+  .C .path{background:repeating-linear-gradient(90deg,#2f6f78 0 6px,transparent 6px 12px)}
+  .C .node.done{background:#14b8a6;color:#04231f;box-shadow:0 0 10px rgba(20,184,166,.6)}
+  .C .node.cur{background:#0b1026;color:#f5c451;box-shadow:0 0 0 4px rgba(245,196,81,.35),0 0 12px rgba(245,196,81,.5)}
+  .C .node.lock{background:#22305c;color:#5b6da0}
+  .C .menu{background:linear-gradient(160deg,rgba(30,44,90,.7),rgba(14,20,48,.7));border:1px solid rgba(90,120,200,.25)}
+  .C .menu .t{color:#eaf2ff}
+  .C .menu .btnp{background:#14b8a6;color:#04231f}
+  .C .menu .btns{background:rgba(60,90,160,.3);color:#cdd9ff}
+</style>
+
+<div class="head">
+  <h1>Zen Bubbles — three calm directions</h1>
+  <p>All Photoreal 2D (baked-refraction sprites, DOM render untouched). These are CSS approximations of the <b>mood</b> — the real bubbles come from Higgsfield in Step 3 and will look far richer. Each shows the board + a bubble + the world/phase map ribbon + a menu. Pick <b>A</b>, <b>B</b>, or <b>C</b>.</p>
+</div>
+
+<div class="grid">
+
+  <!-- A -->
+  <div class="card A">
+    <div class="tag"><span class="letter">A</span><span class="mood">Serene Glass &amp; Light</span></div>
+    <div class="sub">clear crystalline bubbles · daylight calm</div>
+    <div class="phone">
+      <div class="hud"><span class="world">Mundo 1 · 1/8</span><span class="timer">0:42</span></div>
+      <div class="board"><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div></div>
+      <div class="goal"><span>Meta: combo ×12</span><b>+22 ●</b></div>
+    </div>
+    <div class="mapwrap"><div class="lbl">World map · you are here</div>
+      <div class="map"><div class="path"></div>
+        <div class="node done">★</div><div class="node done">★</div><div class="node cur">▶</div><div class="node lock">🔒</div><div class="node lock">🔒</div>
+      </div>
+    </div>
+    <div class="menu"><div class="t">Burbujas Zen</div><div class="btnp">Desafío Pop</div><div class="btns">Reventar por diversión</div></div>
+    <div class="pal">
+      <div class="sw" style="background:#eaf7f4"><span>#EAF7F4</span></div>
+      <div class="sw" style="background:#33e0c6"><span>#33E0C6</span></div>
+      <div class="sw" style="background:#bfe9e2"><span>#BFE9E2</span></div>
+      <div class="sw" style="background:#ffffff"><span style="color:#889">#FFFFFF</span></div>
+      <div class="sw" style="background:#f5e7c6"><span style="color:#8a7a4a">#F5E7C6</span></div>
+    </div>
+    <div class="spec">
+      <div class="row"><b>Bubble:</b> clear glass / soap-film, bright specular, thin iridescent rim</div>
+      <div class="row"><b>Board:</b> soft daylight gradient, faint caustics &amp; bokeh</div>
+      <div class="row"><b>Menu:</b> frosted-glass panels, airy light type</div>
+    </div>
+  </div>
+
+  <!-- B -->
+  <div class="card B">
+    <div class="tag"><span class="letter">B</span><span class="mood">Tactile Paper-Craft</span></div>
+    <div class="sub">matte handmade felt/paper · warm &amp; cozy</div>
+    <div class="phone">
+      <div class="hud"><span class="world">Mundo 1 · 1/8</span><span class="timer">0:42</span></div>
+      <div class="board"><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div></div>
+      <div class="goal"><span>Meta: combo ×12</span><b>+22 ●</b></div>
+    </div>
+    <div class="mapwrap"><div class="lbl">World map · you are here</div>
+      <div class="map"><div class="path"></div>
+        <div class="node done">★</div><div class="node done">★</div><div class="node cur">▶</div><div class="node lock">🔒</div><div class="node lock">🔒</div>
+      </div>
+    </div>
+    <div class="menu"><div class="t">Burbujas Zen</div><div class="btnp">Desafío Pop</div><div class="btns">Reventar por diversión</div></div>
+    <div class="pal">
+      <div class="sw" style="background:#efe7d8"><span style="color:#8a7a55">#EFE7D8</span></div>
+      <div class="sw" style="background:#c9a896"><span>#C9A896</span></div>
+      <div class="sw" style="background:#a9bfa0"><span>#A9BFA0</span></div>
+      <div class="sw" style="background:#d9a7a0"><span>#D9A7A0</span></div>
+      <div class="sw" style="background:#6b5e52"><span>#6B5E52</span></div>
+    </div>
+    <div class="spec">
+      <div class="row"><b>Bubble:</b> matte paper/felt spheres, soft top light, cut-paper shadow</div>
+      <div class="row"><b>Board:</b> warm linen/paper texture, gentle vignette</div>
+      <div class="row"><b>Menu:</b> cut-paper cards, hand-torn edges, warm ink type</div>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div class="card C">
+    <div class="tag"><span class="letter">C</span><span class="mood">Luminous Night-Sky</span></div>
+    <div class="sub">glowing orbs · wind-down before sleep</div>
+    <div class="phone">
+      <div class="stars"></div>
+      <div class="hud"><span class="world">Mundo 1 · 1/8</span><span class="timer">0:42</span></div>
+      <div class="board"><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div></div>
+      <div class="goal"><span>Meta: combo ×12</span><b>+22 ●</b></div>
+    </div>
+    <div class="mapwrap"><div class="lbl">World map · you are here</div>
+      <div class="map"><div class="path"></div>
+        <div class="node done">★</div><div class="node done">★</div><div class="node cur">▶</div><div class="node lock">🔒</div><div class="node lock">🔒</div>
+      </div>
+    </div>
+    <div class="menu"><div class="t">Burbujas Zen</div><div class="btnp">Desafío Pop</div><div class="btns">Reventar por diversión</div></div>
+    <div class="pal">
+      <div class="sw" style="background:#0b1026"><span>#0B1026</span></div>
+      <div class="sw" style="background:#14b8a6"><span>#14B8A6</span></div>
+      <div class="sw" style="background:#3b4b8a"><span>#3B4B8A</span></div>
+      <div class="sw" style="background:#f5c451"><span style="color:#5a4a10">#F5C451</span></div>
+      <div class="sw" style="background:#eaf2ff"><span style="color:#889">#EAF2FF</span></div>
+    </div>
+    <div class="spec">
+      <div class="row"><b>Bubble:</b> dark glass orb glowing from within, bright core</div>
+      <div class="row"><b>Board:</b> deep-indigo night, slow starfield, teal nebula</div>
+      <div class="row"><b>Menu:</b> dark panels, teal glow accents, gold stars</div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,129 @@
+<!doctype html>
+<title>Burbujas Zen — Menu color options</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#eef2f3;color:#1c2330;padding:26px 18px 60px}
+  .wrap{max-width:1200px;margin:0 auto}
+  h1{font-size:24px;letter-spacing:-.3px}
+  .lead{color:#5b6472;margin:6px 0 22px;font-size:14px;max-width:840px;line-height:1.5}
+  .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+  @media(max-width:1000px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:680px}}
+  @media(max-width:520px){.grid{grid-template-columns:minmax(0,1fr);max-width:330px}}
+  .col{display:flex;flex-direction:column}
+  .nm{font-size:13px;font-weight:800;margin:0 0 3px}
+  .desc{font-size:11px;color:#7d8890;margin-bottom:10px}
+  .phone{height:600px;border-radius:30px;overflow:hidden;position:relative;box-shadow:0 12px 30px rgba(20,30,50,.12);border:1px solid rgba(0,0,0,.06)}
+  .st{position:absolute;top:0;left:0;right:0;height:34px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;font-size:11px;font-weight:700;z-index:5}
+  .chip{border-radius:999px;padding:4px 10px;font-weight:700;font-size:11px}
+  .coins{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font-weight:800;background:rgba(255,255,255,.7)}
+  .cdot{width:11px;height:11px;border-radius:50%;background:#F5C451;display:inline-block}
+  /* clear bubble hero (stays clear in every palette) */
+  .bw{position:absolute;top:78px;left:50%;transform:translateX(-50%);width:150px;height:150px;border-radius:50%;
+    background:radial-gradient(circle at 34% 28%, rgba(255,255,255,.97) 0%, rgba(255,255,255,.4) 22%, rgba(255,255,255,.12) 60%, rgba(255,255,255,.05) 82%);
+    box-shadow: inset 0 -6px 12px rgba(120,140,150,.28), inset 0 6px 10px rgba(255,255,255,.9), 0 6px 14px rgba(60,70,90,.16);
+    border:1.5px solid rgba(255,255,255,.7)}
+  .bw::before{content:"";position:absolute;top:16%;left:22%;width:26%;height:20%;border-radius:50%;background:rgba(255,255,255,.95);filter:blur(1px)}
+  .title{position:absolute;top:250px;left:0;right:0;text-align:center;font-size:29px;font-weight:800;letter-spacing:-.5px}
+  .tag{position:absolute;top:292px;left:28px;right:28px;text-align:center;font-size:12px;line-height:1.4}
+  .cta{position:absolute;left:24px;right:24px;top:352px;display:flex;flex-direction:column;gap:11px}
+  .p{border-radius:16px;padding:15px;text-align:center;font-size:15px;font-weight:800}
+  .sub{font-size:11px;text-align:center;margin-top:-3px}
+  .g{border-radius:16px;padding:14px;text-align:center;font-size:13px;font-weight:700}
+  .foot{position:absolute;left:0;right:0;bottom:22px;display:flex;justify-content:center;gap:8px}
+  .fc{border-radius:999px;padding:8px 13px;font-size:11px;font-weight:700;background:rgba(255,255,255,.72)}
+  .sws{display:flex;gap:6px;margin-top:10px}
+  .sw{flex:1;height:26px;border-radius:7px;border:1px solid rgba(0,0,0,.06)}
+
+  /* ---------- CORAL ---------- */
+  .coral .phone{background:linear-gradient(170deg,#FFF3F6,#FFE1EA)}
+  .coral .st{color:#B23A63}.coral .chip{background:rgba(255,92,138,.16);color:#B23A63}.coral .coins{color:#98701a}
+  .coral .title{color:#5A2233}.coral .tag{color:#9A6172}
+  .coral .p{background:#FF5C8A;color:#fff;box-shadow:0 8px 20px rgba(255,92,138,.45)}
+  .coral .sub{color:#9A6172}.coral .g{background:rgba(255,255,255,.8);color:#C23E6C;border:1px solid rgba(255,92,138,.4)}
+  .coral .fc{color:#C23E6C}
+
+  /* ---------- INDIGO / SKY ---------- */
+  .indigo .phone{background:linear-gradient(170deg,#EEF2FF,#DCE4FF)}
+  .indigo .st{color:#3A49A8}.indigo .chip{background:rgba(76,111,255,.15);color:#3A49A8}.indigo .coins{color:#98701a}
+  .indigo .title{color:#22306E}.indigo .tag{color:#5C6AA8}
+  .indigo .p{background:#4C6FFF;color:#fff;box-shadow:0 8px 20px rgba(76,111,255,.45)}
+  .indigo .sub{color:#5C6AA8}.indigo .g{background:rgba(255,255,255,.8);color:#3A49A8;border:1px solid rgba(76,111,255,.4)}
+  .indigo .fc{color:#3A49A8}
+
+  /* ---------- VIOLET / LAVENDER ---------- */
+  .violet .phone{background:linear-gradient(170deg,#F5F0FF,#E7DBFF)}
+  .violet .st{color:#5B3EA6}.violet .chip{background:rgba(139,111,232,.16);color:#5B3EA6}.violet .coins{color:#98701a}
+  .violet .title{color:#3E2E73}.violet .tag{color:#6E5CA0}
+  .violet .p{background:#8B6FE8;color:#fff;box-shadow:0 8px 20px rgba(139,111,232,.45)}
+  .violet .sub{color:#6E5CA0}.violet .g{background:rgba(255,255,255,.8);color:#5B3EA6;border:1px solid rgba(139,111,232,.4)}
+  .violet .fc{color:#5B3EA6}
+
+  /* ---------- AMBER / HONEY ---------- */
+  .amber .phone{background:linear-gradient(170deg,#FFF8EA,#FDECC8)}
+  .amber .st{color:#9A6B12}.amber .chip{background:rgba(245,166,35,.18);color:#9A6B12}.amber .coins{color:#9A6B12}
+  .amber .title{color:#6E4E14}.amber .tag{color:#9A7A45}
+  .amber .p{background:#F5A623;color:#3a2600;box-shadow:0 8px 20px rgba(245,166,35,.45)}
+  .amber .sub{color:#9A7A45}.amber .g{background:rgba(255,255,255,.85);color:#9A6B12;border:1px solid rgba(245,166,35,.5)}
+  .amber .fc{color:#9A6B12}
+</style>
+
+<div class="wrap">
+  <h1>Burbujas Zen — menu accent colors (not teal)</h1>
+  <p class="lead">Same clear realistic bubble, same clean "clear but strong" layout — only the accent color changes (buttons, chips, titles, panels). The play board and bubbles are unaffected; this is purely the menu/UI identity. Note: moving off aqua would also mean refreshing the app icon + store art to match.</p>
+
+  <div class="grid">
+
+    <div class="col coral">
+      <div class="nm">Coral</div><div class="desc">warm, friendly, inviting</div>
+      <div class="phone">
+        <div class="st"><span class="chip">★ Racha 4</span><span class="coins"><span class="cdot"></span>1240</span></div>
+        <div class="bw"></div>
+        <div class="title">Burbujas Zen</div>
+        <div class="tag">Revienta plástico de burbujas realista. Relájate y supera tu récord.</div>
+        <div class="cta"><div class="p">🔥 Desafío Pop</div><div class="sub">Nuevo desafío hoy · otro mañana</div><div class="g">Reventar por diversión</div></div>
+        <div class="foot"><span class="fc">Récords</span><span class="fc">Tienda</span><span class="fc">Ajustes</span></div>
+      </div>
+      <div class="sws"><div class="sw" style="background:#FF5C8A"></div><div class="sw" style="background:#FFB0C6"></div><div class="sw" style="background:#5A2233"></div><div class="sw" style="background:#FFE1EA"></div></div>
+    </div>
+
+    <div class="col indigo">
+      <div class="nm">Indigo / Sky</div><div class="desc">clean, calm, confident</div>
+      <div class="phone">
+        <div class="st"><span class="chip">★ Racha 4</span><span class="coins"><span class="cdot"></span>1240</span></div>
+        <div class="bw"></div>
+        <div class="title">Burbujas Zen</div>
+        <div class="tag">Revienta plástico de burbujas realista. Relájate y supera tu récord.</div>
+        <div class="cta"><div class="p">🔥 Desafío Pop</div><div class="sub">Nuevo desafío hoy · otro mañana</div><div class="g">Reventar por diversión</div></div>
+        <div class="foot"><span class="fc">Récords</span><span class="fc">Tienda</span><span class="fc">Ajustes</span></div>
+      </div>
+      <div class="sws"><div class="sw" style="background:#4C6FFF"></div><div class="sw" style="background:#A9B9FF"></div><div class="sw" style="background:#22306E"></div><div class="sw" style="background:#DCE4FF"></div></div>
+    </div>
+
+    <div class="col violet">
+      <div class="nm">Violet / Lavender</div><div class="desc">premium, dreamy, calm</div>
+      <div class="phone">
+        <div class="st"><span class="chip">★ Racha 4</span><span class="coins"><span class="cdot"></span>1240</span></div>
+        <div class="bw"></div>
+        <div class="title">Burbujas Zen</div>
+        <div class="tag">Revienta plástico de burbujas realista. Relájate y supera tu récord.</div>
+        <div class="cta"><div class="p">🔥 Desafío Pop</div><div class="sub">Nuevo desafío hoy · otro mañana</div><div class="g">Reventar por diversión</div></div>
+        <div class="foot"><span class="fc">Récords</span><span class="fc">Tienda</span><span class="fc">Ajustes</span></div>
+      </div>
+      <div class="sws"><div class="sw" style="background:#8B6FE8"></div><div class="sw" style="background:#C9B8FA"></div><div class="sw" style="background:#3E2E73"></div><div class="sw" style="background:#E7DBFF"></div></div>
+    </div>
+
+    <div class="col amber">
+      <div class="nm">Amber / Honey</div><div class="desc">warm, sunny, energetic</div>
+      <div class="phone">
+        <div class="st"><span class="chip">★ Racha 4</span><span class="coins"><span class="cdot"></span>1240</span></div>
+        <div class="bw"></div>
+        <div class="title">Burbujas Zen</div>
+        <div class="tag">Revienta plástico de burbujas realista. Relájate y supera tu récord.</div>
+        <div class="cta"><div class="p">🔥 Desafío Pop</div><div class="sub">Nuevo desafío hoy · otro mañana</div><div class="g">Reventar por diversión</div></div>
+        <div class="foot"><span class="fc">Récords</span><span class="fc">Tienda</span><span class="fc">Ajustes</span></div>
+      </div>
+      <div class="sws"><div class="sw" style="background:#F5A623"></div><div class="sw" style="background:#FBD48A"></div><div class="sw" style="background:#6E4E14"></div><div class="sw" style="background:#FDECC8"></div></div>
+    </div>
+
+  </div>
+</div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal } from "./Modal";
 import { t } from "../lib/i18n";
 import { track } from "../lib/analytics";
@@ -6,12 +6,13 @@ import {
   getCount,
   consumeItems,
   buyConsumable,
+  grantConsumables,
   priceOfConsumable,
   subscribeInventory,
   CONSUMABLE_EMOJI,
   type ConsumableId,
 } from "../lib/consumables";
-import { getCoins } from "../lib/economy";
+import { getCoins, addCoins } from "../lib/economy";
 import { showRewarded } from "../lib/ads";
 import { CoinBalance } from "./CoinBalance";
 import { PlayIcon, CoinIcon } from "./icons";
@@ -51,23 +52,51 @@ export function EquipModal({
   const bombN = bombs;
   const freezeN = freeze;
 
-  // Add one of `id` to this phase, irreversibly. Prefer an owned unit (free);
-  // otherwise buy one with coins. No-op if unaffordable and none owned.
+  // Track, per item, what each "+" cost this session so a CANCEL (close without
+  // Play) can hand it all back: `used` = units taken from inventory, `bought` =
+  // units purchased with coins. There's no "−" mid-session (equipping can't be
+  // undone one at a time), but closing the popup must never silently burn coins
+  // or owned items.
+  const usedRef = useRef<Record<ConsumableId, number>>({ bomb: 0, freeze: 0 });
+  const boughtRef = useRef<Record<ConsumableId, number>>({ bomb: 0, freeze: 0 });
+  const committedRef = useRef(false); // set once the player commits (Play / boost)
+
+  // Add one of `id` to this phase. Prefer an owned unit (free); otherwise buy one
+  // with coins. No-op if unaffordable and none owned.
   const add = (id: ConsumableId, inc: () => void) => {
     if (busy) return;
     if (getCount(id) > 0) {
       consumeItems(id, 1);
+      usedRef.current[id] += 1;
       inc();
       return;
     }
     if (buyConsumable(id)) {
       consumeItems(id, 1);
+      boughtRef.current[id] += 1;
       inc();
     }
   };
 
+  // Cancel: refund everything armed this session (coins for buys, items for owned
+  // units) and close. No-op once the player has committed via Play.
+  const cancel = () => {
+    if (busy) return;
+    if (!committedRef.current) {
+      (["bomb", "freeze"] as ConsumableId[]).forEach((id) => {
+        if (usedRef.current[id] > 0) grantConsumables(id, usedRef.current[id], "equip_cancel");
+        if (boughtRef.current[id] > 0)
+          addCoins(priceOfConsumable(id) * boughtRef.current[id], "equip_cancel");
+      });
+      usedRef.current = { bomb: 0, freeze: 0 };
+      boughtRef.current = { bomb: 0, freeze: 0 };
+    }
+    onClose();
+  };
+
   const start = () => {
     if (busy) return;
+    committedRef.current = true;
     setBusy(true);
     // Already consumed/bought on each "+", so don't consume again here.
     track("phase_equipped", { world, phase, bombs: bombN, freeze: freezeN, boost: 0 });
@@ -76,6 +105,7 @@ export function EquipModal({
 
   const rewardedStart = async () => {
     if (busy) return;
+    committedRef.current = true;
     setBusy(true);
     const watched = await showRewarded("equip_boost");
     const boost = watched ? BOOST.bomb : 0;
@@ -154,7 +184,7 @@ export function EquipModal({
 
   return (
     <Modal
-      onClose={busy ? undefined : onClose}
+      onClose={busy ? undefined : cancel}
       closeLabel={t("bonus.close")}
       overlayClassName="gs-dialog-overlay"
       panelClassName="gs-panel relative w-full max-w-xs p-6 text-center"

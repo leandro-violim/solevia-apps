@@ -1,0 +1,186 @@
+<!doctype html>
+<title>Burbujas Zen — Game-style Home</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{font-family:'Baloo 2',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#e9edf2;color:#26304a;padding:26px 18px 60px;display:flex;flex-direction:column;align-items:center}
+  h1{font-size:23px;letter-spacing:-.3px;align-self:flex-start;max-width:960px;width:100%;margin:0 auto}
+  .lead{color:#5b6472;font-size:14px;max-width:600px;align-self:flex-start;margin:6px auto 20px;line-height:1.5}
+  .stage{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+
+  /* ---- phone ---- */
+  .phone{width:330px;height:700px;border-radius:36px;position:relative;overflow:hidden;
+    box-shadow:0 20px 50px rgba(40,30,80,.28);border:6px solid #2a2350}
+  .sky{position:absolute;inset:0;background:
+    radial-gradient(120% 60% at 50% 0%, #ffd9a8 0%, #ffb9c4 22%, transparent 46%),
+    linear-gradient(180deg,#9ad9e6 0%, #9db8f0 34%, #9f8ff0 60%, #8b78ea 100%)}
+  .cloud{position:absolute;border-radius:50%;background:rgba(255,225,210,.8);filter:blur(2px)}
+  .water{position:absolute;left:0;right:0;bottom:0;height:60%;background:linear-gradient(180deg,rgba(120,110,230,.15),rgba(110,95,220,.45));}
+
+  /* ---- top bar ---- */
+  .top{position:absolute;top:14px;left:12px;right:12px;display:flex;align-items:center;gap:8px;z-index:6}
+  .avatar{width:46px;height:46px;border-radius:14px;background:linear-gradient(#ffd76a,#f0a93a);border:3px solid #fff;box-shadow:0 4px 0 #c77f22,0 6px 10px rgba(0,0,0,.25);display:grid;place-items:center;font-size:22px}
+  .pill{height:30px;display:flex;align-items:center;gap:6px;background:rgba(40,30,70,.55);border:2px solid rgba(255,255,255,.25);border-radius:999px;padding:0 12px 0 8px;color:#fff;font-weight:800;font-size:13px;position:relative}
+  .pill .ic{font-size:15px}
+  .plus{position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;background:linear-gradient(#8fe36b,#57bd3f);border:2px solid #fff;color:#fff;font-weight:900;font-size:11px;display:grid;place-items:center;box-shadow:0 2px 3px rgba(0,0,0,.3)}
+  .gear{margin-left:auto;width:46px;height:46px;border-radius:14px;background:linear-gradient(#6db8ff,#3d8ef0);border:3px solid #fff;box-shadow:0 4px 0 #2b6fc4,0 6px 10px rgba(0,0,0,.25);display:grid;place-items:center;font-size:20px}
+
+  /* ---- left event tiles ---- */
+  .events{position:absolute;top:72px;left:12px;display:flex;flex-direction:column;gap:14px;z-index:6}
+  .ev{width:78px;text-align:center}
+  .ev .tile{width:78px;height:70px;border-radius:18px;display:grid;place-items:center;font-size:30px;border:3px solid #fff;position:relative;
+    box-shadow:0 5px 0 rgba(0,0,0,.18),0 8px 12px rgba(0,0,0,.22)}
+  .ev.gold .tile{background:linear-gradient(#b58bf0,#8a5fe0)}
+  .ev.pie .tile{background:linear-gradient(#7fc8f5,#4f97e6)}
+  .ev.gift .tile{background:linear-gradient(#ff9ec4,#f062a0)}
+  .startbtn{margin-top:-10px;background:linear-gradient(#8fe36b,#4fbf3f);border:2px solid #fff;border-radius:12px;color:#fff;font-weight:800;font-size:12px;padding:5px 0;box-shadow:0 4px 0 #379a2c,0 6px 8px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+
+  /* ---- map / islands ---- */
+  /* islands are now made of real bubble wrap (warm-tinted) with a soft overlay so content on top stays readable */
+  .island{position:absolute;border-radius:30px;box-shadow:0 10px 0 rgba(150,110,60,.35),0 16px 20px rgba(0,0,0,.25);
+    background-color:#ecdcbb;
+    background-image:
+      radial-gradient(circle at 50% 48%, rgba(255,240,210,.55), rgba(255,240,210,.15) 60%, rgba(255,240,210,0) 75%),
+      radial-gradient(circle at 35% 33%, rgba(255,255,255,.9), rgba(255,255,255,0) 42%),
+      radial-gradient(circle at 52% 70%, rgba(140,105,55,.30), rgba(0,0,0,0) 55%);
+    background-size:100% 100%, 17px 17px, 17px 17px;
+    background-position:center, 0 0, 0 0}
+  .island::after{content:"";position:absolute;inset:0;border-radius:30px;background:radial-gradient(120% 90% at 50% 45%, rgba(255,238,205,.4), rgba(255,238,205,0) 70%);pointer-events:none}
+  .isl1{width:150px;height:80px;top:250px;right:14px}
+  .isl2{width:230px;height:120px;bottom:150px;left:50%;transform:translateX(-50%)}
+  .tree{position:absolute;font-size:34px;filter:drop-shadow(0 4px 3px rgba(0,0,0,.25))}
+  .buddy{position:absolute;width:52px;height:52px;border-radius:50%;
+    background:radial-gradient(circle at 36% 30%, #eafff9, #7fe6cf 60%, #46c9ad);border:2px solid #fff;
+    box-shadow:0 6px 10px rgba(0,0,0,.25);display:grid;place-items:center;z-index:5}
+  .buddy::before{content:"^‿^";font-size:13px;color:#0d6a58;font-weight:800;margin-top:4px}
+
+  .node{position:absolute;width:56px;height:56px;z-index:5;display:grid;place-items:center}
+  .hex{position:absolute;inset:0;background:linear-gradient(180deg,#9fe9ff,#4fb8e8);clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%);box-shadow:0 8px 14px rgba(0,120,180,.4)}
+  .node .num{position:relative;color:#fff;font-weight:900;font-size:15px;text-shadow:0 2px 2px rgba(0,60,90,.6)}
+  .glow{position:absolute;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(150,240,255,.7),transparent 70%);z-index:4}
+
+  /* ---- main play button ---- */
+  .playwrap{position:absolute;left:20px;right:20px;bottom:74px;z-index:7;text-align:center}
+  .skull{font-size:22px;margin-bottom:-6px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}
+  .play{background:linear-gradient(#8fe36b,#4fbf3f);border:3px solid #fff;border-radius:22px;padding:12px 10px;
+    box-shadow:0 7px 0 #379a2c,0 12px 16px rgba(0,0,0,.3);color:#fff;position:relative;
+    outline:3px solid rgba(255,120,200,.6);outline-offset:3px}
+  .play .l1{font-size:22px;font-weight:900;letter-spacing:.3px;text-shadow:0 2px 2px rgba(0,60,20,.5)}
+  .play .l2{font-size:13px;font-weight:700;opacity:.95}
+
+  /* ---- bottom nav ---- */
+  .nav{position:absolute;left:0;right:0;bottom:0;height:64px;background:linear-gradient(180deg,#eaf0ff,#d7def5);display:flex;justify-content:space-around;align-items:center;border-top:2px solid rgba(255,255,255,.6);z-index:8}
+  .nav .n{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:20px;background:linear-gradient(#fff,#e7ecfa);box-shadow:0 3px 0 rgba(120,130,170,.35);position:relative}
+  .nav .n.home{width:62px;height:62px;border-radius:18px;margin-top:-20px;background:linear-gradient(#c7f0a8,#8fe36b);border:3px solid #fff;box-shadow:0 5px 0 #4fbf3f}
+  .badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:#ff4d6d;border:2px solid #fff;color:#fff;font-size:9px;font-weight:900;display:grid;place-items:center}
+
+  .cap{font-size:12px;color:#5b6472;margin-top:12px;max-width:330px;text-align:center;line-height:1.5}
+
+  /* ambient floating real bubbles */
+  .floatb{position:absolute;border-radius:50%;z-index:4;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.95), rgba(255,255,255,.3) 40%, rgba(200,240,235,.25) 70%, rgba(255,255,255,.05));
+    box-shadow:inset 0 -3px 6px rgba(120,180,170,.3),inset 0 3px 5px rgba(255,255,255,.9),0 3px 6px rgba(60,90,120,.18);border:1px solid rgba(255,255,255,.6)}
+  .floatb::before{content:"";position:absolute;top:18%;left:24%;width:26%;height:20%;border-radius:50%;background:rgba(255,255,255,.9);filter:blur(.5px)}
+
+  /* realistic bubble-wrap TEASER card ("come pop me") */
+  .teaser{position:absolute;top:120px;right:20px;width:140px;z-index:6;transform:rotate(4deg)}
+  /* teaser = a continuous REAL bubble-wrap sheet photo; fallback dome pattern if the image is blocked */
+  .teaser .patch{position:relative;overflow:hidden;height:116px;border:3px solid rgba(255,255,255,.9);border-radius:16px;box-shadow:0 10px 20px rgba(30,60,90,.35);
+    background-color:#dfeee9;
+    background-image:
+      url("https://d8j0ntlcm91z4.cloudfront.net/user_3Gy9Lu8BGRS2LbDJBYp8Mtuafy2/hf_20260909_194624_9286ac86-695f-4c25-ab08-393f0bfa1fb7.png"),
+      radial-gradient(circle at 35% 32%, rgba(255,255,255,.8), rgba(255,255,255,0) 42%),
+      radial-gradient(circle at 52% 70%, rgba(120,150,140,.3), rgba(0,0,0,0) 55%);
+    background-size:cover, 18px 18px, 18px 18px;
+    background-position:center, 0 0, 0 0;background-repeat:no-repeat,repeat,repeat;
+    animation:invite 2.6s ease-in-out infinite}
+  /* each spot = a real popped bubble that fades in over the sheet (a bubble "pops"), then out (resets) */
+  .teaser .popspot{position:absolute;width:26px;height:26px;transform:translate(-50%,-50%) scale(1);opacity:0;
+    background:url("https://d8j0ntlcm91z4.cloudfront.net/user_3Gy9Lu8BGRS2LbDJBYp8Mtuafy2/hf_20260909_210055_fe5e3ba2-bb16-4b79-9a66-53974b27eeab.png") center/contain no-repeat;
+    filter:drop-shadow(0 1px 2px rgba(60,90,85,.5));animation:popspot 4.4s ease-in-out infinite}
+  @keyframes popspot{
+    0%,60%{opacity:0;transform:translate(-50%,-50%) scale(1.1)}
+    66%{opacity:1;transform:translate(-50%,-50%) scale(1.18)}
+    72%,90%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(1)}
+  }
+  .teaser .ribbon{margin:7px auto 0;width:max-content;background:linear-gradient(#ff8fbf,#f062a0);color:#fff;font-weight:900;font-size:11px;padding:5px 12px;border-radius:999px;border:2px solid #fff;box-shadow:0 4px 8px rgba(0,0,0,.25);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+  @keyframes invite{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+  @media(prefers-reduced-motion:reduce){.teaser .patch{animation:none}.teaser .popspot{animation:none}}
+</style>
+
+<h1>Burbujas Zen — game-style Home (inspired by, not copied)</h1>
+<p class="lead">Juicier and rounder: glossy chunky buttons, soft-3D icon tiles with "+" badges, a sunset→water sky, hex/island map nodes, a bubble-buddy mascot, and a rounded bottom nav. Themed to bubble wrap (clear aqua bubbles), not a Candy Crush clone. Decorative 3D art (islands, mascot, sky) would be Higgsfield-rendered; this shows the UI language + layout.</p>
+
+<div class="stage">
+  <div>
+    <div class="phone">
+      <div class="sky"></div>
+      <div class="cloud" style="width:120px;height:40px;top:40px;left:-20px"></div>
+      <div class="cloud" style="width:150px;height:46px;top:70px;right:-30px"></div>
+      <div class="water"></div>
+
+      <!-- top bar -->
+      <div class="top">
+        <div class="avatar">🫧</div>
+        <div class="pill"><span class="plus">+</span><span class="ic">💙</span>29:47</div>
+        <div class="pill"><span class="plus">+</span><span class="ic">🪙</span>15</div>
+        <div class="gear">⚙️</div>
+      </div>
+
+      <!-- left events -->
+      <div class="events">
+        <div class="ev gold"><div class="tile">🏆</div><div class="startbtn">Jugar</div></div>
+        <div class="ev pie"><div class="tile">🗓️</div><div class="startbtn">Diario</div></div>
+        <div class="ev gift"><div class="tile">🎁</div><div class="startbtn">Abrir</div></div>
+      </div>
+
+      <!-- ambient floating real bubbles -->
+      <div class="floatb" style="width:20px;height:20px;top:250px;left:210px"></div>
+      <div class="floatb" style="width:13px;height:13px;top:300px;left:250px"></div>
+      <div class="floatb" style="width:26px;height:26px;top:470px;left:36px"></div>
+      <div class="floatb" style="width:15px;height:15px;top:520px;right:40px"></div>
+
+      <!-- realistic teaser: a continuous real bubble-wrap SHEET; a few bubbles pop/unpop on a loop -->
+      <div class="teaser">
+        <div class="patch">
+          <span class="popspot" style="top:24%;left:20%;animation-delay:0s"></span>
+          <span class="popspot" style="top:58%;left:38%;animation-delay:1.5s"></span>
+          <span class="popspot" style="top:32%;left:68%;animation-delay:2.6s"></span>
+          <span class="popspot" style="top:70%;left:74%;animation-delay:.8s"></span>
+          <span class="popspot" style="top:74%;left:24%;animation-delay:3.4s"></span>
+        </div>
+        <div class="ribbon">¡Toca y revienta!</div>
+      </div>
+
+      <!-- islands / map -->
+      <div class="island isl1"></div>
+      <div class="buddy" style="top:262px;right:60px"></div>
+
+      <div class="glow" style="top:330px;left:120px"></div>
+      <div class="node" style="top:345px;left:137px"><div class="hex"></div><span class="num">12</span></div>
+
+      <div class="island isl2"></div>
+      <div class="tree" style="bottom:210px;left:70px">🌲</div>
+      <div class="tree" style="bottom:205px;right:70px">🌳</div>
+      <div class="buddy" style="bottom:200px;left:50%;transform:translateX(-50%)"></div>
+      <div class="node" style="bottom:250px;left:90px"><div class="hex" style="background:linear-gradient(180deg,#cfefff,#8fbfe0)"></div><span class="num">11</span></div>
+      <div class="node" style="bottom:250px;right:90px"><div class="hex" style="background:linear-gradient(180deg,#cfefff,#8fbfe0)"></div><span class="num">13</span></div>
+
+      <!-- main play -->
+      <div class="playwrap">
+        <div class="skull">🫧</div>
+        <div class="play"><div class="l1">Mundo 1 · Fase 12</div><div class="l2">Toca para jugar</div></div>
+      </div>
+
+      <!-- bottom nav -->
+      <div class="nav">
+        <div class="n">🛍️<span class="badge">!</span></div>
+        <div class="n">👥</div>
+        <div class="n home">🫧</div>
+        <div class="n">🏅</div>
+        <div class="n">🗓️</div>
+      </div>
+    </div>
+    <div class="cap">Game-style Home — rounder, glossier, more playful, with the world/phase map built into the home screen (Candy-Crush-style progression you asked for).</div>
+  </div>
+</div>
