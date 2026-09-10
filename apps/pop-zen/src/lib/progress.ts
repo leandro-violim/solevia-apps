@@ -8,16 +8,32 @@
  * it only ever moves forward.
  */
 import { TOTAL_STAGES, roundOf, phaseInRound } from "./game-config";
+import { furthestPlayedStage } from "./records";
 
 const KEY = "zb_reached_stage";
 
 const clamp = (n: number) => Math.min(Math.max(Math.round(n) || 1, 1), TOTAL_STAGES);
 
-/** Furthest global stage the player has reached (1..TOTAL_STAGES; default 1). */
+/**
+ * Furthest global stage the player has reached (1..TOTAL_STAGES; default 1).
+ *
+ * Migration (v1.3): app updates must never reset progress. If there's no saved
+ * map-progress yet (a player coming from v1.0–1.2, which had no map), derive it
+ * from their existing per-phase records — start them at the phase AFTER the
+ * furthest they've already played — and persist it. Brand-new players → 1.
+ */
 export function reachedStage(): number {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? clamp(parseInt(raw, 10)) : 1;
+    if (raw) return clamp(parseInt(raw, 10));
+    const played = furthestPlayedStage();
+    const start = played > 0 ? clamp(played + 1) : 1;
+    try {
+      localStorage.setItem(KEY, String(start));
+    } catch {
+      /* storage blocked — just don't persist the migration */
+    }
+    return start;
   } catch {
     return 1;
   }

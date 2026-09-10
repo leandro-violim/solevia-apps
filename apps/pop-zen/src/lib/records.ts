@@ -118,6 +118,22 @@ function readStorage(): RecordsMap {
   }
 }
 
+/**
+ * Highest global stage (1..) that has any recorded best score, or 0 if none.
+ * Used by the v1.3 world-map to migrate returning players (who have records but
+ * no map-progress yet) to where they already were — so an update never resets
+ * progress.
+ */
+export function furthestPlayedStage(): number {
+  const map = readStorage();
+  let max = 0;
+  for (const key of Object.keys(map)) {
+    const s = Number(key);
+    if (map[s]?.bestScore > 0 && s > max) max = s;
+  }
+  return max;
+}
+
 function writeStorage(map: RecordsMap): void {
   try {
     const envelope: Envelope = { schemaVersion: SCHEMA_VERSION, phases: map };
