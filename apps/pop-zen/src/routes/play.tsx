@@ -51,6 +51,7 @@ import {
 import { checkAchievements } from "../lib/achievements";
 import { seededRand, recordDailyResult } from "../lib/daily-challenge";
 import { track } from "../lib/analytics";
+import { markFirstPop, markFirstRunCompleted, noteMaxProgress } from "../lib/journey-analytics";
 import { unlockZenSkins } from "../lib/skins";
 import { ChallengeGoals } from "../components/ChallengeGoals";
 import { CoinBalance } from "../components/CoinBalance";
@@ -484,6 +485,13 @@ function PlayPage() {
       noteRunStarted(); // first run of a session gets the lighter ad cadence
       track("run_start", { mode, difficulty, phase_start: phase }); // P1-T6
     }
+    // Progression: fires for EVERY phase entry (not just run start), so a funnel
+    // can see exactly where players drop off between phases. Zen is endless (no
+    // phase progression), so it's excluded.
+    if (!isZen) {
+      track("phase_start", { mode, world: round, phase });
+      noteMaxProgress(round, phase); // update highest_world / highest_phase props
+    }
     // Warm up the interstitial now so it's ready (if online) by phase end.
     void preloadInterstitial();
     // Ask for a fresh banner creative for the new phase (rate-limited internally
@@ -569,6 +577,7 @@ function PlayPage() {
   // bubble state) and drives the particle burst without a re-render.
   const handlePop = useCallback(
     (id: number, cx: number, cy: number, variant: number, special: SpecialType) => {
+      markFirstPop(); // onboarding funnel: the very first bubble ever popped (guarded)
       // Armed Bomb power-up: this tap detonates a blast at (cx,cy) instead of a
       // normal single pop — clears the tapped bubble + its cluster, spends one bomb.
       if (bombArmedRef.current) {
@@ -730,7 +739,14 @@ function PlayPage() {
     const timeLeftMs = deadline !== null ? Math.max(0, deadline - Date.now()) : 0;
     noteRunPhaseCleared(t); // §8/§10
     scanObjectives();
-    track("phase_cleared", { mode, phase, time_left_s: Math.round(timeLeftMs / 1000) }); // P1-T6
+    track("phase_cleared", {
+      mode,
+      world: round,
+      phase,
+      time_left_s: Math.round(timeLeftMs / 1000),
+    }); // P1-T6
+    // A world is done when its last (8th) phase clears — v1.3 map milestone.
+    if (pir === PHASES_PER_ROUND) track("world_completed", { world: round });
     // §9: the Time Attack score rewards the countdown time LEFT (clear faster →
     // keep more time → higher), plus the best-combo bonus + §7 special points.
     const base = computeTimeAttackScore(cfg.bubbles, timeLeftMs, cfg.timeLimitMs);
@@ -751,6 +767,7 @@ function PlayPage() {
     cfg.size,
     phase,
     pir,
+    round,
     submit,
     scanObjectives,
     isZen,
@@ -821,6 +838,7 @@ function PlayPage() {
       checkAchievements();
       const total = getRunTotal();
       const { beat, prevBest } = commitRunTotal(total);
+      markFirstRunCompleted(); // onboarding funnel: the player's first-ever finish
       if (isDaily) recordDailyResult(total); // §12 — daily best + first-play bonus coins
       const coins = coinsForScore(total);
       addCoins(coins, "time_attack_run");
@@ -849,8 +867,8 @@ function PlayPage() {
     // phase; don't flip to "time up" on an already-cleared board.
     if (remainingRef.current === 0) return;
     setState((s) => (s === "playing" ? "timeup" : s));
-    track("time_up", { mode, phase });
-  }, [mode, phase]);
+    track("time_up", { mode, world: round, phase });
+  }, [mode, phase, round]);
 
   // Revives left this run? (Time Attack only; capped by CONFIG.ads.rewarded.)
   const canRevive = !isZen && getRunRevives() < CONFIG.ads.rewarded.maxRevivesPerRun;
@@ -909,6 +927,30 @@ function PlayPage() {
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
   remainingRef.current = remaining; // keep the expiry-handler's live count fresh
 
+  // Abandonment: if the player backgrounds/leaves the app while ACTIVELY playing
+  // (not on a between-phase dialog), log it — this is where real drop-off shows.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  useEffect(() => {
+    if (isZen) return; // Zen is endless — "abandon" isn't meaningful
+    const onHidden = () => {
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden" &&
+        startedRef.current &&
+        stateRef.current === "playing"
+      ) {
+        track("run_abandoned", { mode, world: round, phase, reason: "background" });
+      }
+    };
+    document.addEventListener("visibilitychange", onHidden);
+    window.addEventListener("pagehide", onHidden);
+    return () => {
+      document.removeEventListener("visibilitychange", onHidden);
+      window.removeEventListener("pagehide", onHidden);
+    };
+  }, [isZen, mode, round, phase]);
+
   // Background wrap sheet: the seamless photoreal WRAP_TILE tiled to fill the whole
   // board BEHIND the poppable bubbles, scaled so its ~7 bubbles render at the
   // poppable bubble SIZE (background bubbles ≈ the ones you pop). It's a truly
@@ -945,6 +987,8 @@ function PlayPage() {
                 duration_s: Math.round((Date.now() - runStartAtRef.current) / 1000),
                 ended_by: "quit",
               });
+              // Drop-off signal: left the play screen before finishing the run.
+              if (!isZen) track("run_abandoned", { mode, world: round, phase, reason: "nav" });
             }
           }}
           className="gs-hud px-3 py-1.5 text-sm font-semibold"

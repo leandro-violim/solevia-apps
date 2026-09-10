@@ -6,6 +6,7 @@ import { reachedStage, stageState } from "../lib/progress";
 import { HexNode, MascotHop } from "../components/gameshell";
 import { t } from "../lib/i18n";
 import { unlockAudio } from "../lib/pop-sound";
+import { track } from "../lib/analytics";
 import { trackModeSelected } from "../lib/mode";
 import { fadeMusicIn, fadeMusicOut } from "../lib/music";
 import { CoinBalance } from "../components/CoinBalance";
@@ -365,7 +366,10 @@ function MapPage() {
                 return (
                   <button
                     type="button"
-                    onClick={() => playStage(nextStage)}
+                    onClick={() => {
+                      track("portal_used", { from_world: world, to_world: world + 1 });
+                      playStage(nextStage);
+                    }}
                     aria-label={t("map.portal")}
                     className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
                     style={{

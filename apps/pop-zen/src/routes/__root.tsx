@@ -13,7 +13,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { initAds, showBanner, hideBanner } from "../lib/ads";
-import { initAnalytics, track } from "../lib/analytics";
+import { initAnalytics, track, logScreenView, setUserProps } from "../lib/analytics";
+import { LANG } from "../lib/i18n";
 import { AchievementToast } from "../components/AchievementToast";
 
 function NotFoundComponent() {
@@ -134,6 +135,25 @@ function RootShell({ children }: { children: ReactNode }) {
 // "Google-served ads obscuring content" fix). Add future full-screen dialogs here.
 const BANNER_HIDDEN_ROUTES = new Set<string>(["/finish"]);
 
+// Map a route pathname to a stable GA4 screen_name for navigation analysis.
+const SCREEN_NAMES = new Set([
+  "map",
+  "play",
+  "finish",
+  "shop",
+  "settings",
+  "records",
+  "achievements",
+  "about",
+  "privacy",
+  "terms",
+]);
+function screenNameFor(pathname: string): string {
+  if (pathname === "/") return "home";
+  const seg = pathname.replace(/^\//, "").split("/")[0];
+  return SCREEN_NAMES.has(seg) ? seg : seg || "home";
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -145,6 +165,7 @@ function RootComponent() {
     // P1-T6: load Firebase off the critical path (idle), then mark ready.
     initAnalytics();
     track("game_ready");
+    setUserProps({ app_language: LANG }); // segment the LatAm launch (pt/es/en)
     let cancelled = false;
     (async () => {
       await initAds();
@@ -154,6 +175,12 @@ function RootComponent() {
       cancelled = true;
     };
   }, []);
+
+  // GA4 navigation tracking: one screen_view per route change (deduped in
+  // logScreenView), so Path/Funnel explorations can see how users move.
+  useEffect(() => {
+    logScreenView(screenNameFor(pathname));
+  }, [pathname]);
 
   // Show the banner on normal screens; hide it on full-screen routes (Finish)
   // so no button/CTA is ever covered. Idempotent (see ads.ts), so re-running on

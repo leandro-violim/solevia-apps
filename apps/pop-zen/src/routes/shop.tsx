@@ -20,6 +20,8 @@ import {
   CONSUMABLE_EMOJI,
 } from "../lib/consumables";
 import { showRewarded } from "../lib/ads";
+import { track } from "../lib/analytics";
+import { markSpender } from "../lib/journey-analytics";
 import { CONFIG } from "../lib/config";
 import { t } from "../lib/i18n";
 import { CoinIcon, CheckIcon, PlayIcon } from "../components/icons";
@@ -41,7 +43,16 @@ function ShopPage() {
   const [busy, setBusy] = useState(false);
 
   const onBuy = (item: CosmeticDef) => {
-    if (buy(item.id) === "ok") equip(item.id);
+    const price = priceOf(item);
+    const before = getCoins();
+    track("shop_item_viewed", { item_id: item.id, rarity: item.rarity, price });
+    const res = buy(item.id);
+    if (res === "ok") {
+      equip(item.id);
+      markSpender(); // first purchase → is_spender user property
+    } else if (res === "insufficient") {
+      track("purchase_blocked_insufficient_coins", { item_id: item.id, short_by: price - before });
+    }
     refresh();
   };
   const onEquip = (item: CosmeticDef) => {
@@ -49,7 +60,11 @@ function ShopPage() {
     refresh();
   };
   const onBuyItem = (id: ConsumableId) => {
-    buyConsumable(id);
+    const price = priceOfConsumable(id);
+    const before = getCoins();
+    track("shop_item_viewed", { item_id: id, rarity: "consumable", price });
+    if (buyConsumable(id)) markSpender();
+    else track("purchase_blocked_insufficient_coins", { item_id: id, short_by: price - before });
     refresh();
   };
   const onWatchEarn = async () => {

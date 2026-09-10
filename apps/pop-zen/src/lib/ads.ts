@@ -169,6 +169,20 @@ export function isBannerVisible(): boolean {
   return bannerVisible;
 }
 
+let bannerEverShown = false;
+
+/**
+ * Log an ad load/show failure, separating "no fill" (AdMob code 3 — inventory,
+ * expected until the app is fully live) from a real error, so ad reliability can
+ * be read after the AdMob placement fix.
+ */
+function logAdFailure(format: "banner" | "interstitial" | "rewarded", err: unknown): void {
+  const e = err as { code?: number; message?: string } | undefined;
+  const reason = e?.message ?? (e?.code != null ? `code_${e.code}` : String(err ?? "unknown"));
+  const noFill = e?.code === 3 || /no.?fill/i.test(reason);
+  track(noFill ? "ad_no_fill" : "ad_failed", { format, reason });
+}
+
 /** Show the bottom banner. Idempotent — no-ops if it's already shown. */
 export async function showBanner(): Promise<void> {
   if (!IS_NATIVE || bannerVisible) return;
@@ -177,8 +191,13 @@ export async function showBanner(): Promise<void> {
   try {
     await AdMob.showBanner(bannerOptions());
     lastBannerAt = Date.now();
+    if (!bannerEverShown) {
+      bannerEverShown = true;
+      track("ad_banner_shown");
+    }
   } catch (e) {
     bannerVisible = false;
+    logAdFailure("banner", e);
     console.warn("[ads] showBanner failed:", e);
   }
 }
@@ -234,9 +253,10 @@ function setupInterstitialListeners() {
   }).catch(() => {
     /* ignore */
   });
-  AdMob.addListener(InterstitialAdPluginEvents.FailedToLoad, () => {
+  AdMob.addListener(InterstitialAdPluginEvents.FailedToLoad, (e) => {
     interstitialReady = false;
     interstitialLoading = false;
+    logAdFailure("interstitial", e);
   }).catch(() => {
     /* ignore */
   });
@@ -366,9 +386,10 @@ function setupRewardedListeners() {
     rewardedReady = true;
     rewardedLoading = false;
   }).catch(() => {});
-  AdMob.addListener(RewardAdPluginEvents.FailedToLoad, () => {
+  AdMob.addListener(RewardAdPluginEvents.FailedToLoad, (e) => {
     rewardedReady = false;
     rewardedLoading = false;
+    logAdFailure("rewarded", e);
   }).catch(() => {});
 }
 

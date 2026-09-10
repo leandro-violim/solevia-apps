@@ -4,14 +4,24 @@
  * Modal (P1-T8). F6: no longer auto-shown on launch — the game is meant to be
  * intuitive; this opens on demand from Settings. Controlled via `open`.
  */
+import { useEffect } from "react";
 import { Modal } from "./Modal";
 import { t } from "../lib/i18n";
+import { track } from "../lib/analytics";
 import { FlameIcon } from "./icons";
 import heroImg from "../assets/scene/loading-hero.webp";
 
 export function HowToPlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+  // Onboarding funnel: log when the How-to-play is shown.
+  useEffect(() => {
+    if (open) track("tutorial_shown");
+  }, [open]);
   if (!open) return null;
   const ink = { color: "var(--gs-ink)" };
+  const complete = () => {
+    track("tutorial_completed");
+    onClose();
+  };
   return (
     <Modal
       onClose={onClose}
@@ -70,7 +80,7 @@ export function HowToPlay({ open, onClose }: { open: boolean; onClose: () => voi
         </div>
       </div>
 
-      <button onClick={onClose} className="gs-btn mt-5 w-full py-3.5">
+      <button onClick={complete} className="gs-btn mt-5 w-full py-3.5">
         {t("onboarding.cta")}
       </button>
     </Modal>
