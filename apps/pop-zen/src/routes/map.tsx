@@ -17,56 +17,63 @@ import world3 from "../assets/scene/world-3.webp";
 import world4 from "../assets/scene/world-4.webp";
 
 const WORLD_BG = [world1, world2, world3, world4];
-// Per-world node anchors (% of the world SECTION, i.e. after the cover-crop) —
-// placed ON the painted beige pads of each island, ordered along the painted
-// rope so the phases sit on the stepping-stones and the buddy walks pad-to-pad.
-// Where an island has fewer than 8 pads, the extra phases sit between two pads,
-// on the rope. One array per world (index 0 = World 1 … 3 = World 4).
+// Per-world node anchors (x%, y% of the SQUARE world image) — Cowork baked the 8
+// tan pads at exactly these coordinates in each island (world-maps v3), so the
+// phase markers sit dead-centre on the pads, ordered pad1→pad8 along the rope.
+// The section is shown SQUARE (full image, no crop) so these percentages map 1:1.
 const WORLD_NODES: [number, number][][] = [
-  // World 1 — trees; pads spread across a wide island.
+  // World 1 — daytime, green trees
   [
-    [24, 22],
-    [27, 42],
-    [40, 55],
-    [53, 68],
-    [66, 61],
-    [79, 53],
-    [72, 40],
-    [64, 27],
+    [37.0, 33.0],
+    [50.3, 35.1],
+    [63.0, 39.0],
+    [51.0, 44.5],
+    [40.3, 50.9],
+    [52.6, 56.2],
+    [58.0, 62.4],
+    [45.0, 66.0],
   ],
-  // World 2 — palms; 8 pads in a loop.
+  // World 2 — tropical, palms
   [
-    [33, 30],
-    [44, 36],
-    [51, 46],
-    [41, 58],
-    [26, 45],
-    [66, 39],
-    [73, 33],
-    [77, 48],
+    [36.0, 33.0],
+    [31.8, 42.6],
+    [29.9, 52.8],
+    [36.7, 60.5],
+    [45.5, 65.9],
+    [55.8, 64.5],
+    [64.7, 59.2],
+    [66.0, 49.0],
   ],
-  // World 3 — sunset; pad loop in the centre-lower interior.
+  // World 3 — sunset
   [
-    [65, 31],
-    [53, 34],
-    [66, 49],
-    [50, 60],
-    [39, 62],
-    [28, 64],
-    [25, 46],
-    [23, 36],
+    [34.0, 37.0],
+    [41.8, 30.9],
+    [51.2, 28.3],
+    [60.8, 30.1],
+    [65.8, 38.4],
+    [67.2, 48.2],
+    [62.5, 56.6],
+    [55.0, 63.0],
   ],
-  // World 4 — aurora; pad loop, island centred.
+  // World 4 — night + aurora
   [
-    [63, 28],
-    [54, 35],
-    [66, 53],
-    [56, 56],
-    [45, 59],
-    [36, 53],
-    [26, 46],
-    [25, 34],
+    [64.0, 28.0],
+    [46.0, 27.0],
+    [32.0, 36.0],
+    [27.0, 50.0],
+    [33.0, 62.0],
+    [47.0, 69.0],
+    [62.0, 68.0],
+    [72.0, 56.0],
   ],
+];
+// The portal sits just past pad8, baked into each image (world-maps v3). Tapping
+// it advances to the next world's first phase (when unlocked).
+const WORLD_PORTALS: [number, number][] = [
+  [36.8, 63.3],
+  [67.7, 35.6],
+  [45.0, 70.5],
+  [78.2, 46.9],
 ];
 
 // `auto=1` means we arrived here between phases: the mascot HOPS from the phase
@@ -267,7 +274,9 @@ function MapPage() {
               key={world}
               className="relative overflow-hidden rounded-3xl border border-white/40 shadow-lg"
               style={{
-                height: 480,
+                // SQUARE so Cowork's baked pad coordinates (% of the square image)
+                // map 1:1 onto the phase markers — no cover-crop to account for.
+                aspectRatio: "1 / 1",
                 backgroundImage: `url(${WORLD_BG[wi]})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
@@ -276,7 +285,7 @@ function MapPage() {
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0"
-                style={{ background: "rgba(255,255,255,0.14)" }}
+                style={{ background: "rgba(255,255,255,0.08)" }}
               />
               {/* world name chip */}
               <div className="absolute left-3 top-3 z-10">
@@ -305,7 +314,7 @@ function MapPage() {
                     n={p}
                     state={state}
                     hereLabel={state === "current" ? t("home.here") : undefined}
-                    size={isCurrent ? 58 : 48}
+                    size={isCurrent ? 46 : 40}
                   />
                 );
                 const interactive = state !== "locked";
@@ -337,6 +346,33 @@ function MapPage() {
                   </div>
                 );
               })}
+
+              {/* Portal past pad 8 — baked into the art; a tap here continues to
+                  the next world's first phase once it's unlocked. */}
+              {(() => {
+                const [px, py] = WORLD_PORTALS[wi];
+                const nextStage = world * PHASES_PER_ROUND + 1; // first phase of next world
+                const unlocked =
+                  nextStage <= TOTAL_ROUNDS * PHASES_PER_ROUND && reached >= nextStage;
+                if (!unlocked) return null;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => playStage(nextStage)}
+                    aria-label={t("map.portal")}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    style={{
+                      left: `${px}%`,
+                      top: `${py}%`,
+                      width: "17%",
+                      aspectRatio: "1 / 1",
+                      border: 0,
+                      background: "transparent",
+                      cursor: "pointer",
+                    }}
+                  />
+                );
+              })()}
             </section>
           );
         })}

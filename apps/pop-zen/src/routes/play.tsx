@@ -57,6 +57,7 @@ import { CoinBalance } from "../components/CoinBalance";
 import { CoinIcon, PlayIcon } from "../components/icons";
 import sky from "../assets/scene/sky.webp";
 import wrapTile from "../assets/scene/wrap-tile.webp";
+import mascotSad from "../assets/shell/mascot-sad.webp";
 import {
   computeTimeAttackScore,
   formatCountdown,
@@ -1135,6 +1136,13 @@ function PlayPage() {
               }}
             >
               <div className="gs-panel w-full max-w-xs p-6 text-center">
+                <img
+                  src={mascotSad}
+                  alt=""
+                  aria-hidden
+                  className="mx-auto -mt-16 mb-1 h-24 w-24"
+                  style={{ filter: "drop-shadow(0 6px 8px rgba(0,0,0,0.22))" }}
+                />
                 <div className="text-3xl font-extrabold" style={{ color: "var(--gs-coral)" }}>
                   {t("play.timeUp")}
                 </div>
