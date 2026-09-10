@@ -108,6 +108,33 @@ export const CONFIG = {
     bonusCoins: 40,
     historyLength: 14,
   },
+
+  /**
+   * §13 Pop Challenge — a comeback booster available once every 3 hours. Each
+   * time it rolls a RANDOM mission and a RANDOM reward. Finishing it (pass OR
+   * fail) grants the reward — success pays full, a miss still pays a consolation —
+   * then a reward popup and an interstitial. Rewards are deliberately richer than
+   * a normal run so players come back on the timer.
+   */
+  challenge: {
+    cooldownMs: 3 * 60 * 60 * 1000, // 3 hours between challenges
+    // The field a challenge uses (a round-1 global stage, 1–8). Kept mid-range so
+    // it's brisk but winnable; the timer is what makes each mission a challenge.
+    phaseMin: 2,
+    phaseMax: 6,
+    // Random coin reward band (booster — richer than coinsForScore of a run).
+    coinsMin: 120,
+    coinsMax: 320,
+    failCoinFactor: 0.4, // a miss still pays this fraction of the rolled coins
+    // Random item-reward counts (bombs / snowflakes).
+    bombMin: 2,
+    bombMax: 4,
+    freezeMin: 2,
+    freezeMax: 3,
+    failItems: 1, // a miss on an item mission still grants this many
+    // Reward-kind weights (coins are the most common, being the headline booster).
+    rewardWeights: { coins: 0.55, bomb: 0.25, freeze: 0.2 },
+  },
 } as const;
 
 export type Difficulty = keyof typeof CONFIG.difficulty;

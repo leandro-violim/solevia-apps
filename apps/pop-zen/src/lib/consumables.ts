@@ -90,9 +90,15 @@ export function consumeItems(id: ConsumableId, n: number): number {
 
 /** Grant one for free (rewards) — no coin cost. */
 export function grantConsumable(id: ConsumableId, source: string): void {
+  grantConsumables(id, 1, source);
+}
+
+/** Grant `n` for free (rewards, e.g. Pop Challenge). One notify + one event. */
+export function grantConsumables(id: ConsumableId, n: number, source: string): void {
+  if (n <= 0) return;
   update((st) => {
-    st.inventory[id] = (st.inventory[id] ?? 0) + 1;
+    st.inventory[id] = (st.inventory[id] ?? 0) + n;
   });
-  track("consumable_granted", { item: id, source });
+  track("consumable_granted", { item: id, source, count: n });
   notify();
 }

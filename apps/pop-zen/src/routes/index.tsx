@@ -18,6 +18,7 @@ import {
   FloatBubble,
 } from "../components/gameshell";
 import { currentWorldPhase } from "../lib/progress";
+import { msUntilChallenge, formatCooldown, startChallenge } from "../lib/pop-challenge";
 import sky from "../assets/scene/sky.webp";
 
 export const Route = createFileRoute("/")({
@@ -65,6 +66,24 @@ function Home() {
     navigate({ to: "/play", search: { mode: "zen", phase: 1, difficulty: "normal", daily: 0 } });
   };
 
+  // §13 Pop Challenge: roll the random mission + reward, then start the single
+  // phase it's tied to. The 3-hour cooldown begins when the challenge completes.
+  const startChallengeRun = () => {
+    unlockAudio();
+    const active = startChallenge();
+    trackModeSelected("time-attack");
+    navigate({
+      to: "/play",
+      search: {
+        mode: "time-attack",
+        phase: active.mission.phase,
+        difficulty: "normal",
+        daily: 0,
+        challenge: 1,
+      },
+    });
+  };
+
   return (
     <div
       className="gs-home screen-fade relative flex min-h-dvh flex-col overflow-hidden"
@@ -106,15 +125,10 @@ function Home() {
 
       {/* ---- scene ---- */}
       <div className="relative z-10 min-h-0 flex-1">
-        {/* left: the daily challenge (the one event not in the bottom nav) */}
+        {/* left: the Pop Challenge (every-3-hours booster) — the one event not in
+            the bottom nav. Gated: tappable when available, else a live countdown. */}
         <div className="absolute left-3 top-3 z-20">
-          <EventTile
-            to="/play"
-            search={{ mode: "time-attack", phase: 1, difficulty: "normal", daily: 1 }}
-            variant="blue"
-            icon="🗓️"
-            label={t("home.daily")}
-          />
+          <PopChallengeTile onStart={startChallengeRun} />
         </div>
 
         {/* bubble-wrap teaser (upper-right) → Pop for Fun */}
@@ -186,43 +200,57 @@ function Home() {
   );
 }
 
-/** An event: soft-3D icon tile + a small glossy caption, links somewhere. */
-function EventTile({
-  to,
-  search,
-  variant,
-  icon,
-  label,
-}: {
-  to: string;
-  search?: Record<string, unknown>;
-  variant: "purple" | "blue" | "pink" | "gold";
-  icon: string;
-  label: string;
-}) {
+/**
+ * §13 Pop Challenge home tile: soft-3D icon + glossy caption. Tappable when the
+ * challenge is available; while on cooldown it dims and shows a live countdown to
+ * the next one (ticking every second). Reads the cooldown after mount so SSR /
+ * prerender (no localStorage) doesn't cause a hydration mismatch.
+ */
+function PopChallengeTile({ onStart }: { onStart: () => void }) {
+  const [ms, setMs] = useState(0);
+  useEffect(() => {
+    const tick = () => setMs(msUntilChallenge());
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const available = ms <= 0;
+  const label = available ? t("home.daily") : t("challenge.in", { t: formatCooldown(ms) });
+
   return (
-    <Link
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      to={to as any}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      search={search as any}
-      className="flex w-[76px] flex-col items-center gap-1"
+    <button
+      type="button"
+      onClick={available ? onStart : undefined}
+      disabled={!available}
       aria-label={label}
+      className="flex w-[76px] flex-col items-center gap-1"
+      style={{
+        background: "transparent",
+        border: 0,
+        padding: 0,
+        cursor: available ? "pointer" : "default",
+      }}
     >
-      <IconTile variant={variant} size={64}>
-        {icon}
-      </IconTile>
+      <div
+        style={{ opacity: available ? 1 : 0.55, filter: available ? undefined : "grayscale(0.4)" }}
+      >
+        <IconTile variant="blue" size={64}>
+          🎯
+        </IconTile>
+      </div>
       <span
-        className="w-full rounded-lg px-1.5 py-0.5 text-center text-[10px] font-extrabold leading-tight text-white"
+        className="w-full rounded-lg px-1.5 py-0.5 text-center text-[10px] font-extrabold leading-tight text-white tabular-nums"
         style={{
-          background: "linear-gradient(var(--gs-green-1), var(--gs-green-2))",
+          background: available
+            ? "linear-gradient(var(--gs-green-1), var(--gs-green-2))"
+            : "linear-gradient(#9aa4b2, #7f8a99)",
           border: "2px solid #fff",
-          boxShadow: "0 3px 0 var(--gs-green-edge)",
+          boxShadow: available ? "0 3px 0 var(--gs-green-edge)" : "0 3px 0 #6b7482",
           textShadow: "0 1px 1px rgba(0,0,0,.25)",
         }}
       >
         {label}
       </span>
-    </Link>
+    </button>
   );
 }

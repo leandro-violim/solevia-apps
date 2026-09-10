@@ -48,6 +48,14 @@ import {
 } from "../lib/run-stats";
 import { checkAchievements } from "../lib/achievements";
 import { seededRand, recordDailyResult } from "../lib/daily-challenge";
+import {
+  getActiveChallenge,
+  startChallenge,
+  completeChallenge,
+  type ActiveChallenge,
+  type ChallengeReward,
+} from "../lib/pop-challenge";
+import { ChallengeResult } from "../components/ChallengeResult";
 import { track } from "../lib/analytics";
 import { markFirstPop, markFirstRunCompleted, noteMaxProgress } from "../lib/journey-analytics";
 import { unlockZenSkins } from "../lib/skins";
@@ -91,6 +99,9 @@ const searchSchema = z.object({
   mode: z.enum(["zen", "time-attack"]).optional().default("time-attack"),
   difficulty: z.enum(["easy", "normal", "hard"]).optional().default("normal"),
   daily: z.coerce.number().optional().default(0), // 1 = date-seeded daily challenge (§12)
+  // 1 = §13 Pop Challenge (3h booster). Optional (no default) so other /play
+  // navigations needn't pass it; absent ⇒ a normal run.
+  challenge: z.coerce.number().optional(),
   // Power-ups the player equipped for this phase from the journey popup — exactly
   // this many bomb / snowflake bubbles are placed on the board (no random ones).
   // Left optional (no default) so existing navigations to /play needn't pass them;
@@ -299,20 +310,36 @@ function prePopSome(list: BubbleState[]): BubbleState[] {
 }
 
 function PlayPage() {
-  const { phase, mode, difficulty, daily, bombs: bombsRaw, freeze: freezeRaw } = Route.useSearch();
+  const {
+    phase,
+    mode,
+    difficulty,
+    daily,
+    challenge,
+    bombs: bombsRaw,
+    freeze: freezeRaw,
+  } = Route.useSearch();
   // Equipped power-up counts (absent in the URL ⇒ none equipped).
   const bombs = bombsRaw ?? 0;
   const freeze = freezeRaw ?? 0;
   const navigate = useNavigate({ from: "/play" });
   const isZen = mode === "zen";
   const isDaily = daily === 1; // §12 date-seeded Time Attack run
+  const isChallenge = challenge === 1; // §13 Pop Challenge — single-phase booster run
+  // The active Pop Challenge roll (mission + reward), read once. If the URL says
+  // challenge but none is persisted (e.g. a hard reload), roll a fresh one so the
+  // run is always well-formed.
+  const challengeRef = useRef<ActiveChallenge | null>(null);
+  if (isChallenge && challengeRef.current === null) {
+    challengeRef.current = getActiveChallenge() ?? startChallenge();
+  }
 
   // v1.3 §11 step 4: advance world/phase map progress as the player reaches each
   // phase of the MAIN journey (Pop Challenge, not Zen and not the daily challenge
   // — the daily is its own date-seeded run). Persistence only — no gameplay effect.
   useEffect(() => {
-    if (!isZen && !isDaily) noteStageReached(phase);
-  }, [phase, isZen, isDaily]);
+    if (!isZen && !isDaily && !isChallenge) noteStageReached(phase);
+  }, [phase, isZen, isDaily, isChallenge]);
   // Zen makes specials rare; Time Attack full-rate (§7/§9). Primitive → effect-safe.
   const specialsMul = isZen ? CONFIG.specials.zenMultiplier : 1;
   const cfg = isZen ? ZEN_FIELD : stageConfig(phase, difficulty);
@@ -492,7 +519,7 @@ function PlayPage() {
       resetRun();
       // Fresh run → reset run-stats and draw new objectives (§8, Time Attack only).
       resetRunStats();
-      objectivesRef.current = isZen ? [] : rollObjectives();
+      objectivesRef.current = isZen || isChallenge ? [] : rollObjectives();
       completedRef.current = new Set();
       setObjVersion((v) => v + 1);
       runStartAtRef.current = Date.now();
@@ -523,6 +550,7 @@ function PlayPage() {
     specialsMul,
     isZen,
     isDaily,
+    isChallenge,
     mode,
     difficulty,
     bombs,
@@ -740,6 +768,14 @@ function PlayPage() {
     if (settledRef.current) return;
     settledRef.current = true;
     const t = startAt !== null ? Date.now() - startAt : 0;
+    // §13 Pop Challenge: a self-contained single-phase run. Clearing the sheet just
+    // ends it (the ChallengeResult overlay grades the mission + grants the reward);
+    // it must NOT write phase records / run continuity / objectives like a journey run.
+    if (isChallenge) {
+      challengeElapsedRef.current = t;
+      setState("done");
+      return;
+    }
     const timeLeftMs = deadline !== null ? Math.max(0, deadline - Date.now()) : 0;
     noteRunPhaseCleared(t); // §8/§10
     scanObjectives();
@@ -777,9 +813,43 @@ function PlayPage() {
     isZen,
     specialsMul,
     isDaily,
+    isChallenge,
     mode,
     cfg.timeLimitMs,
   ]);
+
+  // §13 Pop Challenge resolution: grade the mission + grant the reward exactly
+  // once when the single-phase run ends (cleared → "done", or the clock ran out →
+  // "timeup"). Both outcomes pay out — a win in full, a miss a consolation.
+  const challengeElapsedRef = useRef(0);
+  const challengeResolvedRef = useRef(false);
+  const [challengeOutcome, setChallengeOutcome] = useState<{
+    success: boolean;
+    granted: ChallengeReward;
+  } | null>(null);
+  useEffect(() => {
+    if (!isChallenge || challengeResolvedRef.current) return;
+    if (state !== "done" && state !== "timeup") return;
+    const active = challengeRef.current;
+    if (!active) return;
+    challengeResolvedRef.current = true;
+    const cleared = state === "done";
+    const elapsedMs = cleared
+      ? challengeElapsedRef.current
+      : startAt !== null
+        ? Date.now() - startAt
+        : 0;
+    const rs = getRunStats();
+    commitStats(rs.popped, rs.goldenPopped, rs.maxCombo, true); // cumulative stats
+    checkAchievements();
+    const res = completeChallenge(active, {
+      popped: rs.popped,
+      maxCombo: getMaxCombo(),
+      cleared,
+      elapsedMs,
+    });
+    setChallengeOutcome({ success: res.success, granted: res.granted });
+  }, [isChallenge, state, startAt]);
 
   const record = records[phase];
   const isLast = phase >= TOTAL_STAGES;
@@ -804,6 +874,16 @@ function PlayPage() {
   // Live count of un-popped bubbles, so the countdown-expiry handler can tell a
   // last-frame clear from a real time-up (avoids "Time up" on a cleared field).
   const remainingRef = useRef(0);
+
+  // §13 Close the Pop Challenge result: fire the reward-close interstitial, then
+  // return home. The reward + cooldown were already applied at resolution.
+  const closeChallenge = useCallback(async () => {
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+    setAdvancing(true);
+    await maybeShowInterstitial("challenge_end");
+    navigate({ to: "/" });
+  }, [navigate]);
 
   const nextPhase = useCallback(async () => {
     if (advancingRef.current) return;
@@ -935,6 +1015,26 @@ function PlayPage() {
   const remaining = useMemo(() => bubbles.filter((b) => !b.popped).length, [bubbles]);
   remainingRef.current = remaining; // keep the expiry-handler's live count fresh
 
+  // §13 Pop Challenge mission label + live progress (shown in the header instead
+  // of the world/phase + "bubbles left" line).
+  const mission = isChallenge ? (challengeRef.current?.mission ?? null) : null;
+  const missionLabel = mission
+    ? mission.kind === "pop"
+      ? t("challenge.mPop", { n: mission.target })
+      : mission.kind === "combo"
+        ? t("challenge.mCombo", { n: mission.target })
+        : mission.kind === "fast"
+          ? t("challenge.mFast", { n: mission.target })
+          : t("challenge.mClear")
+    : "";
+  const missionProgress = mission
+    ? mission.kind === "pop"
+      ? `${Math.min(mission.target, bubbles.length - remaining)}/${mission.target}`
+      : mission.kind === "clear"
+        ? t("play.bubblesLeftShort", { n: remaining })
+        : missionLabel
+    : "";
+
   // Abandonment: if the player backgrounds/leaves the app while ACTIVELY playing
   // (not on a between-phase dialog), log it — this is where real drop-off shows.
   const stateRef = useRef(state);
@@ -1010,11 +1110,13 @@ function PlayPage() {
           >
             {isZen
               ? t("home.zen")
-              : t("play.worldPhase", { world: round, phase: pir, per: PHASES_PER_ROUND })}
+              : isChallenge
+                ? t("challenge.title")
+                : t("play.worldPhase", { world: round, phase: pir, per: PHASES_PER_ROUND })}
           </div>
           {!isZen && (
             <div className="text-sm font-semibold" style={{ color: "var(--gs-ink)" }}>
-              {t(cfg.key)}
+              {isChallenge ? missionLabel : t(cfg.key)}
             </div>
           )}
         </div>
@@ -1034,7 +1136,9 @@ function PlayPage() {
       </header>
 
       <div className="px-4 pb-2 text-center text-xs" style={{ color: "var(--gs-ink-soft)" }}>
-        {t("play.bubblesLeft", { n: remaining, best: record?.bestScore ?? 0 })}
+        {isChallenge
+          ? missionProgress
+          : t("play.bubblesLeft", { n: remaining, best: record?.bestScore ?? 0 })}
       </div>
 
       <div
@@ -1156,7 +1260,7 @@ function PlayPage() {
             </div>
           )}
 
-          {state === "timeup" && (
+          {state === "timeup" && !isChallenge && (
             <div
               className="fixed inset-0 z-50 flex items-center justify-center px-4"
               style={{
@@ -1204,7 +1308,7 @@ function PlayPage() {
             </div>
           )}
 
-          {state === "done" && result && (
+          {state === "done" && result && !isChallenge && (
             <div
               className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 py-6"
               style={{
@@ -1333,6 +1437,18 @@ function PlayPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* §13 Pop Challenge result: mission graded, reward granted → shows the
+              prize; closing fires an interstitial and returns home. */}
+          {isChallenge && challengeOutcome && challengeRef.current && (
+            <ChallengeResult
+              mission={challengeRef.current.mission}
+              success={challengeOutcome.success}
+              reward={challengeOutcome.granted}
+              busy={advancing}
+              onClose={closeChallenge}
+            />
           )}
         </div>
       </div>
