@@ -118,7 +118,8 @@ export function HexNode({
   n: number;
   state?: "done" | "current" | "locked";
   hereLabel?: string;
-  size?: number;
+  /** px (number) or any CSS length, e.g. "100%" to fill a sized wrapper. */
+  size?: number | string;
   style?: CSSProperties;
 }) {
   const tile = state === "done" ? nodeDone : state === "current" ? nodeCurrent : nodeLocked;

@@ -24,17 +24,18 @@ const WORLD_BG = [world1, world2, world3, world4];
 // phase markers sit dead-centre on the pads, ordered pad1→pad8 along the rope.
 // The section is shown SQUARE (full image, no crop) so these percentages map 1:1.
 const WORLD_NODES: [number, number][][] = [
-  // World 1 — daytime, green trees. Coordinates are the MEASURED centres of the 8
-  // baked pads (detected from world-1.webp), so each marker sits on its pad.
+  // World 1 — daytime, green trees. Coordinates are the MEASURED bounding-box
+  // centres of the 8 baked pads (detected from world-1.webp), so each marker sits
+  // dead-centre on its pad.
   [
-    [37.4, 32.8],
-    [49.0, 34.5],
-    [59.6, 38.4],
-    [51.8, 44.0],
-    [42.0, 49.9],
-    [50.9, 55.4],
-    [57.7, 62.0],
-    [45.8, 65.6],
+    [37.2, 33.3],
+    [49.2, 34.6],
+    [60.1, 37.8],
+    [51.5, 43.6],
+    [41.5, 50.6],
+    [51.1, 56.7],
+    [56.9, 61.9],
+    [46.5, 66.3],
   ],
   // World 2 — tropical, palms
   [
@@ -339,12 +340,16 @@ function MapPage() {
                 const showLocked = isCurrent && auto && !arrived;
                 const state = showLocked ? "locked" : baseState;
                 const [x, y] = WORLD_NODES[wi][pi];
+                // Marker size as a PERCENT of the (square) island, so the hex
+                // scales with the art and fully covers its baked pad on any device
+                // width. Pads are ~12% wide; the locked/done sprite has ~7% side
+                // margin so a 14% box gives a ~12% visible hex. The current sprite
+                // is wider, so it needs a slightly smaller box.
+                const nodePct = isCurrent ? 13 : 14;
                 const node = (
-                  // "You are here" now rides above the mascot's head (see the
-                  // overlay below), not the node, so we don't pass hereLabel.
-                  // Sized to sit WITHIN the baked tan pads (~8% of the island) so
-                  // each star fits its pad and no two overlap (World 1 is crowded).
-                  <HexNode n={p} state={state} size={isCurrent ? 34 : 30} />
+                  // "You are here" rides above the mascot's head (overlay below),
+                  // not the node, so no hereLabel here. Fills the sized wrapper.
+                  <HexNode n={p} state={state} size="100%" />
                 );
                 const interactive = state !== "locked";
                 return (
@@ -352,7 +357,12 @@ function MapPage() {
                     key={p}
                     ref={isCurrent ? curNodeRef : isPrev ? prevNodeRef : undefined}
                     className="absolute -translate-x-1/2 -translate-y-1/2"
-                    style={{ left: `${x}%`, top: `${y}%` }}
+                    style={{
+                      left: `${x}%`,
+                      top: `${y}%`,
+                      width: `${nodePct}%`,
+                      aspectRatio: "1 / 1",
+                    }}
                   >
                     {interactive ? (
                       <button
@@ -361,6 +371,9 @@ function MapPage() {
                         aria-label={`${t("world.label")} ${world} · ${p}`}
                         className={isCurrent && arrived && auto ? "gs-unlock" : undefined}
                         style={{
+                          display: "block",
+                          width: "100%",
+                          height: "100%",
                           border: 0,
                           background: "transparent",
                           padding: 0,
@@ -370,7 +383,12 @@ function MapPage() {
                         {node}
                       </button>
                     ) : (
-                      <div aria-label={`${t("world.label")} ${world} · ${p}`}>{node}</div>
+                      <div
+                        aria-label={`${t("world.label")} ${world} · ${p}`}
+                        style={{ width: "100%", height: "100%" }}
+                      >
+                        {node}
+                      </div>
                     )}
                   </div>
                 );
