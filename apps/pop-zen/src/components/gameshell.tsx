@@ -113,6 +113,7 @@ export function HexNode({
   state = "locked",
   hereLabel,
   size = 54,
+  stretch = false,
   style,
 }: {
   n: number;
@@ -120,6 +121,9 @@ export function HexNode({
   hereLabel?: string;
   /** px (number) or any CSS length, e.g. "100%" to fill a sized wrapper. */
   size?: number | string;
+  /** When true the tile FILLS its box (matches a non-square footprint like a pad)
+   *  instead of preserving its own aspect ratio (contain). */
+  stretch?: boolean;
   style?: CSSProperties;
 }) {
   const tile = state === "done" ? nodeDone : state === "current" ? nodeCurrent : nodeLocked;
@@ -130,7 +134,12 @@ export function HexNode({
         src={tile}
         alt=""
         aria-hidden
-        style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: stretch ? "fill" : "contain",
+          display: "block",
+        }}
       />
       {state === "current" && (
         <span

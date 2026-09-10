@@ -19,6 +19,11 @@ import world3 from "../assets/scene/world-3.webp";
 import world4 from "../assets/scene/world-4.webp";
 
 const WORLD_BG = [world1, world2, world3, world4];
+// The baked tan pads are all the same isometric-oval footprint: ~PAD_W% wide ×
+// ~PAD_H% tall of the SQUARE island image (measured from world-1.webp). Markers
+// use exactly this box so each sits on its pad at the pad's own size and shape.
+const PAD_W = 12.6;
+const PAD_H = 10.4;
 // Per-world node anchors (x%, y% of the SQUARE world image) — Cowork baked the 8
 // tan pads at exactly these coordinates in each island (world-maps v3), so the
 // phase markers sit dead-centre on the pads, ordered pad1→pad8 along the rope.
@@ -340,16 +345,14 @@ function MapPage() {
                 const showLocked = isCurrent && auto && !arrived;
                 const state = showLocked ? "locked" : baseState;
                 const [x, y] = WORLD_NODES[wi][pi];
-                // Marker size as a PERCENT of the (square) island, so the hex
-                // scales with the art and fully covers its baked pad on any device
-                // width. Pads are ~12% wide; the locked/done sprite has ~7% side
-                // margin so a 14% box gives a ~12% visible hex. The current sprite
-                // is wider, so it needs a slightly smaller box.
-                const nodePct = isCurrent ? 13 : 14;
+                // Marker box matches the baked pad's own FOOTPRINT (an isometric
+                // oval ~PAD_W% × PAD_H% of the square island), and the tile is
+                // stretched to fill it — so each marker is exactly the pad's size
+                // and shape, sitting dead-centre on it, never crowding neighbours.
                 const node = (
                   // "You are here" rides above the mascot's head (overlay below),
-                  // not the node, so no hereLabel here. Fills the sized wrapper.
-                  <HexNode n={p} state={state} size="100%" />
+                  // not the node, so no hereLabel here. Fills the pad-shaped wrapper.
+                  <HexNode n={p} state={state} size="100%" stretch />
                 );
                 const interactive = state !== "locked";
                 return (
@@ -360,8 +363,8 @@ function MapPage() {
                     style={{
                       left: `${x}%`,
                       top: `${y}%`,
-                      width: `${nodePct}%`,
-                      aspectRatio: "1 / 1",
+                      width: `${PAD_W}%`,
+                      aspectRatio: `${PAD_W} / ${PAD_H}`,
                     }}
                   >
                     {interactive ? (
