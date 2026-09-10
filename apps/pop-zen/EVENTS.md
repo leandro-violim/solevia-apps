@@ -39,6 +39,20 @@ registered — expected). Use DebugView for QA.
 `objective_completed {objective_id?, coins}`, `achievement_unlocked {achievement_id?}`,
 `streak_milestone`, `skin_unlocked` / `skin_equipped`.
 
+## Equip (journey power-ups, v1.3)
+| Event | Params | When |
+|---|---|---|
+| `phase_equipped` | `world`, `phase`, `bombs`, `freeze`, `boost` | player taps Play in the equip popup. `boost=1` when the rewarded-ad free boost was watched |
+
+## Pop Challenge (§13 — the 3-hour comeback booster, v1.3)
+| Event | Params | When |
+|---|---|---|
+| `challenge_started` | `mission_kind` (`pop`/`combo`/`clear`/`fast`), `reward_kind` (`coins`/`bomb`/`freeze`), `phase` | the tile is tapped and a challenge is rolled |
+| `challenge_completed` | `mission_kind`, `success`, `reward_kind`, `reward_amount` | the single phase ends (win OR miss); reward already granted |
+
+(The reward itself also fires `coins_earned {source: pop_challenge}` or
+`consumable_granted {item, source: pop_challenge, count}`.)
+
 ## Economy & monetization
 | Event | Params | When |
 |---|---|---|
@@ -72,7 +86,8 @@ registered — expected). Use DebugView for QA.
 1. **Custom definitions → custom dimensions (event-scoped):** `screen_name`, `previous_screen`,
    `mode`, `difficulty`, `world`, `phase`, `phase_start`, `placement`, `item_id`, `rarity`,
    `source`, `sink`, `reason`, `objective_id`, `achievement_id`, `milestone`, `type`,
-   `day_count`, `format`, `from_world`, `to_world`, `short_by`, `ended_by`.
+   `day_count`, `format`, `from_world`, `to_world`, `short_by`, `ended_by`,
+   `bombs`, `freeze`, `boost`, `mission_kind`, `reward_kind`, `reward_amount`, `success`.
    **(user-scoped):** `app_language`, `highest_world`, `highest_phase`, `is_spender`.
 2. **Events → Mark as key event:** `run_start`, `phase_cleared`, `world_completed`,
    `rewarded_watched`, `daily_bonus_claimed`, `skin_unlocked`, `first_run_completed`.
