@@ -7,11 +7,14 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { t } from "../lib/i18n";
+import { CoinBalance } from "./CoinBalance";
+import { AdBanner, AdBannerSpacer } from "./AdBanner";
 import wrapSheet from "../assets/scene/wrap-sheet.webp";
 import poppedSprite from "../assets/bubbles/real-bubble-popped.webp";
 import mascotIdle from "../assets/shell/mascot-idle.webp";
 import islandTrees from "../assets/shell/island-trees.webp";
 import islandHex from "../assets/shell/island-hex.webp";
+import sky from "../assets/scene/sky.webp";
 
 /* 1 — Glossy primary button (actions). Navigation uses <Link className="gs-btn">. */
 export function GlossyButton({
@@ -84,8 +87,14 @@ export function ResourcePill({
 }) {
   return (
     <span className={`gs-pill ${className}`}>
-      {plus && <span className="gs-pill__plus" aria-hidden>+</span>}
-      <span aria-hidden style={{ fontSize: 15 }}>{icon}</span>
+      {plus && (
+        <span className="gs-pill__plus" aria-hidden>
+          +
+        </span>
+      )}
+      <span aria-hidden style={{ fontSize: 15 }}>
+        {icon}
+      </span>
       {children}
     </span>
   );
@@ -187,7 +196,14 @@ export function WrapTeaser({
       onClick={onClick}
       aria-label={ribbon}
       className={`gs-teaser ${className}`}
-      style={{ width, border: 0, background: "transparent", padding: 0, cursor: "pointer", ...style }}
+      style={{
+        width,
+        border: 0,
+        background: "transparent",
+        padding: 0,
+        cursor: "pointer",
+        ...style,
+      }}
     >
       <div
         className="gs-teaser__patch"
@@ -222,17 +238,110 @@ export function BottomNav({
 }) {
   return (
     <nav className="gs-nav" style={{ height }} aria-label={t("nav.settings")}>
-      <Link to="/shop" className="gs-nav__btn" aria-label={t("home.shop")}
-        aria-current={active === "shop" ? "page" : undefined}>🛍️</Link>
-      <Link to="/records" className="gs-nav__btn" aria-label={t("home.viewRecords")}
-        aria-current={active === "records" ? "page" : undefined}>📊</Link>
-      <Link to="/" className="gs-nav__btn gs-nav__btn--home" aria-label={t("home.title")}
-        aria-current={active === "home" ? "page" : undefined}>🫧</Link>
-      <Link to="/achievements" className="gs-nav__btn" aria-label={t("home.achievements")}
-        aria-current={active === "achievements" ? "page" : undefined}>🏆</Link>
-      <Link to="/settings" className="gs-nav__btn" aria-label={t("nav.settings")}
-        aria-current={active === "settings" ? "page" : undefined}>⚙️</Link>
+      <Link
+        to="/shop"
+        className="gs-nav__btn"
+        aria-label={t("home.shop")}
+        aria-current={active === "shop" ? "page" : undefined}
+      >
+        🛍️
+      </Link>
+      <Link
+        to="/records"
+        className="gs-nav__btn"
+        aria-label={t("home.viewRecords")}
+        aria-current={active === "records" ? "page" : undefined}
+      >
+        📊
+      </Link>
+      <Link
+        to="/"
+        className="gs-nav__btn gs-nav__btn--home"
+        aria-label={t("home.title")}
+        aria-current={active === "home" ? "page" : undefined}
+      >
+        🫧
+      </Link>
+      <Link
+        to="/achievements"
+        className="gs-nav__btn"
+        aria-label={t("home.achievements")}
+        aria-current={active === "achievements" ? "page" : undefined}
+      >
+        🏆
+      </Link>
+      <Link
+        to="/settings"
+        className="gs-nav__btn"
+        aria-label={t("nav.settings")}
+        aria-current={active === "settings" ? "page" : undefined}
+      >
+        ⚙️
+      </Link>
     </nav>
+  );
+}
+
+/* Game-style screen shell: sky background + sticky header (back · title · coins)
+   + scrollable content + optional bottom nav + ad. Used by the menu screens. */
+export function ScreenShell({
+  title,
+  children,
+  nav,
+  back = "/",
+  coins = true,
+  ad = true,
+}: {
+  title: string;
+  children: ReactNode;
+  nav?: "shop" | "records" | "home" | "achievements" | "settings";
+  back?: string;
+  coins?: boolean;
+  ad?: boolean;
+}) {
+  return (
+    <div
+      className="gs-home screen-fade relative flex min-h-dvh flex-col"
+      style={{
+        backgroundImage: `url(${sky})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+      }}
+    >
+      <header
+        className="gs-topwash sticky top-0 z-20 flex items-center gap-2 px-3 pb-2"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+      >
+        <Link
+          to={back}
+          aria-label={t("home.title")}
+          className="gs-nav__btn"
+          style={{ width: 42, height: 42 }}
+        >
+          ←
+        </Link>
+        <h1 className="text-lg font-extrabold" style={{ color: "var(--gs-ink)" }}>
+          {title}
+        </h1>
+        {coins && (
+          <Link to="/shop" aria-label={t("home.shop")} className="ml-auto">
+            <ResourcePill icon="🪙" plus>
+              <CoinBalance />
+            </ResourcePill>
+          </Link>
+        )}
+      </header>
+
+      <main className="relative z-10 mx-auto w-full max-w-md flex-1 px-4 pb-6">{children}</main>
+
+      {nav && <BottomNav active={nav} />}
+      {ad && (
+        <>
+          <AdBannerSpacer />
+          <AdBanner />
+        </>
+      )}
+    </div>
   );
 }
 

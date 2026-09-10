@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { Trophy, Sparkles, RotateCcw, ArrowRight } from "lucide-react";
+import { RotateCcw, ArrowRight } from "lucide-react";
 import { launchConfetti } from "../lib/confetti";
 import { showRewarded } from "../lib/ads";
 import { addCoins } from "../lib/economy";
@@ -9,7 +9,9 @@ import { getAllTimeBestTotal } from "../lib/records";
 import { pickQuote } from "../lib/quotes";
 import { t } from "../lib/i18n";
 import { CoinIcon, PlayIcon } from "../components/icons";
+import { Mascot } from "../components/gameshell";
 import { fadeMusicIn, fadeMusicOut } from "../lib/music";
+import sky from "../assets/scene/sky.webp";
 
 // beat is passed as 1/0 to survive URL (de)serialization cleanly.
 const searchSchema = z.object({
@@ -84,96 +86,102 @@ function FinishPage() {
 
   return (
     <div
-      className="screen-fade relative flex min-h-dvh flex-col items-center justify-center px-6 text-center"
+      className="gs-home screen-fade relative flex min-h-dvh flex-col items-center justify-center px-6 text-center"
       style={{
+        backgroundImage: `url(${sky})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
         paddingTop: "calc(env(safe-area-inset-top) + 24px)",
         paddingBottom: "calc(env(safe-area-inset-bottom) + 24px)",
       }}
     >
-      {/* Icon */}
+      {/* Mascot celebration */}
       <div
-        className="mb-6"
+        className="mb-3"
         style={{ animation: "trophyPop 620ms cubic-bezier(.34,1.56,.64,1) both" }}
       >
-        {beatRecord ? (
-          <div
-            className="grid h-28 w-28 place-items-center rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle at 50% 40%, oklch(0.9 0.16 90 / 0.35), transparent 70%)",
-            }}
-          >
-            <Trophy
-              className="h-20 w-20"
-              strokeWidth={1.5}
-              style={{
-                color: "oklch(0.9 0.16 92)",
-                animation: "trophyGlow 2.4s ease-in-out infinite",
-              }}
-            />
-          </div>
-        ) : (
-          <div
-            className="grid h-28 w-28 place-items-center rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle at 50% 40%, oklch(0.82 0.13 195 / 0.28), transparent 70%)",
-            }}
-          >
-            <Sparkles className="h-16 w-16 text-primary" strokeWidth={1.5} />
-          </div>
-        )}
+        <div
+          className="grid h-32 w-32 place-items-center rounded-full"
+          style={{
+            background: beatRecord
+              ? "radial-gradient(circle at 50% 45%, rgba(245,196,81,0.5), transparent 70%)"
+              : "radial-gradient(circle at 50% 45%, rgba(51,224,198,0.35), transparent 70%)",
+          }}
+        >
+          <Mascot size={116} />
+        </div>
       </div>
 
       {/* Headline */}
       {beatRecord ? (
         <>
-          <div className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
+          <div
+            className="text-xs font-extrabold uppercase tracking-[0.3em]"
+            style={{ color: "var(--gs-coral)" }}
+          >
             {prevBest > 0 ? t("finish.newAllTime") : t("finish.firstRecord")}
           </div>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-foreground">
+          <h1
+            className="mt-2 text-4xl font-extrabold tracking-tight"
+            style={{ color: "var(--gs-ink)" }}
+          >
             {t("finish.youBeatBest")}
           </h1>
         </>
       ) : (
         <>
-          <div className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+          <div
+            className="text-xs font-extrabold uppercase tracking-[0.3em]"
+            style={{ color: "var(--gs-blue-2)" }}
+          >
             {t("finish.runComplete")}
           </div>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-foreground">
+          <h1
+            className="mt-2 text-4xl font-extrabold tracking-tight"
+            style={{ color: "var(--gs-ink)" }}
+          >
             {t("finish.soClose")}
           </h1>
         </>
       )}
 
       {/* Score card */}
-      <div className="mt-7 w-full max-w-xs rounded-3xl bg-card p-6">
-        <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
-          {t("finish.yourRun")}
-        </div>
-        <div className="mt-1 text-5xl font-bold text-primary tabular-nums">
+      <div className="gs-panel mt-6 w-full max-w-xs p-6">
+        <div className="text-[11px] uppercase tracking-widest gs-muted">{t("finish.yourRun")}</div>
+        <div
+          className="mt-1 text-5xl font-extrabold tabular-nums"
+          style={{ color: "var(--gs-blue-2)" }}
+        >
           {total.toLocaleString()}
         </div>
 
         {beatRecord ? (
           prevBest > 0 ? (
-            <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+            <div
+              className="mt-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-bold"
+              style={{ background: "rgba(240,98,160,0.15)", color: "var(--gs-coral)" }}
+            >
               {t("finish.overOldBest", {
                 delta: delta.toLocaleString(),
                 prev: prevBest.toLocaleString(),
               })}
             </div>
           ) : (
-            <div className="mt-3 text-sm text-muted-foreground">{t("finish.firstTotal")}</div>
+            <div className="mt-3 text-sm gs-muted">{t("finish.firstTotal")}</div>
           )
         ) : (
           <div className="mt-3 space-y-1">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm gs-muted">
               {t("finish.allTimeBest")}{" "}
-              <span className="font-semibold text-foreground">{allTimeBest.toLocaleString()}</span>
+              <span className="font-bold" style={{ color: "var(--gs-ink)" }}>
+                {allTimeBest.toLocaleString()}
+              </span>
             </div>
             {pointsAway > 0 && (
-              <div className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-3 py-1 text-sm font-semibold text-primary">
+              <div
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-bold"
+                style={{ background: "rgba(61,142,240,0.14)", color: "var(--gs-blue-2)" }}
+              >
                 {t("finish.pointsAway", { n: pointsAway.toLocaleString() })}
               </div>
             )}
@@ -183,7 +191,7 @@ function FinishPage() {
 
       {/* Encouragement */}
       <p
-        className="mt-5 max-w-xs text-sm italic text-muted-foreground"
+        className="mt-5 max-w-xs text-sm italic gs-muted"
         style={{ animation: "floatUp 600ms ease-out 200ms both" }}
       >
         {beatRecord ? t("finish.momentum") : `“${quote}”`}
@@ -192,7 +200,10 @@ function FinishPage() {
       {/* §1/§3.2 run coins + rewarded double */}
       {coins > 0 && (
         <div className="mt-6 flex flex-col items-center gap-2">
-          <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
+          <div
+            className="inline-flex items-center gap-1.5 text-sm font-bold"
+            style={{ color: "var(--gs-ink)" }}
+          >
             <CoinIcon size={16} className="text-gold" />
             {t("finish.coinsEarned", { coins: coins + bonusCoins })}
           </div>
@@ -200,7 +211,7 @@ function FinishPage() {
             <button
               onClick={doubleCoins}
               disabled={adBusy}
-              className="btn btn-ghost gap-1.5 px-4 py-2 text-xs text-accent"
+              className="gs-btn gs-btn--ghost gap-1.5 px-4 py-2 text-xs disabled:opacity-50"
             >
               <PlayIcon size={13} />
               {t("finish.doubleCoins")}
@@ -221,7 +232,7 @@ function FinishPage() {
               search: { phase: 1, mode: "time-attack", difficulty: "normal", daily: 1 },
             })
           }
-          className="btn btn-primary w-full py-4 text-base"
+          className="gs-btn w-full gap-1.5 py-4 text-base"
         >
           {beatRecord ? (
             <>
@@ -233,10 +244,10 @@ function FinishPage() {
             </>
           )}
         </button>
-        <Link to="/records" className="btn btn-ghost w-full text-sm">
+        <Link to="/records" className="gs-btn gs-btn--ghost w-full py-3 text-sm">
           {t("finish.viewRecords")}
         </Link>
-        <Link to="/" className="py-1 text-xs text-muted-foreground hover:underline">
+        <Link to="/" className="py-1 text-xs gs-muted hover:underline">
           {t("finish.backHome")}
         </Link>
       </div>
