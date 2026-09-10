@@ -15,6 +15,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RecordsRouteImport } from './routes/records'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PlayRouteImport } from './routes/play'
+import { Route as MapRouteImport } from './routes/map'
 import { Route as FinishRouteImport } from './routes/finish'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as AboutRouteImport } from './routes/about'
@@ -50,6 +51,11 @@ const PlayRoute = PlayRouteImport.update({
   path: '/play',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FinishRoute = FinishRouteImport.update({
   id: '/finish',
   path: '/finish',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/achievements': typeof AchievementsRoute
   '/finish': typeof FinishRoute
+  '/map': typeof MapRoute
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/records': typeof RecordsRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/achievements': typeof AchievementsRoute
   '/finish': typeof FinishRoute
+  '/map': typeof MapRoute
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/records': typeof RecordsRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/achievements': typeof AchievementsRoute
   '/finish': typeof FinishRoute
+  '/map': typeof MapRoute
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/records': typeof RecordsRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/achievements'
     | '/finish'
+    | '/map'
     | '/play'
     | '/privacy'
     | '/records'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/achievements'
     | '/finish'
+    | '/map'
     | '/play'
     | '/privacy'
     | '/records'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/achievements'
     | '/finish'
+    | '/map'
     | '/play'
     | '/privacy'
     | '/records'
@@ -152,6 +164,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AchievementsRoute: typeof AchievementsRoute
   FinishRoute: typeof FinishRoute
+  MapRoute: typeof MapRoute
   PlayRoute: typeof PlayRoute
   PrivacyRoute: typeof PrivacyRoute
   RecordsRoute: typeof RecordsRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/finish': {
       id: '/finish'
       path: '/finish'
@@ -240,6 +260,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AchievementsRoute: AchievementsRoute,
   FinishRoute: FinishRoute,
+  MapRoute: MapRoute,
   PlayRoute: PlayRoute,
   PrivacyRoute: PrivacyRoute,
   RecordsRoute: RecordsRoute,

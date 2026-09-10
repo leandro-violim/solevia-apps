@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { fadeMusicIn, fadeMusicOut } from "../lib/music";
 import { AdBanner, AdBannerSpacer } from "../components/AdBanner";
 import { DailyBonus } from "../components/DailyBonus";
@@ -18,6 +18,7 @@ import {
   BottomNav,
   FloatBubble,
 } from "../components/gameshell";
+import { currentWorldPhase } from "../lib/progress";
 import sky from "../assets/scene/sky.webp";
 
 export const Route = createFileRoute("/")({
@@ -39,14 +40,16 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-// Step 3 (game-style Home): the world/phase shown on the play button. Real
-// per-session persistence + an interactive map land in step 4; for now the
-// current node defaults to World 1 · Phase 1.
-const CURRENT_WORLD = 1;
-const CURRENT_PHASE = 1;
-
 function Home() {
   const navigate = useNavigate();
+
+  // v1.3 §11 step 4: real world/phase progress. Read after mount (SSR/prerender
+  // has no localStorage). The play button "continues" to the map at the current
+  // node; the mini-map preview mirrors nearby nodes.
+  const [{ world: CURRENT_WORLD, phase: CURRENT_PHASE }, setProgress] = useState({ world: 1, phase: 1 });
+  useEffect(() => {
+    setProgress(currentWorldPhase());
+  }, []);
 
   // Calm piano on the home screen (fades out when leaving).
   useEffect(() => {
@@ -143,12 +146,8 @@ function Home() {
       <div className="relative z-20 px-5 pb-2 text-center">
         <div aria-hidden className="mb-[-4px] text-2xl drop-shadow">🫧</div>
         <Link
-          to="/play"
-          search={{ mode: "time-attack", phase: CURRENT_PHASE, difficulty: "normal", daily: 0 }}
-          onClick={() => {
-            unlockAudio();
-            trackModeSelected("time-attack");
-          }}
+          to="/map"
+          aria-label={t("home.worldPhase", { world: CURRENT_WORLD, phase: CURRENT_PHASE })}
           className="gs-btn gs-btn--hero mx-auto w-full max-w-xs flex-col gap-0.5 px-4 py-2.5"
         >
           <span style={{ fontSize: 20 }}>

@@ -82,6 +82,7 @@ import {
   commitRunTotal,
 } from "../lib/records";
 import { pickQuote } from "../lib/quotes";
+import { noteStageReached } from "../lib/progress";
 import { t } from "../lib/i18n";
 
 const searchSchema = z.object({
@@ -258,6 +259,12 @@ function PlayPage() {
   const navigate = useNavigate({ from: "/play" });
   const isZen = mode === "zen";
   const isDaily = daily === 1; // §12 date-seeded Time Attack run
+
+  // v1.3 §11 step 4: advance world/phase map progress as the player reaches each
+  // Pop Challenge phase (not Zen). Persistence only — no gameplay effect.
+  useEffect(() => {
+    if (!isZen) noteStageReached(phase);
+  }, [phase, isZen]);
   // Zen makes specials rare; Time Attack full-rate (§7/§9). Primitive → effect-safe.
   const specialsMul = isZen ? CONFIG.specials.zenMultiplier : 1;
   const cfg = isZen ? ZEN_FIELD : stageConfig(phase, difficulty);
