@@ -44,7 +44,6 @@ import {
   getRunStats,
   commitStats,
   registerRevive,
-  getRunRevives,
 } from "../lib/run-stats";
 import { checkAchievements } from "../lib/achievements";
 import { seededRand, recordDailyResult } from "../lib/daily-challenge";
@@ -403,6 +402,9 @@ function PlayPage() {
   // null in Zen and before the first pop. Extended by a revive.
   const [deadline, setDeadline] = useState<number | null>(null);
   const [reviveBusy, setReviveBusy] = useState(false); // rewarded-ad in flight
+  // Cap revive ATTEMPTS (not just successes) per run: even if a credit is missed,
+  // the player can never be shown a second revive ad. Reset when the run resets.
+  const reviveAttemptsRef = useRef(0);
   // "resume" = after a revive, the phase is armed but the countdown is PAUSED
   // until the player taps Continue (so the +15s never bleeds away behind the ad).
   const [state, setState] = useState<"ready" | "playing" | "timeup" | "done" | "resume">("ready");
@@ -531,6 +533,7 @@ function PlayPage() {
       resetRun();
       // Fresh run → reset run-stats and draw new objectives (§8, Time Attack only).
       resetRunStats();
+      reviveAttemptsRef.current = 0; // fresh run → revive offer available again
       objectivesRef.current = isZen || isChallenge ? [] : rollObjectives();
       completedRef.current = new Set();
       setObjVersion((v) => v + 1);
@@ -981,23 +984,27 @@ function PlayPage() {
     track("time_up", { mode, world: round, phase });
   }, [mode, phase, round]);
 
-  // Revives left this run? (Time Attack only; capped by CONFIG.ads.rewarded.)
-  const canRevive = !isZen && getRunRevives() < CONFIG.ads.rewarded.maxRevivesPerRun;
+  // Revives left this run? Gated by ATTEMPTS so a missed credit never offers a
+  // second ad (Time Attack only; capped by CONFIG.ads.rewarded.maxRevivesPerRun).
+  const canRevive = !isZen && reviveAttemptsRef.current < CONFIG.ads.rewarded.maxRevivesPerRun;
 
   // Watch a rewarded ad to earn a revive. On a watched ad the player ALWAYS gets
-  // the +reviveSeconds (see the Dismissed grace in ads.ts). We then go to the
-  // PAUSED "resume" state — the countdown doesn't start until the player taps
+  // the +reviveSeconds (order-independent reward capture in ads.ts). We then go to
+  // the PAUSED "resume" state — the countdown doesn't start until the player taps
   // Continue, so the granted time can't drain away behind the ad (#12).
   const onRevive = useCallback(async () => {
-    if (reviveBusy) return;
+    if (reviveBusy || reviveAttemptsRef.current >= CONFIG.ads.rewarded.maxRevivesPerRun) return;
     setReviveBusy(true);
+    reviveAttemptsRef.current += 1; // one ad per attempt, credited or not
     const watched = await showRewarded("revive"); // web/dev simulates success
     resumeAudio(); // recover the iOS audio session the ad stole, so pops sound again
     if (watched) {
-      registerRevive(); // run-scoped cap + lifetime stat
-      checkAchievements(); // "use your first revive"
+      registerRevive(); // lifetime stat + "first revive" achievement
+      checkAchievements();
       track("revive_used", { mode, phase });
       setState("resume"); // armed but paused — wait for "tap to continue"
+    } else {
+      setItemFlash(t("play.reviveNoCredit")); // couldn't verify the ad — no time added
     }
     setReviveBusy(false);
   }, [reviveBusy, mode, phase]);

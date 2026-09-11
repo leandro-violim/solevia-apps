@@ -428,39 +428,45 @@ export async function showRewarded(placement: string): Promise<boolean> {
   }
 
   return await new Promise<boolean>((resolve) => {
+    // Order-independent reward capture: grant the moment `Rewarded` fires (before
+    // OR after `Dismissed`); if `Dismissed` arrives first, wait up to 2s for a
+    // late `Rewarded` before resolving false — so a fully-watched ad always pays
+    // out (the +15s revive was being lost to a Dismissed-before-Rewarded race).
     const handles: PluginListenerHandle[] = [];
-    let settled = false;
-    let earned = false;
+    let settled = false,
+      earned = false,
+      adShown = false;
     const finish = () => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       rewardedReady = false;
       handles.forEach((h) => h.remove());
-      resumeAudio(); // F5: same audio-focus recovery after a rewarded ad (P1-T4 revive)
+      resumeAudio();
+      if (adShown) lastInterstitialAt = Date.now(); // don't stack an interstitial right after
       track(earned ? "rewarded_watched" : "rewarded_skipped", { placement });
       resolve(earned);
-      void preloadRewarded(); // warm up the next one
+      void preloadRewarded();
     };
-    const timer = setTimeout(finish, 40000); // safety net for a stuck SDK
-    // Some AdMob builds fire Rewarded slightly AFTER Dismissed (or the two race),
-    // which lost the reward for a user who watched the whole ad. On Dismissed,
-    // wait a short grace for a trailing Rewarded before settling, so a watched ad
-    // reliably grants its reward (e.g. the +15s revive).
+    const timer = setTimeout(finish, 40000);
+    const onReward = () => {
+      earned = true;
+      finish();
+    };
     const onDismissed = () => {
+      adShown = true;
       if (earned) return finish();
-      setTimeout(finish, 600);
+      setTimeout(finish, 2000);
     };
     Promise.all([
-      AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
-        earned = true;
-      }),
+      AdMob.addListener(RewardAdPluginEvents.Rewarded, onReward),
       AdMob.addListener(RewardAdPluginEvents.Dismissed, onDismissed),
       AdMob.addListener(RewardAdPluginEvents.FailedToShow, finish),
     ])
       .then((hs) => {
         handles.push(...hs);
         if (settled) hs.forEach((h) => h.remove());
+        adShown = true;
         return AdMob.showRewardVideoAd();
       })
       .catch(finish);

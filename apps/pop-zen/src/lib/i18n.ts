@@ -197,6 +197,7 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
     "challenge.collect": "Collect",
     "play.tapToStart": "Tap any bubble to start",
     "play.tapToContinue": "Tap to continue",
+    "play.reviveNoCredit": "Couldn't verify the ad — no time added",
     "world.label": "World",
     "world.skip": "Continue",
     "world.r1.name": "Bubble Wrap",
@@ -471,6 +472,7 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
     "challenge.collect": "Coletar",
     "play.tapToStart": "Toque em qualquer bolha para começar", // NOT in spec table — review
     "play.tapToContinue": "Toque para continuar",
+    "play.reviveNoCredit": "Não foi possível confirmar o anúncio — sem tempo extra",
     "play.phaseComplete": "Fase {phase} concluída",
     "play.time": "Tempo {time}", // NOT in spec table — review
     "combo.milestone": "Combo ×{n}!",
@@ -725,6 +727,7 @@ export const STRINGS: Record<Lang, Record<string, string>> = {
     "challenge.collect": "Recoger",
     "play.tapToStart": "Toca cualquier burbuja para empezar",
     "play.tapToContinue": "Toca para continuar",
+    "play.reviveNoCredit": "No se pudo verificar el anuncio: sin tiempo extra",
     "world.label": "Mundo",
     "world.skip": "Continuar",
     "world.r1.name": "Plástico de burbujas",
