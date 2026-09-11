@@ -1,13 +1,30 @@
 import UIKit
 import Capacitor
+import AVFoundation
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
+    // WKWebView's default audio session isn't an active playback session, so
+    // WebAudio (our bubble pops) produced NO sound until a full-screen ad forced
+    // the session to .playback — which is why sound only appeared after an ad /
+    // the next phase. Setting an active .playback session at launch fixes it.
+    // .mixWithOthers keeps us polite to other apps' audio.
+    private func configureAudioSession() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, options: [.mixWithOthers])
+            try session.setActive(true)
+        } catch {
+            print("Zen Bubbles: audio session config failed: \(error)")
+        }
+    }
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        configureAudioSession()
         return true
     }
 
@@ -27,6 +44,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        // Re-assert our playback session after interruptions (phone call, ad, etc.).
+        configureAudioSession()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

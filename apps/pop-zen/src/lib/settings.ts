@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 /** App version shown in Settings & About. Bump on each store submission. */
-export const APP_VERSION = "1.0.0";
+export const APP_VERSION = "1.3.1";
 
 const SOUND_KEY = "bubble-sound-enabled-v1";
 
