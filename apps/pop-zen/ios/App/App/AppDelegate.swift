@@ -1,46 +1,19 @@
 import UIKit
 import Capacitor
-import AVFoundation
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
-    // Keep an active .playback audio session so game audio and, importantly, the
-    // AdMob rewarded/interstitial video ads play their audio. A plain .playback
-    // category (NOT .mixWithOthers) is used because mixWithOthers can leave a
-    // video ad's audio non-primary, so ads started muted until the user toggled
-    // the ad's sound button. We also re-assert it when an interruption ends.
-    private func configureAudioSession() {
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default, options: [])
-            try session.setActive(true)
-        } catch {
-            print("Zen Bubbles: audio session config failed: \(error)")
-        }
-    }
-
-    @objc private func handleAudioInterruption(_ note: Notification) {
-        guard
-            let info = note.userInfo,
-            let raw = info[AVAudioSessionInterruptionTypeKey] as? UInt,
-            let type = AVAudioSession.InterruptionType(rawValue: raw)
-        else { return }
-        // When an interruption (e.g. a full-screen ad) ends, bring our session back.
-        if type == .ended { configureAudioSession() }
-    }
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
-        configureAudioSession()
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleAudioInterruption(_:)),
-            name: AVAudioSession.interruptionNotification,
-            object: nil
-        )
+        // NOTE: we deliberately do NOT configure/activate an AVAudioSession here.
+        // Bubble pops + music use HTMLAudio (which works via the WebView), and
+        // forcing our own .playback session was interfering with Google Mobile
+        // Ads' own audio-session management, leaving rewarded/interstitial video
+        // ads muted until the user toggled the ad's sound button. Let AdMob manage
+        // the session.
         return true
     }
 
@@ -60,8 +33,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-        // Re-assert our playback session after interruptions (phone call, ad, etc.).
-        configureAudioSession()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
