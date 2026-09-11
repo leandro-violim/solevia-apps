@@ -20,6 +20,50 @@ import pop3 from "../assets/sounds/pop-3.mp3";
 
 const SOURCES = [pop1, pop2, pop3];
 
+// ── Pop playback via HTMLAudio (NOT WebAudio) ────────────────────────────────
+// On iOS/WKWebView the WebAudio audio units can fail to initialise inside the web
+// content process ("AudioComponentRegistrar … Operation not permitted"), leaving
+// the AudioContext silently interrupted — so WebAudio pops produced NO sound until
+// a full-screen ad reset the audio stack. The HTMLAudio media pipeline (the same
+// one the background music uses) is unaffected, so pops now play through a small
+// round-robin pool of <audio> elements. The samples are tiny inlined data URIs.
+const POP_POOL_SIZE = 12;
+const pool: HTMLAudioElement[] = [];
+let poolIdx = 0;
+let poolUnlocked = false;
+
+function buildPool(): void {
+  if (pool.length || typeof Audio === "undefined") return;
+  for (let i = 0; i < POP_POOL_SIZE; i++) {
+    const a = new Audio(SOURCES[i % SOURCES.length]);
+    a.preload = "auto";
+    // Let playbackRate shift PITCH (bright combo rise), not just tempo.
+    a.preservesPitch = false;
+    (a as unknown as { webkitPreservesPitch?: boolean }).webkitPreservesPitch = false;
+    (a as unknown as { mozPreservesPitch?: boolean }).mozPreservesPitch = false;
+    pool.push(a);
+  }
+}
+
+// iOS unlocks HTMLAudio on the first play from a user gesture; prime each element
+// muted so the first real pop is instant + audible.
+function unlockPool(): void {
+  if (poolUnlocked || !pool.length) return;
+  poolUnlocked = true;
+  for (const a of pool) {
+    a.muted = true;
+    a.play()
+      .then(() => {
+        a.pause();
+        a.currentTime = 0;
+        a.muted = false;
+      })
+      .catch(() => {
+        a.muted = false;
+      });
+  }
+}
+
 let ctx: AudioContext | null = null;
 let bus: AudioNode | null = null;
 let buffers: AudioBuffer[] = [];
@@ -112,12 +156,17 @@ function primeOutput(ac: AudioContext): void {
  * even after the app was minimized and reopened.
  */
 export function unlockAudio(): void {
+  // Primary: warm + unlock the HTMLAudio pop pool (the reliable path on iOS).
+  buildPool();
+  unlockPool();
+  // Secondary: warm the WebAudio context used only by the milestone/coin/bell
+  // chimes (best-effort — recovers after any ad if the web process blocked it).
   const st = ctx?.state as string | undefined;
   if (ctx && (st === "interrupted" || st === "closed")) resetAudio();
   const ac = getCtx();
   if (ac) {
     getBus(ac);
-    primeOutput(ac); // wake the iOS output route so the first pop isn't swallowed
+    primeOutput(ac); // wake the iOS output route so the first chime isn't swallowed
     void loadBuffers(ac);
   }
 }
@@ -190,32 +239,27 @@ if (typeof window !== "undefined") {
 }
 
 /**
- * Play a pop. `combo` (P1-T2) nudges the pitch UP per combo step, hard-capped by
+ * Play a pop through the HTMLAudio pool. `combo` (P1-T2) nudges the pitch UP per
+ * combo step (via playbackRate with preservesPitch off), hard-capped by
  * JUICE.combo.pitchCeil so a long chain rises musically but never goes shrill.
+ * A round-robin pool gives polyphony for rapid pops.
  */
 export function playPop(combo = 0): void {
   if (!isSoundEnabled()) return;
-  const ac = getCtx();
-  if (!ac) return;
-  if (buffers.length !== SOURCES.length) {
-    void loadBuffers(ac); // not ready this tap; ready by the next
-    return;
-  }
-  const out = getBus(ac);
-  const buf = buffers[(Math.random() * buffers.length) | 0];
-  // A fresh one-shot source per pop → overlapping pops always play together and
-  // never cut each other off (Web Audio is inherently polyphonic).
-  const src = ac.createBufferSource();
-  src.buffer = buf;
+  buildPool();
+  if (!pool.length) return;
+  const a = pool[poolIdx];
+  poolIdx = (poolIdx + 1) % pool.length;
   const { pitchJitter, volumeJitter } = JUICE.sound;
-  // Rising pitch: +pitchStep per combo step, clamped to pitchCeil (calm ceiling).
   const rise = Math.min(Math.max(combo - 1, 0) * JUICE.combo.pitchStep, JUICE.combo.pitchCeil);
-  src.playbackRate.value = 1 + rise + (Math.random() * 2 - 1) * pitchJitter;
-  const g = ac.createGain();
-  g.gain.value = 1 + (Math.random() * 2 - 1) * volumeJitter; // ±10%
-  src.connect(g);
-  g.connect(out);
-  src.start();
+  try {
+    a.playbackRate = 1 + rise + (Math.random() * 2 - 1) * pitchJitter;
+    a.volume = Math.max(0, Math.min(1, 1 - Math.random() * volumeJitter)); // slight ≤1 jitter
+    a.currentTime = 0;
+    void a.play().catch(() => {});
+  } catch {
+    /* ignore transient play() errors */
+  }
 }
 
 /** One soft sine "bell" partial through the shared bus — the calm chime voice. */
