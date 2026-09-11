@@ -7,24 +7,40 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
-    // WKWebView's default audio session isn't an active playback session, so
-    // WebAudio (our bubble pops) produced NO sound until a full-screen ad forced
-    // the session to .playback — which is why sound only appeared after an ad /
-    // the next phase. Setting an active .playback session at launch fixes it.
-    // .mixWithOthers keeps us polite to other apps' audio.
+    // Keep an active .playback audio session so game audio and, importantly, the
+    // AdMob rewarded/interstitial video ads play their audio. A plain .playback
+    // category (NOT .mixWithOthers) is used because mixWithOthers can leave a
+    // video ad's audio non-primary, so ads started muted until the user toggled
+    // the ad's sound button. We also re-assert it when an interruption ends.
     private func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, options: [.mixWithOthers])
+            try session.setCategory(.playback, mode: .default, options: [])
             try session.setActive(true)
         } catch {
             print("Zen Bubbles: audio session config failed: \(error)")
         }
     }
 
+    @objc private func handleAudioInterruption(_ note: Notification) {
+        guard
+            let info = note.userInfo,
+            let raw = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+            let type = AVAudioSession.InterruptionType(rawValue: raw)
+        else { return }
+        // When an interruption (e.g. a full-screen ad) ends, bring our session back.
+        if type == .ended { configureAudioSession() }
+    }
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         configureAudioSession()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioInterruption(_:)),
+            name: AVAudioSession.interruptionNotification,
+            object: nil
+        )
         return true
     }
 
