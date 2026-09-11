@@ -12,6 +12,7 @@
  * called from a real user gesture (Home "Play" / first tap) to unlock iOS audio
  * AND warm the decode so the first pop isn't silent.
  */
+import { Capacitor } from "@capacitor/core";
 import { isSoundEnabled } from "./settings";
 import { JUICE } from "./juice";
 import pop1 from "../assets/sounds/pop-1.mp3";
@@ -19,6 +20,15 @@ import pop2 from "../assets/sounds/pop-2.mp3";
 import pop3 from "../assets/sounds/pop-3.mp3";
 
 const SOURCES = [pop1, pop2, pop3];
+
+// On native (Capacitor/WKWebView) the WebAudio audio units can't initialise in the
+// web-content process ("AudioComponentRegistrar … Operation not permitted"), and a
+// failed AudioContext leaves the shared iOS audio session INTERRUPTED — which then
+// muted the AdMob video ads. So we NEVER create a WebAudio context on native: pops
+// play via the HTMLAudio pool, and the WebAudio-only chimes (milestone/coin) simply
+// stay silent on native (they still work on the web build). getCtx() returns null
+// on native, which makes every WebAudio path a no-op.
+const IS_NATIVE = Capacitor.isNativePlatform();
 
 // ── Pop playback via HTMLAudio (NOT WebAudio) ────────────────────────────────
 // On iOS/WKWebView the WebAudio audio units can fail to initialise inside the web
@@ -70,7 +80,8 @@ let buffers: AudioBuffer[] = [];
 let loading = false;
 
 function getCtx(): AudioContext | null {
-  if (typeof window === "undefined") return null;
+  // Never create/use a WebAudio context on native — see IS_NATIVE note above.
+  if (typeof window === "undefined" || IS_NATIVE) return null;
   // iOS leaves the context "interrupted" after a full-screen ad or backgrounding;
   // resume() can't revive that, so drop it and build a fresh one. Because getCtx
   // is reached from the pop tap (a user gesture), the new context resumes and
