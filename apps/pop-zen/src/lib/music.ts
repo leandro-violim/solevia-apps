@@ -118,6 +118,17 @@ function pauseImmediate(): void {
   }
 }
 
+/**
+ * Hard-pause the music right before a full-screen ad. The music is HTMLAudio, so
+ * while it's playing (e.g. on the Time's Up screen when Revive is tapped) it holds
+ * the audio route and the ad's own player starts MUTED until the user toggles the
+ * ad's sound. Pausing it first hands the route to the ad. `wantPlaying` is kept,
+ * so the state-driven music logic restores it on the next screen if appropriate.
+ */
+export function pauseMusicForAd(): void {
+  pauseImmediate();
+}
+
 // Stop the moment the tab/app is hidden; resume when it returns (if wanted).
 if (typeof document !== "undefined") {
   document.addEventListener("visibilitychange", () => {

@@ -32,6 +32,7 @@ import { runConsentAndTracking } from "@solevia/consent";
 import { CONFIG } from "./config";
 import { track } from "./analytics";
 import { resumeAudio } from "./pop-sound";
+import { pauseMusicForAd } from "./music";
 
 const IS_NATIVE = Capacitor.isNativePlatform();
 const PLATFORM = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
@@ -330,6 +331,7 @@ export async function showInterstitial(): Promise<boolean> {
       .then((hs) => {
         handles.push(...hs);
         if (settled) hs.forEach((h) => h.remove());
+        pauseMusicForAd(); // hand the audio route to the ad so it isn't muted
         return AdMob.showInterstitial();
       })
       .catch(finish);
@@ -467,6 +469,7 @@ export async function showRewarded(placement: string): Promise<boolean> {
         handles.push(...hs);
         if (settled) hs.forEach((h) => h.remove());
         adShown = true;
+        pauseMusicForAd(); // hand the audio route to the ad so it isn't muted
         return AdMob.showRewardVideoAd();
       })
       .catch(finish);
