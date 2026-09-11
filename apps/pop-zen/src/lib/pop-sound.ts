@@ -87,6 +87,25 @@ async function loadBuffers(ac: AudioContext): Promise<void> {
 }
 
 /**
+ * Prime the output route with a 1-frame silent buffer. On iOS a freshly-created
+ * AudioContext often produces NO sound for its first real source until an empty
+ * buffer has been played through it once (the audio route only "wakes" then) —
+ * which is why, before this, the first phase's pops were silent while a later
+ * phase (whose ad rebuilt the context) had sound. Cheap + inaudible; safe to
+ * repeat. Must run inside a user gesture (so the context can actually resume).
+ */
+function primeOutput(ac: AudioContext): void {
+  try {
+    const src = ac.createBufferSource();
+    src.buffer = ac.createBuffer(1, 1, ac.sampleRate);
+    src.connect(ac.destination);
+    src.start(0);
+  } catch {
+    /* priming is best-effort */
+  }
+}
+
+/**
  * Call from the first user gesture to unlock iOS audio AND warm the samples.
  * If the context was left "interrupted"/"closed" by backgrounding, rebuild it
  * here — inside the gesture — so the very first pop of a phase always sounds,
@@ -98,7 +117,22 @@ export function unlockAudio(): void {
   const ac = getCtx();
   if (ac) {
     getBus(ac);
+    primeOutput(ac); // wake the iOS output route so the first pop isn't swallowed
     void loadBuffers(ac);
+  }
+}
+
+/**
+ * Release our hold on the iOS audio session BEFORE a full-screen ad, so the ad's
+ * own player can take the session and play its audio. Suspending the WebAudio
+ * context deactivates its audio unit; `resumeAudio()` (called from the ad's
+ * dismiss callback) brings pops back afterwards.
+ */
+export function suspendAudio(): void {
+  try {
+    if (ctx && ctx.state === "running") void ctx.suspend();
+  } catch {
+    /* best-effort */
   }
 }
 

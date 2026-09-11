@@ -14,6 +14,7 @@ import {
 } from "../lib/consumables";
 import { getCoins, addCoins } from "../lib/economy";
 import { showRewarded } from "../lib/ads";
+import { unlockAudio } from "../lib/pop-sound";
 import { CoinBalance } from "./CoinBalance";
 import { PlayIcon, CoinIcon } from "./icons";
 
@@ -97,6 +98,7 @@ export function EquipModal({
   const start = () => {
     if (busy) return;
     committedRef.current = true;
+    unlockAudio(); // last gesture before gameplay — prime iOS audio so pops sound
     setBusy(true);
     // Already consumed/bought on each "+", so don't consume again here.
     track("phase_equipped", { world, phase, bombs: bombN, freeze: freezeN, boost: 0 });
